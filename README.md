@@ -120,3 +120,24 @@ Trang chi tiết có quan hệ theo từng nghĩa từ Open English WordNet 2025
 - Sổ từ `#/notebook`: các ngày được nhóm theo tháng, với số từ và tiến độ thật. Màn hình chi tiết ngày và các đường dẫn học cũ vẫn dùng được.
 - Menu nổi bo tròn trên desktop và mobile: Trang chủ, Ôn tập, thêm nhanh, Sổ từ, Tiến độ. Cài đặt chuyển lên góc trên; khoảng cách đáy có tính vùng an toàn của thiết bị.
 - Mã giao diện mới: `assets/js/features/home.js`, `assets/css/v3.css`. Giữ font Be Vietnam Pro và các tuỳ chọn giao diện hiện có.
+
+### Gợi ý tra từ ngay trên trang chủ
+
+- Gõ từ tiếng Anh hoặc nghĩa tiếng Việt để xem tối đa 6 gợi ý có nghĩa ngay dưới ô tra.
+- Bấm gợi ý để mở thẳng chi tiết từ; dùng phím lên/xuống và Enter để chọn. Escape đóng gợi ý. Enter khi chưa chọn mở danh sách kết quả đầy đủ.
+- Dùng chung kho từ tải một lần và cache ngoại tuyến. Kết quả tiếng Việt được tìm theo từng đợt; thay từ khóa hoặc chuyển trang sẽ hủy lượt tìm cũ.
+- Mã chức năng: `assets/js/features/home-lookup.js`; giao diện: `assets/css/v3.css`.
+
+### Thanh menu bo tròn
+
+- CSS menu tập trung tại `assets/css/navigation.css`, dùng chung bố cục 5 cột bằng nhau trên desktop và mobile. Các quy tắc menu cũ đã được bỏ khỏi V2/V3 để tránh chồng CSS.
+- Nút cộng nằm gọn ở giữa thanh; kích thước vùng bấm 48–54 px. Icon có khung riêng, không phụ thuộc đường cơ sở chữ. Khoảng cách đáy có tính vùng an toàn của thiết bị.
+
+### Thống nhất trạng thái và lịch ôn
+
+- Đánh dấu nhớ/chưa nhớ trong sổ cập nhật lịch theo cùng quy tắc với lật thẻ và ghép cặp; thao tác đánh dấu không cộng lượt học hay chuỗi ngày ôn.
+- Các mốc giữ nguyên: 1, 3, 7, 14, 30 ngày. Luyện thêm trước ngày hẹn không tăng cấp hoặc đẩy ngày hẹn xa hơn; lượt học thật vẫn được ghi nhận. Quên từ sẽ đưa về hôm nay và bắt đầu lại từ mốc 1 ngày khi nhớ lại.
+- Từ chưa nhớ luôn vào hàng chờ, kể cả dữ liệu từ bản cũ còn giữ lịch ở tương lai.
+- Kết quả và nút ôn lại chỉ chứa các từ chưa nhớ trong chính lượt vừa học; giữ đúng sổ ngày gốc khi ôn nhiều ngày.
+- Chỉ đổi ví dụ hoặc lưu lại nội dung không đổi sẽ giữ lịch. Đổi từ hoặc nghĩa sẽ đưa từ về cần ôn lại.
+- Dừng ghép cặp giữa chừng không hiện thông báo đã nhớ hết; lịch của các từ chưa trả lời được giữ nguyên.

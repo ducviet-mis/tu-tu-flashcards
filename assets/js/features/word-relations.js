@@ -56,6 +56,9 @@ function bankSenseCard(sense,word,number){
   const related=bankRelationGroup('Từ liên quan','related',sense.related,word);
   return `<section class="dictionary-sense" data-sense="${esc(sense.id)}" tabindex="-1"><p class="dictionary-sense-label">${number}. ${bankPartOfSpeech[sense.pos]||'Từ vựng'}</p><h3 ${sense.vi?'':'lang="en"'}>${esc(sense.vi||sense.definition)}</h3>${sense.vi?`<details class="dictionary-english"><summary>Giải thích tiếng Anh</summary><p class="dictionary-definition" lang="en">${esc(sense.definition)}</p></details>`:''}${sense.examples.length?`<blockquote class="dictionary-example" lang="en">${esc(sense.examples[0])}</blockquote>`:''}${near}${opposite}${related}${!near&&!opposite&&!related?'<p class="dictionary-relation-note">Chưa có từ gần nghĩa hoặc trái nghĩa cho nghĩa này trong nguồn.</p>':''}</section>`;
 }
+function bankRelationsLoading(){
+  return '<h3 class="dictionary-section-title">Theo từng nghĩa</h3><div class="dictionary-loading"><p class="dictionary-relation-note" role="status">Đang tải các nghĩa và từ liên quan…</p><div class="dictionary-loading-lines" aria-hidden="true"><span></span><span></span><span></span></div></div>';
+}
 function bankWordDetail(i,{word='',sense='',push=false,scroll=0,returnSense=''}={}){
   const row=bankData?.entries[i]||(word?[word,'','',0]:null);if(!row)return;
   rememberLookup(row[0]);
@@ -66,8 +69,9 @@ function bankWordDetail(i,{word='',sense='',push=false,scroll=0,returnSense=''}=
   bankSearchToken++;clearTimeout(bankDebounce);
   const saved=day(C.isoToday()).words.some(w=>C.wordKey(w.en)===C.wordKey(row[0]));
   utility.setAttribute('data-view','bank-detail');
-  utility.innerHTML=`<div class="dictionary-header"><button class="round" data-action="bank-back" aria-label="Quay lại">${icon('back')}</button><span class="tiny muted">Từ điển</span><button class="round" data-action="close-utility" aria-label="Đóng từ điển">${icon('close')}</button></div><div class="dictionary-word-head"><h2 id="utility-title" tabindex="-1">${esc(row[0])}</h2>${row[2]?`<p class="bank-pos">${esc(row[2])}</p>`:''}<button class="btn outline dictionary-pronounce" data-action="bank-speak" data-bank="${i}" ${speakerSupported?'':'disabled'}>${icon('sound')}Nghe phát âm</button>${speakerSupported?'':'<p class="dictionary-speech-note">Trình duyệt này chưa hỗ trợ phát âm.</p>'}</div>${row[1]?`<p class="dictionary-translation-preview">${esc(C.bankSummary(row,bankState.q))}</p>`:''}<div id="bank-relations" class="dictionary-relations" aria-busy="true"><p class="dictionary-relation-note" role="status">Đang tìm từ liên quan…</p></div>${row[1]?`<details class="dictionary-translations" open><summary>Nghĩa tiếng Việt đầy đủ</summary><ol class="bank-senses">${row[1].split('\n').filter(Boolean).map(meaning=>`<li>${esc(meaning)}</li>`).join('')}</ol></details>`:''}<div class="dictionary-save"><details ${saved?'hidden':''}><summary>Sửa nghĩa để lưu vào bộ học</summary><label class="sr-only" for="bank-custom-meaning">Nghĩa lưu vào bộ học</label><textarea id="bank-custom-meaning" maxlength="1000" placeholder="Nhập nghĩa bạn muốn lưu">${esc(C.bankSummary(row,bankState.q))}</textarea></details><button class="btn outline wfull" data-action="bank-save" data-bank="${i}" ${saved||!row[1]?'disabled':''}>${icon(saved?'check':'plus')}${saved?'Đã có trong hôm nay':'Lưu vào hôm nay'}</button></div>`;
+  utility.innerHTML=`<div class="dictionary-header"><button class="round" data-action="bank-back" aria-label="Quay lại">${icon('back')}</button><span class="tiny muted">Từ điển</span><button class="round" data-action="close-utility" aria-label="Đóng từ điển">${icon('close')}</button></div><div class="dictionary-word-head"><h2 id="utility-title" tabindex="-1">${esc(row[0])}</h2>${row[2]?`<p class="bank-pos">${esc(row[2])}</p>`:''}<button class="btn outline dictionary-pronounce" data-action="bank-speak" data-bank="${i}" ${speakerSupported?'':'disabled'}>${icon('sound')}Nghe phát âm</button>${speakerSupported?'':'<p class="dictionary-speech-note">Trình duyệt này chưa hỗ trợ phát âm.</p>'}</div>${row[1]?`<p class="dictionary-translation-preview">${esc(C.bankSummary(row,bankState.q))}</p>`:''}<div id="bank-relations" class="dictionary-relations" aria-busy="true">${bankRelationsLoading()}</div>${row[1]?`<details class="dictionary-translations"><summary>Nghĩa tiếng Việt đầy đủ</summary><ol class="bank-senses">${row[1].split('\n').filter(Boolean).map(meaning=>`<li>${esc(meaning)}</li>`).join('')}</ol></details>`:''}<div class="dictionary-save"><details ${saved?'hidden':''}><summary>Sửa nghĩa để lưu vào bộ học</summary><label class="sr-only" for="bank-custom-meaning">Nghĩa lưu vào bộ học</label><textarea id="bank-custom-meaning" maxlength="1000" placeholder="Nhập nghĩa bạn muốn lưu">${esc(C.bankSummary(row,bankState.q))}</textarea></details><button class="btn outline wfull" data-action="bank-save" data-bank="${i}" ${saved||!row[1]?'disabled':''}>${icon(saved?'check':'plus')}${saved?'Đã có trong hôm nay':'Lưu vào hôm nay'}</button></div>`;
   $('#utility-title').focus({preventScroll:true});utility.scrollTop=scroll;
+  bankWordState.initialScroll=utility.scrollTop;
   if(sense){$('#bank-custom-meaning').value='';$('[data-action="bank-save"]').disabled=true;}
   bankRelationsPending=bankRenderRelations(token,bankWordState);
   return bankRelationsPending;
@@ -90,7 +94,6 @@ async function bankRenderRelations(token,state){
     const rootLinks=roots.map(word=>({word}));
     const forms=[...new Set(Object.values(entry.forms).flat())].map(word=>({word}));
     target.innerHTML=(roots.length?`<div class="dictionary-root"><span>Dạng của</span><div class="dictionary-chips">${rootLinks.map(bankRelationLink).join('')}</div></div>`:'')+(forms.length?`<div class="dictionary-word-forms"><span>Các dạng của ${esc(entry.word)}</span><div class="dictionary-chips">${forms.map(bankRelationLink).join('')}</div></div>`:'')+`<h3 class="dictionary-section-title">${L.key(entry.word)===L.key(state.word)?'Theo từng nghĩa':'Nghĩa của '+esc(entry.word)}</h3>`+senses.slice(0,3).map((s,i)=>bankSenseCard(s,entry.word,i+1)).join('')+(senses.length>3?`<details class="dictionary-more-senses"><summary>Xem ${senses.length-3} nghĩa khác</summary>${senses.slice(3).map((s,i)=>bankSenseCard(s,entry.word,i+4)).join('')}</details>`:'')+'<p class="dictionary-source">Quan hệ từ: <a href="https://en-word.net/" target="_blank" rel="noopener noreferrer">Open English WordNet</a>. <a href="./data/WORDNET-NOTICE.txt" target="_blank" rel="noopener noreferrer">Nguồn & giấy phép</a></p>';
-    const full=$('.dictionary-translations');if(full)full.open=false;
     // No headword-based translation guesses: only an explicitly translated sense can fill a new card.
     if(!state.meaningEdited){
       const selected=senses.find(s=>s.id===state.focus)||senses[0],field=$('#bank-custom-meaning');
@@ -103,7 +106,8 @@ async function bankRenderRelations(token,state){
         $('.dictionary-save').querySelector('details').open=true;
       }
     }
-    utility.scrollTop=state.scroll||0;
+    // Restore a previous word's position only if the reader has not moved while loading.
+    if(state.scroll&&utility.scrollTop===state.initialScroll)utility.scrollTop=state.scroll;
     if(state.returnSense)[...utility.querySelectorAll('.dictionary-sense')].find(card=>card.dataset.sense===state.returnSense)?.focus({preventScroll:true});
   }catch{
     if(active()){
@@ -130,7 +134,7 @@ document.addEventListener('click',event=>{
     if(bankWordState){const card=button.closest('.dictionary-sense');if(card)bankWordState.returnSense=card.dataset.sense;}
     bankWordDetail(bankFindWord(button.dataset.word),{word:button.dataset.word,sense:button.dataset.sense||'',push:true});
   }else if(button.dataset.action==='bank-relations-retry'&&bankWordState){
-    $('#bank-relations').innerHTML='<p class="dictionary-relation-note" role="status">Đang tìm từ liên quan…</p>';
+    $('#bank-relations').innerHTML=bankRelationsLoading();
     $('#bank-relations').setAttribute('aria-busy','true');bankRelationsPending=bankRenderRelations(++bankRelationToken,bankWordState);
   }
 });

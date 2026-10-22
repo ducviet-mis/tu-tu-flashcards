@@ -22,3 +22,21 @@ test('Streak counts actual activity and stays live when yesterday was the last a
  assert.equal(box.ReviewEngine.streak({'2026-10-20':{reviewed:1},'2026-10-21':{reviewed:2}},'2026-10-22'),2);
  assert.equal(box.ReviewEngine.streak({},'2026-10-22'),0);
 });
+
+test('Practising an already remembered word before its due date keeps its schedule',()=>{
+ const R=box.ReviewEngine,w={id:'a',remembered:false};
+ R.grade(w,true,'2026-10-22');assert.equal(w.nextReview,'2026-10-23');
+ R.grade(w,true,'2026-10-22');assert.equal(w.nextReview,'2026-10-23');assert.equal(w.reviewLevel,1);
+ R.grade(w,true,'2026-10-23');assert.equal(w.nextReview,'2026-10-26');assert.equal(w.reviewLevel,2);
+ R.grade(w,true,'2026-10-24');assert.equal(w.nextReview,'2026-10-26');assert.equal(w.reviewLevel,2);
+ assert.equal(w.reviewCount,4);assert.equal(w.lastReviewed,'2026-10-24');
+ R.grade(w,false,'2026-10-24');assert.equal(w.nextReview,'2026-10-24');assert.equal(w.reviewLevel,0);
+ R.grade(w,true,'2026-10-24');assert.equal(w.nextReview,'2026-10-25');assert.equal(w.reviewLevel,1);
+});
+
+test('A forgotten word is due even if an older app left it with a future schedule',()=>{
+ const rows=[{date:'2026-10-20',words:[{id:'forgotten',remembered:false,reviewLevel:4,nextReview:'2026-11-01'},{id:'known',remembered:true,nextReview:'2026-11-01'}]}];
+ assert.deepEqual(Array.from(box.ReviewEngine.queue(rows,'2026-10-22'),x=>x.word.id),['forgotten']);
+ box.ReviewEngine.grade(rows[0].words[0],true,'2026-10-22');
+ assert.equal(rows[0].words[0].reviewLevel,1);assert.equal(rows[0].words[0].nextReview,'2026-10-23');
+});

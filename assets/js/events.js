@@ -28,7 +28,7 @@ document.addEventListener('click',e=>{
     case'toggle':{
       const w=day().words.find(w=>w.id===id);
       if(w){
-        w.remembered=!w.remembered;
+        ReviewEngine.setRemembered(w,!w.remembered,C.isoToday());
         persist();
         renderBase();
         toast(w.remembered?'Đã đánh dấu nhớ “'+w.en+'”.':'Đã chuyển “'+w.en+'” sang cần ôn.');
@@ -95,10 +95,7 @@ document.addEventListener('click',e=>{
     case'finish-match':finishStudy();
     break;
     case'result-review':{
-      const global=session.fromReview,date=session.date;
-      stopSession();
-      if(global)startGlobalReview('unknown');
-      else go('#/flip/'+date+'?review=1');
+      retryMissedWords();
       break;
     }
     case'home':go('#/');
@@ -166,17 +163,16 @@ utility.addEventListener('submit',e=>{
       toast('Từ tiếng Anh này đã có trong ngày.',null,'',true);
       return;
     }
+    const changed=C.wordKey(w.en)!==C.wordKey(en)||w.vi!==vi;
     w.en=en;
     w.vi=vi;
     w.example=$('#edit-example').value.trim();
     w.exampleVi=$('#edit-example-vi').value.trim();
-    w.remembered=false;
-    w.reviewLevel=0;
-    w.nextReview=C.isoToday();
+    if(changed)ReviewEngine.setRemembered(w,false,C.isoToday());
     persist();
     utility.close();
     renderBase();
-    toast('Đã sửa từ. Từ được chuyển sang cần ôn lại.');
+    toast(changed?'Đã sửa từ. Từ được chuyển sang cần ôn lại.':'Đã lưu thay đổi.');
   }
   else if(e.target.id==='cloud-form'){
     try{

@@ -54,7 +54,8 @@ function renderFlip(){
     finishStudy();
     return;
   }
-  study.innerHTML=studyHeader('Lật thẻ')+`<h2 class="study-heading" id="study-title">Mỗi lần lật,<br>Một lần nhớ.</h2><div class="segments" aria-hidden="true">${s.words.map((_,i)=>`<span class="${i<s.index?s.answers[i]?'done':'miss':i===s.index?'current':''}"></span>`).join('')}</div><div class="session-progress"><span>${s.review?'Ôn từ chưa nhớ':'Bộ thẻ của bạn'}</span><span>${s.index+1} / ${s.words.length}</span></div><div class="deck"><button class="flip-card ${s.flipped?'flipped':''}" data-action="flip-card" aria-label="${esc(C.cardLabel(w,s.reversed,s.flipped))}" aria-pressed="${s.flipped}"><span class="flip-inner"><span class="face front" aria-hidden="${s.flipped}"><span class="eyebrow">${s.reversed?'Tiếng Việt':'Tiếng Anh'}</span><span class="word">${esc(s.reversed?w.vi:w.en)}</span>${w.example?`<span class="card-example">${esc(w.example)}</span>`:''}<span class="flip-hint">Bấm vào thẻ để lật</span></span><span class="face back" aria-hidden="${!s.flipped}"><span class="eyebrow">${s.reversed?'Tiếng Anh':'Nghĩa tiếng Việt'}</span><span class="word">${esc(s.reversed?w.en:w.vi)}</span><span class="translation-small">${esc(s.reversed?w.vi:w.en)}</span>${w.exampleVi?`<span class="card-example">${esc(w.exampleVi)}</span>`:''}</span></span></button></div><div class="answer-buttons" id="answer-buttons">${s.flipped?answerButtons():'<div class="answer-prompt">Lật thẻ rồi tự đánh giá trí nhớ của bạn.</div>'}</div><div class="review-schedule">Đã nhớ → hẹn ôn sau ${ReviewEngine.intervals[Math.min(w.reviewLevel||0,4)]} ngày · Chưa nhớ → ôn lại hôm nay</div><div class="session-tools"><button class="btn outline small" data-action="shuffle">${icon('shuffle')}Xáo trộn</button><button class="btn outline small ${s.reversed?'selected':''}" data-action="reverse" aria-pressed="${s.reversed}">${icon('reverse')}Đảo chiều</button></div><div class="shortcut" style="margin:18px 0 0">Phím cách: lật · ← chưa nhớ · đã nhớ →</div>`;
+  const nextReview=ReviewEngine.setRemembered({...w},true,C.isoToday()).nextReview;
+  study.innerHTML=studyHeader('Lật thẻ')+`<h2 class="study-heading" id="study-title">Mỗi lần lật,<br>Một lần nhớ.</h2><div class="segments" aria-hidden="true">${s.words.map((_,i)=>`<span class="${i<s.index?s.answers[i]?'done':'miss':i===s.index?'current':''}"></span>`).join('')}</div><div class="session-progress"><span>${s.review?'Ôn từ chưa nhớ':'Bộ thẻ của bạn'}</span><span>${s.index+1} / ${s.words.length}</span></div><div class="deck"><button class="flip-card ${s.flipped?'flipped':''}" data-action="flip-card" aria-label="${esc(C.cardLabel(w,s.reversed,s.flipped))}" aria-pressed="${s.flipped}"><span class="flip-inner"><span class="face front" aria-hidden="${s.flipped}"><span class="eyebrow">${s.reversed?'Tiếng Việt':'Tiếng Anh'}</span><span class="word">${esc(s.reversed?w.vi:w.en)}</span>${w.example?`<span class="card-example">${esc(w.example)}</span>`:''}<span class="flip-hint">Bấm vào thẻ để lật</span></span><span class="face back" aria-hidden="${!s.flipped}"><span class="eyebrow">${s.reversed?'Tiếng Anh':'Nghĩa tiếng Việt'}</span><span class="word">${esc(s.reversed?w.en:w.vi)}</span><span class="translation-small">${esc(s.reversed?w.vi:w.en)}</span>${w.exampleVi?`<span class="card-example">${esc(w.exampleVi)}</span>`:''}</span></span></button></div><div class="answer-buttons" id="answer-buttons">${s.flipped?answerButtons():'<div class="answer-prompt">Lật thẻ rồi tự đánh giá trí nhớ của bạn.</div>'}</div><div class="review-schedule">Đã nhớ → ôn ngày ${dateLabel(nextReview)} · Chưa nhớ → ôn lại hôm nay</div><div class="session-tools"><button class="btn outline small" data-action="shuffle">${icon('shuffle')}Xáo trộn</button><button class="btn outline small ${s.reversed?'selected':''}" data-action="reverse" aria-pressed="${s.reversed}">${icon('reverse')}Đảo chiều</button></div><div class="shortcut" style="margin:18px 0 0">Phím cách: lật · ← chưa nhớ · đã nhớ →</div>`;
   if(preferences.autoSpeak&&s.spokenId!==w.id){
     s.spokenId=w.id;
     speak(w.en);
@@ -152,9 +153,7 @@ function selectCell(i){
     for(const id of[a.pair,b.pair]){
       const w=day(s.date).words.find(w=>w.id===id);
       if(w){
-        w.remembered=false;
-        w.reviewLevel=0;
-        w.nextReview=C.isoToday();
+        ReviewEngine.setRemembered(w,false,C.isoToday());
       }
     }
     persist();
@@ -180,9 +179,23 @@ function finishStudy(){
   s.type='result';
   go('#/result/'+s.date);
 }
+function sessionReviewWords(s){
+  return s.words.flatMap(item=>{
+    const date=item._date||s.date,word=day(date).words.find(w=>w.id===item.id);
+    return word&&!word.remembered?[{...word,_date:date}]:[];
+  });
+}
+function retryMissedWords(){
+  const previous=session;if(previous?.type!=='result')return;
+  const words=sessionReviewWords(previous);if(!words.length)return;
+  stopSession();createSession('flip',previous.date,true);
+  session.words=words;session.fromReview=!!previous.fromReview;
+  if(previous.fromReview)session.reviewFilter='unknown';
+  go('#/flip/'+previous.date+(previous.fromReview?'?queue=unknown':'?review=1'));
+}
 function renderResult(){
-  const s=session,r=s.result,review=(s.fromReview?ReviewEngine.queue(days,C.isoToday(),'unknown').map(item=>item.word):day(s.date).words.filter(w=>!w.remembered));
-  study.innerHTML=studyHeader('Kết quả')+`<h2 class="sr-only" id="study-title">Kết quả học từ vựng</h2><div class="result-card"><div class="eyebrow">${r.completed?'Thêm một bước tiến!':'Một lượt ôn đã kết thúc'}</div><div class="score">${r.kind==='flip'?r.correct+'/'+r.total:timeLabel(r.elapsed)}</div><div class="eyebrow">${r.kind==='flip'?'Từ đã nhớ trong lượt này':(r.completed?'Thời gian hoàn thành':'Thời gian đã học')+' · ghép '+r.correct+'/'+r.total}</div>${mascot(true)}</div>${review.length?`<div class="review-title">Cần ôn lại · ${review.length} từ cần ôn</div><div class="result-tags">${review.map(w=>`<span class="pill">${esc(w.en)}</span>`).join('')}</div><button class="btn purple wfull" data-action="result-review">Ôn ${review.length} từ chưa nhớ ${icon('arrow')}</button>`:'<p class="success-note">Bạn đã nhớ hết các từ trong lượt này. Hẹn gặp ở lượt ôn tiếp theo!</p>'}<button class="btn white wfull" style="margin-top:12px" data-action="home">Về trang chủ ${icon('arrow')}</button>`;
+  const s=session,r=s.result,review=sessionReviewWords(s);
+  study.innerHTML=studyHeader('Kết quả')+`<h2 class="sr-only" id="study-title">Kết quả học từ vựng</h2><div class="result-card"><div class="eyebrow">${r.completed?'Thêm một bước tiến!':'Một lượt ôn đã kết thúc'}</div><div class="score">${r.kind==='flip'?r.correct+'/'+r.total:timeLabel(r.elapsed)}</div><div class="eyebrow">${r.kind==='flip'?'Từ đã nhớ trong lượt này':(r.completed?'Thời gian hoàn thành':'Thời gian đã học')+' · ghép '+r.correct+'/'+r.total}</div>${mascot(true)}</div>${review.length?`<div class="review-title">Cần ôn lại · ${review.length} từ cần ôn</div><div class="result-tags">${review.map(w=>`<span class="pill">${esc(w.en)}</span>`).join('')}</div><button class="btn purple wfull" data-action="result-review">Ôn ${review.length} từ chưa nhớ ${icon('arrow')}</button>`:`<p class="success-note">${r.completed?'Bạn đã nhớ hết các từ trong lượt này. Hẹn gặp ở lượt ôn tiếp theo!':'Lượt học đã dừng. Bạn có thể quay lại mục Ôn tập để học tiếp.'}</p>`}<button class="btn white wfull" style="margin-top:12px" data-action="home">Về trang chủ ${icon('arrow')}</button>`;
 }
 function stopSession(){
   if(session){

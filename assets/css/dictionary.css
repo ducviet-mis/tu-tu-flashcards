@@ -43,6 +43,12 @@ dialog.bank-dialog[open][data-view=bank]{display:flex;flex-direction:column;heig
 .dictionary-relations{margin:20px 0;min-width:0}
 .dictionary-section-title{font-size:16px;line-height:1.5;font-weight:600;margin:22px 0 12px}
 .dictionary-sense{border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0;background:var(--panel);overflow-wrap:anywhere;scroll-margin-top:16px}
+.dictionary-loading{border:1px solid var(--line);border-radius:16px;padding:16px;min-height:210px;background:var(--panel)}
+.dictionary-loading .dictionary-relation-note{margin:0 0 24px}
+.dictionary-loading-lines{display:grid;gap:14px}
+.dictionary-loading-lines span{display:block;height:12px;border-radius:6px;background:var(--line)}
+.dictionary-loading-lines span:nth-child(2){width:85%}
+.dictionary-loading-lines span:last-child{width:55%}
 .dictionary-sense:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 .dictionary-sense-label{font-size:12px;line-height:1.6;color:var(--muted);margin:0 0 6px}
 .dictionary-sense h3{font-size:16px;font-weight:600;line-height:1.7;margin:0}

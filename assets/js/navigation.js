@@ -10,6 +10,7 @@ function updateNav(page='home'){
   if($('#nav-review-count')){$('#nav-review-count').hidden=!due;$('#nav-review-count').textContent=due>99?'99+':String(due);}
 }
 function route(){
+  closeHomeSuggestions();
   const page=(location.hash||'#/').split('/')[1]?.split('?')[0];
   if(['review','progress','settings','notebook'].includes(page)){
     closeSuggestions();if(study.open)study.close();stopSession();$('#shell').classList.remove('mobile-day');

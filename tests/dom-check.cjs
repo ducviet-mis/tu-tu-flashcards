@@ -108,6 +108,24 @@ test('Word relations stay attached to the selected sense and Back restores the l
  e.click('[data-action="bank-back"]');assert.equal(e.q('#bank-search').value,'light');
 });
 
+test('Word details show the new layout while loading and preserve the reader’s position',async()=>{
+ const e=environment({bankRows:[['light','nhẹ\nsáng\nnhạt màu','tính từ',1]],lexicon:true});await e.qa.bankOpen();
+ const original=e.box.fetch;let release,notify;const started=new Promise(resolve=>notify=resolve);
+ e.box.fetch=async url=>{if(String(url).endsWith('/l.json.gz')){notify();return new Promise(resolve=>release=()=>resolve(new Response(fs.readFileSync(String(url)))));}return original(url);};
+ e.q('#bank-search').value='light';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');await started;
+ const full=e.q('.dictionary-translations'),dialog=e.q('#utility-dialog');
+ assert.equal(full.getAttribute('open'),null,'Legacy meanings must not expand before the new sense cards load');
+ assert.match(e.q('#bank-relations').textContent,/Theo từng nghĩa/);
+ assert.ok(e.q('#bank-relations').querySelector('[role="status"]'));
+ assert.equal(e.q('#bank-relations').getAttribute('aria-busy'),'true');
+ full.open=true;dialog.scrollTop=180;
+ release();await e.qa.bankRelationsPending;
+ assert.ok(e.q('.dictionary-sense[data-sense="light%3:00:01::"]'));
+ assert.equal(e.q('#bank-relations').getAttribute('aria-busy'),'false');
+ assert.ok(full.open,'Finishing a download must not close meanings the reader opened');
+ assert.equal(dialog.scrollTop,180,'Finishing a download must not jump to the top');
+});
+
 test('Missing relation download preserves the dictionary and can be retried',async()=>{
  const e=environment({bankRows:[['hello','xin chào','',1]]});await e.qa.bankOpen();
  e.q('#bank-search').value='hello';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');await e.qa.bankRelationsPending;
@@ -163,6 +181,55 @@ test('A wrong match makes a future scheduled word due again even if the session 
  for(const id of [s.cells[a].pair,s.cells[b].pair]){const w=e.qa.days[0].words.find(w=>w.id===id);assert.equal(w.remembered,false);assert.equal(w.reviewLevel,0);assert.equal(w.nextReview,e.qa.days[0].date);}
 });
 
+test('Notebook memory toggles update due counts without counting as a study session',()=>{
+ const e=demo(),word=e.qa.days[0].words.find(w=>!w.remembered),today=e.qa.days[0].date;
+ const toggle=()=>e.click('[data-action="toggle"][data-id="'+word.id+'"]');
+ toggle();assert.equal(word.remembered,true);assert.equal(word.reviewLevel,1);assert.ok(word.nextReview>today);
+ assert.equal(word.reviewCount,undefined);assert.equal(e.qa.activity[today],undefined);
+ e.box.location.hash='#/review';assert.equal(e.q('.feature-number').textContent,'13');
+ e.box.location.hash='#/day/'+today;toggle();assert.equal(word.remembered,false);assert.equal(word.reviewLevel,0);assert.equal(word.nextReview,today);
+ e.box.location.hash='#/';assert.equal(e.q('[data-home-count="due"]').textContent,'14');
+});
+
+test('Editing only an example preserves the schedule; changing a meaning resets it',()=>{
+ const e=demo(),word=e.qa.days[0].words[0];word.remembered=true;word.reviewLevel=3;word.nextReview='2099-01-01';word.reviewCount=5;
+ const edit=()=>{e.click('[data-action="edit"][data-id="'+word.id+'"]');e.q('#edit-example').value='A new example.';e.q('#edit-example-vi').value='Một ví dụ mới.';};
+ edit();e.q('#edit-form').dispatchEvent({type:'submit'});
+ assert.equal(word.remembered,true);assert.equal(word.reviewLevel,3);assert.equal(word.nextReview,'2099-01-01');assert.equal(word.reviewCount,5);
+ edit();e.q('#edit-vi').value='nghĩa mới';e.q('#edit-form').dispatchEvent({type:'submit'});
+ assert.equal(word.remembered,false);assert.equal(word.reviewLevel,0);assert.equal(word.nextReview,e.qa.days[0].date);assert.equal(word.reviewCount,5);
+});
+
+test('A review result and its retry contain only missed words from that session',()=>{
+ const e=demo(),today=e.qa.days[0].date,oldDay=e.qa.days[1];
+ for(const d of e.qa.days)for(const w of d.words){w.remembered=true;w.reviewLevel=2;w.nextReview='2099-01-01';}
+ const missed=oldDay.words[0],passed=e.qa.days[0].words[0],outside=oldDay.words[1];
+ missed.nextReview=today;passed.nextReview=today;e.qa.startGlobalReview('due');assert.equal(e.qa.session.words.length,2);
+ const studied=[...e.qa.session.words];
+ for(const w of studied){e.qa.flipCard();e.qa.answer(w.id!==missed.id);}
+ outside.remembered=false;outside.nextReview=today;e.qa.route();
+ assert.equal(e.qa.session.type,'result');assert.match(e.q('.result-tags').textContent,new RegExp(missed.en));assert.doesNotMatch(e.q('.result-tags').textContent,new RegExp(outside.en));
+ e.click('[data-action="result-review"]');assert.equal(e.qa.session.words.length,1);assert.equal(e.qa.session.words[0].id,missed.id);assert.equal(e.qa.session.words[0]._date,oldDay.date);
+ e.qa.flipCard();e.qa.answer(true);assert.equal(e.qa.session.type,'result');assert.ok(!e.q('[data-action="result-review"]'));
+ assert.equal(outside.remembered,false);
+});
+
+test('A match result does not offer unplayed words from the rest of the notebook',()=>{
+ const e=demo(),all=e.qa.days[0].words;for(const w of all)w.remembered=false;
+ e.click('[data-action="start-match"]');assert.equal(e.qa.session.words.length,6);
+ const selected=new Set(e.qa.session.words.map(w=>w.id)),outside=all.filter(w=>!selected.has(w.id));
+ for(const w of e.qa.session.words){const cells=e.qa.session.cells.flatMap((c,i)=>c.pair===w.id?[i]:[]);e.click('[data-cell="'+cells[0]+'"]');e.click('[data-cell="'+cells[1]+'"]');}
+ e.flush(500);assert.equal(e.qa.session.type,'result');assert.ok(!e.q('[data-action="result-review"]'),'Unplayed words must not appear in the result retry');
+ assert.ok(outside.every(w=>!w.remembered));
+});
+
+test('Stopping a match early does not claim that every word was recalled',()=>{
+ const e=demo();for(const w of e.qa.days[0].words){w.remembered=true;w.reviewLevel=2;w.nextReview='2099-01-01';}
+ e.click('[data-action="start-match"]');e.click('[data-action="finish-match"]');
+ assert.equal(e.qa.session.result.completed,false);assert.doesNotMatch(e.q('.success-note').textContent,/Bạn đã nhớ hết/);
+ assert.ok(e.qa.days[0].words.every(w=>w.nextReview==='2099-01-01'&&w.reviewLevel===2));
+});
+
 test('Quick add, examples, review across dates, schedules and progress views work together',async()=>{
  const e=environment({bankRows:[['hello','xin chào','',1]]});e.qa.quickAddOpen();await e.qa.loadBank();
  e.q('#quick-en').value='he';e.q('#quick-en').dispatchEvent({type:'input'});e.flush(150);await new Promise(setImmediate);e.click('[data-action="quick-suggest"]');
@@ -189,6 +256,66 @@ test('V3 home lookup submits into the existing dictionary and records only opene
  const reloaded=environment({map:e.map});assert.match(reloaded.q('#recent-lookups').textContent,/hello/);
  assert.equal(reloaded.qa.days.length,0);
 });
+test('Home lookup suggests English prefixes and opens the chosen word directly',async()=>{
+ const e=environment({bankRows:[['hello','xin chào','',1],['help','giúp đỡ','',1],['hero','anh hùng','',0]]});
+ const input=e.q('#home-lookup');input.focus();input.value='he';input.dispatchEvent({type:'input'});e.flush(180);await e.qa.loadBank();await new Promise(setImmediate);
+ assert.ok(e.q('#home-lookup-suggestions'),'Home search needs its own suggestion panel');
+ assert.equal(e.q('#home-lookup-suggestions').hidden,false);
+ assert.match(e.q('#home-lookup-options').textContent,/hello/);assert.match(e.q('#home-lookup-options').textContent,/xin chào/);
+ assert.equal(e.q('#utility-dialog').open,false);assert.equal(input.getAttribute('aria-expanded'),'true');
+ e.click('[data-action="home-lookup-suggest"][data-position="0"]');await new Promise(setImmediate);await e.qa.bankRelationsPending;
+ assert.equal(e.q('#utility-title').textContent,'hello');assert.equal(e.q('#utility-dialog').getAttribute('data-view'),'bank-detail');
+ assert.equal(e.q('#home-lookup-suggestions').hidden,true);assert.equal(e.qa.days.length,0);
+});
+
+test('Home lookup suggests Vietnamese meanings, supports keyboard selection and clears on Escape',async()=>{
+ const e=environment({bankRows:[['eat','ăn\năn cơm','',1],['have a meal','ăn cơm','',1],['Canadian company','công ty Canada','',0]]});
+ const input=e.q('#home-lookup');input.focus();input.value='an com';input.dispatchEvent({type:'input'});e.flush(180);await e.qa.loadBank();await new Promise(setImmediate);
+ assert.ok(e.q('#home-lookup-options'),'Vietnamese queries also need home suggestions');
+ assert.match(e.q('#home-lookup-options').textContent,/eat/);assert.doesNotMatch(e.q('#home-lookup-options').textContent,/Canadian/);
+ input.dispatchEvent({type:'keydown',key:'ArrowDown'});input.dispatchEvent({type:'keydown',key:'ArrowDown'});assert.ok(input.getAttribute('aria-activedescendant'));
+ input.dispatchEvent({type:'keydown',key:'Enter'});await new Promise(setImmediate);await e.qa.bankRelationsPending;
+ assert.equal(e.q('#utility-title').textContent,'eat');
+ e.click('[data-action="close-utility"]');input.focus();input.value='eat';input.dispatchEvent({type:'input'});e.flush(180);await new Promise(setImmediate);
+ input.dispatchEvent({type:'keydown',key:'Escape'});assert.equal(e.q('#home-lookup-suggestions').hidden,true);assert.equal(input.value,'eat');
+ input.value='';input.dispatchEvent({type:'input'});assert.equal(input.getAttribute('aria-expanded'),'false');
+});
+
+test('Home suggestions discard stale downloads after a query is cleared or route changes',async()=>{
+ const e=environment({bankRows:[['hello','xin chào','',1]]}),original=e.box.fetch;let release,notify;
+ const started=new Promise(resolve=>notify=resolve);
+ e.box.fetch=async url=>{if(String(url).includes('data/dictionary.json.gz')){notify();await new Promise(resolve=>release=resolve);}return original(url);};
+ const input=e.q('#home-lookup');input.focus();input.value='he';input.dispatchEvent({type:'input'});e.flush(180);
+ assert.ok(e.q('#home-lookup-suggestions'),'Loading feedback must appear while the dictionary downloads');
+ await started;
+ assert.equal(e.q('#home-lookup-suggestions').hidden,false);
+ input.value='';input.dispatchEvent({type:'input'});e.box.location.hash='#/notebook';release();await new Promise(setImmediate);await new Promise(setImmediate);
+ e.box.location.hash='#/';assert.equal(e.q('#home-lookup-suggestions').hidden,true);assert.equal(e.q('#home-lookup-options').querySelectorAll('[role="option"]').length,0);
+});
+
+test('Home suggestions preserve keyboard selection while Vietnamese results finish loading',async()=>{
+ const rows=[['hello','xin chào','',1],['help','giúp đỡ','',1],...Array.from({length:2000},(_,i)=>['word'+i,'nghĩa khác','',0])];
+ const e=environment({bankRows:rows});await e.qa.loadBank();
+ const frames=[];let clock=0;e.box.requestAnimationFrame=fn=>frames.push(fn);e.box.performance={now:()=>clock+=10};
+ const input=e.q('#home-lookup');input.focus();input.value='he';input.dispatchEvent({type:'input'});e.flush(180);await new Promise(setImmediate);
+ assert.ok(frames.length);input.dispatchEvent({type:'keydown',key:'ArrowDown'});
+ const selected=input.getAttribute('aria-activedescendant');assert.ok(selected);
+ while(frames.length)frames.shift()();
+ assert.equal(input.getAttribute('aria-activedescendant'),selected);
+ assert.equal(e.q('#'+selected).getAttribute('aria-selected'),'true');
+});
+
+test('Home lookup handles a failed download and can retry without reloading the page',async()=>{
+ const e=environment({bankRows:[['hello','xin chào','',1]]}),original=e.box.fetch;
+ e.box.fetch=async()=>{throw Error('offline');};
+ const input=e.q('#home-lookup');input.focus();input.value='he';input.dispatchEvent({type:'input'});e.flush(180);await new Promise(setImmediate);
+ assert.match(e.q('#home-lookup-status').textContent,/Chưa tải được/);
+ e.box.fetch=original;input.dispatchEvent({type:'input'});e.flush(180);await e.qa.loadBank();await new Promise(setImmediate);
+ assert.match(e.q('#home-lookup-options').textContent,/hello/);
+ input.value='no-match';input.dispatchEvent({type:'input'});e.flush(180);await new Promise(setImmediate);
+ assert.match(e.q('#home-lookup-status').textContent,/Chưa tìm thấy/);assert.equal(e.q('#home-lookup-options').querySelectorAll('[role="option"]').length,0);
+});
+
 test('V3 home and notebook are separate routes and use real counts without creating an empty day',()=>{
  const e=environment();assert.ok(e.q('#home-lookup-form'));e.click('[data-action="sample"]');
  assert.equal(e.q('[data-home-count="due"]').textContent,'14');
