@@ -36,7 +36,7 @@ function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech
  const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},get cloud(){return cloud;},getCloudForm,cloudAction,readImport,applyImport,route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,exportFile,configureCloud,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;}};`);vm.runInContext(src,box);
  return{box,doc,spoken,q:s=>doc.querySelector(s),qa:box.QA,map,click:s=>{const e=doc.querySelector(s);assert.ok(e,'Missing element '+s);e.click();},flush:ms=>{for(const t of timers.splice(0))if(!t.cancelled&&t.ms<=ms)t.fn();},key:code=>doc.body.dispatchEvent({type:'keydown',code,target:doc.activeElement||doc.body})};
 }
-function demo(){const e=environment();e.click('[data-action="sample"]');return e;}
+function demo(){const e=environment();e.click('[data-action="sample"]');e.box.location.hash='#/day/'+e.qa.days[0].date;return e;}
 test('Typing he suggests hello; clicking fills both fields; keyboard selection and manual meanings work',async()=>{
  const e=environment({hash:'#/day/2026-10-22',bankRows:[['hello','xin chào','',1],['help','giúp đỡ','',1],['hero','anh hùng','',0]]});
  await e.qa.loadBank();
@@ -56,7 +56,7 @@ test('Typing he suggests hello; clicking fills both fields; keyboard selection a
  assert.equal(e.q('#vietnamese').value,'nghĩa tự sửa');assert.equal(e.q('#word-suggestions').hidden,true);
 });
 test('App mở trống, nạp mẫu, thêm qua submit, chặn từ trùng, sửa, tìm kiếm, xóa/hoàn tác',()=>{
- const e=environment();assert.match(e.q('#app').textContent,/Từ nhỏ hôm nay/);e.click('[data-action="sample"]');e.click('[data-action="add-today"]');e.q('#english').value='Testword';e.q('#vietnamese').value='từ kiểm tra';const submit=()=>e.q('#add-form').dispatchEvent({type:'submit'});submit();assert.equal(e.qa.days[0].words.length,9);assert.equal(e.doc.activeElement.id,'english');e.q('#english').value=' testWORD ';e.q('#vietnamese').value='trùng';submit();assert.equal(e.qa.days[0].words.length,9);
+ const e=environment();assert.match(e.q('#app').textContent,/Từ nhỏ hôm nay/);e.click('[data-action="sample"]');e.box.location.hash=e.q('.home-today').getAttribute('href');e.q('#english').value='Testword';e.q('#vietnamese').value='từ kiểm tra';const submit=()=>e.q('#add-form').dispatchEvent({type:'submit'});submit();assert.equal(e.qa.days[0].words.length,9);assert.equal(e.doc.activeElement.id,'english');e.q('#english').value=' testWORD ';e.q('#vietnamese').value='trùng';submit();assert.equal(e.qa.days[0].words.length,9);
  const w=e.qa.days[0].words.at(-1);e.click('[data-action="edit"][data-id="'+w.id+'"]');e.q('#edit-vi').value='đã sửa';e.q('#edit-form').dispatchEvent({type:'submit'});assert.equal(w.vi,'đã sửa');e.q('#word-search').value='testword';e.q('#word-search').dispatchEvent({type:'input'});assert.equal(e.q('#word-list').querySelectorAll('.word-row').length,1);e.click('[data-action="delete"][data-id="'+w.id+'"]');assert.equal(e.qa.days[0].words.length,8);e.doc.querySelectorAll('.toast').at(-1).querySelector('button').click();assert.equal(e.qa.days[0].words.length,9);
 });
 test('Dán 10 dòng, preview và thêm đủ 10 từ vào ngày',()=>{const e=demo();e.click('[data-action="bulk"]');e.q('#bulk-text').value=['one - một','two – hai','three : ba','four = bốn','five\tnăm','six - sáu','seven – bảy','eight : tám','nine = chín','ten\tmười','sai dòng'].join('\n');e.q('#bulk-text').dispatchEvent({type:'input'});assert.match(e.q('#bulk-count').textContent,/10 Từ/);e.click('[data-action="bulk-add"]');assert.equal(e.qa.days[0].words.length,18);});
@@ -174,4 +174,26 @@ test('Quick add, examples, review across dates, schedules and progress views wor
  assert.equal(e.qa.activity[date].reviewed,1);e.box.location.hash='#/progress';assert.match(e.q('#app').textContent,/1 \/ 10 lượt ôn/);
  e.box.location.hash='#/settings';assert.ok(e.q('#preferences-form'));e.q('#pref-goal').value='20';e.q('#pref-rate').value='1';e.q('#pref-theme').value='light';e.q('#preferences-form').dispatchEvent({type:'submit'});
  assert.equal(e.qa.preferences.goal,20);assert.equal(e.doc.documentElement.getAttribute('data-theme'),'light');
+});
+
+
+test('V3 home lookup submits into the existing dictionary and records only opened words',async()=>{
+ const e=environment({bankRows:[['hello','xin chào','',1],['help','giúp','',1]]});
+ assert.ok(e.q('#home-lookup-form'));assert.equal(e.q('[data-nav="home"]').getAttribute('aria-current'),'page');
+ e.q('#home-lookup').value='hello';e.q('#home-lookup-form').dispatchEvent({type:'submit'});
+ await new Promise(setImmediate);await new Promise(setImmediate);
+ assert.equal(e.q('#bank-search').value,'hello');assert.match(e.q('#bank-list').textContent,/hello/);
+ e.click('[data-action="bank-detail"]');e.click('[data-action="close-utility"]');
+ assert.equal(e.q('#recent-lookups').querySelectorAll('[data-action="home-lookup-recent"]').length,1);
+ assert.match(e.q('#recent-lookups').textContent,/hello/);
+ const reloaded=environment({map:e.map});assert.match(reloaded.q('#recent-lookups').textContent,/hello/);
+ assert.equal(reloaded.qa.days.length,0);
+});
+test('V3 home and notebook are separate routes and use real counts without creating an empty day',()=>{
+ const e=environment();assert.ok(e.q('#home-lookup-form'));e.click('[data-action="sample"]');
+ assert.equal(e.q('[data-home-count="due"]').textContent,'14');
+ e.box.location.hash='#/notebook';assert.equal(e.q('[data-nav="notebook"]').getAttribute('aria-current'),'page');
+ assert.equal(e.q('.notebook-grid').querySelectorAll('.notebook-day').length,3);
+ const count=e.qa.days.length;e.box.location.hash='#/';assert.ok(e.q('#home-lookup-form'));assert.equal(e.qa.days.length,count);
+ e.box.location.hash='#/day/'+e.qa.days[0].date;assert.ok(e.q('#add-form'));assert.equal(e.q('[data-nav="notebook"]').getAttribute('aria-current'),'page');
 });

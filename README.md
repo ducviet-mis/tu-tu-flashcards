@@ -112,3 +112,11 @@ Nút kính lúp mở một ô tìm kiếm Anh/Việt trong toàn bộ 371.705 m�
 ## Từ gần nghĩa và trái nghĩa
 
 Trang chi tiết có quan hệ theo từng nghĩa từ Open English WordNet 2025, liên kết các dạng của từ và cho phép bấm để tra tiếp. Dữ liệu quan hệ được tải từng phần và giữ để dùng offline sau lần tải đầu. Xem [cấu trúc, dữ liệu và cách tái tạo](docs/TU-DIEN-LIEN-KET.md).
+
+
+### Giao diện V3
+
+- Trang chủ `#/`: tra từ Anh/Việt, lịch sử từ đã mở, hàng chờ ôn và các sổ từ gần đây. Lịch sử tra cứu được lưu riêng trên thiết bị; không dùng từ mẫu làm lịch sử mặc định.
+- Sổ từ `#/notebook`: các ngày được nhóm theo tháng, với số từ và tiến độ thật. Màn hình chi tiết ngày và các đường dẫn học cũ vẫn dùng được.
+- Menu nổi bo tròn trên desktop và mobile: Trang chủ, Ôn tập, thêm nhanh, Sổ từ, Tiến độ. Cài đặt chuyển lên góc trên; khoảng cách đáy có tính vùng an toàn của thiết bị.
+- Mã giao diện mới: `assets/js/features/home.js`, `assets/css/v3.css`. Giữ font Be Vietnam Pro và các tuỳ chọn giao diện hiện có.

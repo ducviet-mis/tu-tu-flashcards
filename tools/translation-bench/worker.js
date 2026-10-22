@@ -36,7 +36,9 @@ async function translate(test){
  await load(test.direction);
  const tokens=translator.tokenizer(test.input).input_ids.dims.at(-1);
  const start=performance.now();
- const output=await translator(test.input,{max_new_tokens:256,num_beams:4});
+ // The English→Vietnamese source model card requires a target-language token.
+ const modelInput=test.direction==='en-vi'?'>>vie<< '+test.input:test.input;
+ const output=await translator(modelInput,{max_new_tokens:256,num_beams:4});
  send('result',{result:{...test,output:output[0].translation_text,ms:performance.now()-start,inputTokens:tokens,offlineFetchBlocked:blocked}});
 }
 let chain=Promise.resolve();

@@ -1,6 +1,7 @@
 // ui.js — phần chức năng của Từ Từ. Trạng thái chung được khai báo trong state.js.
 'use strict';
 const paths={
+  home:'M3 11l9-8 9 8M5 10v11h5v-7h4v7h5V10',settings:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M9 3l-1 3-3 1-2 3 2 2-1 3 2 3 3-1 3 2 3-2 3 1 2-3-1-3 2-2-2-3-3-1-1-3z',streak:'M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-2 1-4 3-6 0 3 2 4 3 4-1-3-1-6 0-9z',chart:'M5 20v-8M12 20V4M19 20v-11',
   plus:'M12 5v14M5 12h14',arrow:'M5 12h14m-6-6 6 6-6 6',back:'m14 6-6 6 6 6',cloud:'M7 18a5 5 0 0 1-1-9.9A6 6 0 0 1 17.7 7 5.5 5.5 0 0 1 18 18M12 12v9m-3-3 3 3 3-3',archive:'M4 8h16v12H4zM3 4h18v4H3zM9 12h6',search:'m16 16 5 5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',sound:'m11 5-6 4H2v6h3l6 4zM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14',edit:'m15 4 5 5M4 20l5-1L21 7a2 2 0 0 0-4-4L5 15z',trash:'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',check:'m5 12 4 4L19 6',flip:'M5 4h14v16H5zM9 9h7m-3-3 3 3-3 3',grid:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',shuffle:'M3 5h3l12 14h3m-4-4 4 4-4 2M3 19h3l4-5m4-5 4-4h3m-4-2 4 2-4 4',reverse:'M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4',close:'m6 6 12 12M6 18 18 6',download:'M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5',upload:'M12 16V4m-5 5 5-5 5 5M4 16v5h16v-5',repeat:'M4 8a8 8 0 0 1 14-3l2 3M20 3v5h-5M20 16A8 8 0 0 1 6 19l-2-3M4 21v-5h5',key:'M14 7a5 5 0 1 1-2 4L4 19H1v-3l8-8a5 5 0 0 1 5-1',book:'M3 4h7l2 2 2-2h7v16h-7l-2 1-2-1H3zM12 6v15',copy:'M8 8h13v13H8zM16 8V3H3v13h5'
 }
 ;

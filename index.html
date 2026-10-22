@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="./assets/css/v2.css">
 <link rel="stylesheet" href="./assets/css/typography.css">
 <link rel="stylesheet" href="./assets/css/dictionary.css">
+<link rel="stylesheet" href="./assets/css/v3.css">
 <meta name="application-name" content="Từ Từ"><link rel="icon" type="image/svg+xml" href="./assets/images/icon.svg"><link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./assets/images/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,7 +20,7 @@
 </head>
 <body>
 <div class="shell" id="shell">
-<header class="topbar"><a class="brand" href="#/" aria-label="Từ Từ — Trang chủ"><img class="brand-logo" src="./assets/images/logo.svg" width="210" height="69" alt="Từ Từ — Từ từ mà chắc"></a><div class="top-actions"><button class="btn outline small" data-action="bank-open" aria-label="Mở từ điển tra cứu"><span data-icon="search"></span><span class="desktop-label">Từ điển</span></button><button class="btn outline small" data-action="cloud" aria-label="Đồng bộ Supabase"><span data-icon="cloud"></span><span class="cloud-label">Đồng bộ</span></button><button class="btn outline small" data-action="backup" aria-label="Sao lưu dữ liệu"><span data-icon="archive"></span><span class="desktop-label">Sao lưu</span></button></div></header>
+<header class="topbar"><div class="brand-group"><a class="brand" href="#/" aria-label="Từ Từ - Trang chủ"><img class="brand-logo" src="./assets/images/logo.svg" width="210" height="69" alt="Từ Từ - Từ từ mà chắc"></a><span class="header-date" id="header-date"></span></div><div class="top-actions"><button class="btn outline small header-desktop-action" data-action="bank-open" aria-label="Mở từ điển tra cứu"><span data-icon="search"></span><span class="desktop-label">Từ điển</span></button><button class="btn outline small header-desktop-action" data-action="cloud" aria-label="Đồng bộ Supabase"><span data-icon="cloud"></span><span class="cloud-label">Đồng bộ</span></button><button class="btn outline small header-desktop-action" data-action="backup" aria-label="Sao lưu dữ liệu"><span data-icon="archive"></span><span class="desktop-label">Sao lưu</span></button><a href="#/progress" class="header-streak" aria-label="Chuỗi ngày ôn" id="header-streak"><span data-icon="streak"></span><span id="header-streak-count">0</span></a><a href="#/settings" class="round white header-settings" data-nav="settings" aria-label="Cài đặt"><span data-icon="settings"></span></a></div></header>
 <div id="storage-warning" class="storage-warning" role="status" hidden></div>
 <main id="app"></main>
 <footer class="footer"><span>Mỗi từ mới, một bước tiến.</span><span class="footer-right" id="save-indicator">Lưu trên thiết bị của bạn</span></footer>
@@ -31,9 +32,11 @@
 
 
 <nav id="main-nav" class="main-nav" aria-label="Điều hướng chính">
-<a href="#/" data-nav="days">Ngày</a><a href="#/review" data-nav="review">Ôn tập</a>
-<button type="button" class="quick-plus" data-action="quick-add" aria-label="Thêm từ nhanh">+</button>
-<a href="#/progress" data-nav="progress">Tiến độ</a><a href="#/settings" data-nav="settings">Cài đặt</a>
+<a href="#/" data-nav="home"><span data-icon="home"></span><span>Trang chủ</span></a>
+<a href="#/review" data-nav="review"><span data-icon="repeat"></span><span>Ôn tập</span><span class="nav-count" id="nav-review-count" hidden></span></a>
+<button type="button" class="quick-plus" data-action="quick-add" aria-label="Thêm từ nhanh"><span data-icon="plus"></span></button>
+<a href="#/notebook" data-nav="notebook"><span data-icon="book"></span><span>Sổ từ</span></a>
+<a href="#/progress" data-nav="progress"><span data-icon="chart"></span><span>Tiến độ</span></a>
 </nav><div id="pwa-notice" class="pwa-notice" role="status" hidden></div>
 <noscript><p>Bật JavaScript để dùng Từ Từ.</p></noscript>
 <script defer src="./assets/js/review-engine.js"></script>
@@ -56,6 +59,7 @@
 <script defer src="./assets/js/features/progress.js"></script>
 <script defer src="./assets/js/features/settings.js"></script>
 <script defer src="./assets/js/features/quick-add.js"></script>
+<script defer src="./assets/js/features/home.js"></script>
 <script defer src="./assets/js/navigation.js"></script>
 <script defer src="./assets/js/pwa.js"></script>
 <script defer src="./assets/js/main.js"></script>

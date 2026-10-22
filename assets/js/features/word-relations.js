@@ -58,6 +58,7 @@ function bankSenseCard(sense,word,number){
 }
 function bankWordDetail(i,{word='',sense='',push=false,scroll=0,returnSense=''}={}){
   const row=bankData?.entries[i]||(word?[word,'','',0]:null);if(!row)return;
+  rememberLookup(row[0]);
   if($('#bank-list')){bankScrollTop=$('#bank-list').scrollTop||0;bankReturnIndex=i;bankWordHistory=[];}
   if(push&&bankWordState){bankWordHistory.push({...bankWordState,scroll:utility.scrollTop});if(bankWordHistory.length>30)bankWordHistory.shift();}
   const token=++bankRelationToken;
