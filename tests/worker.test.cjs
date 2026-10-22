@@ -10,6 +10,16 @@ test('Activation only deletes caches owned by this app and this scope',async()=>
 test('Dictionary downloaded once can be loaded offline; missing static files do not return the HTML shell',async()=>{const w=worker();await w.run('install');await w.request('data/dictionary.json.gz');w.setOffline();const r=await w.request('data/dictionary.json.gz');assert.equal(r.status,200);assert.match(await r.text(),/network/);assert.equal(await w.request('not-a-script.js'),null);});
 test('Activating the current shell preserves the separately downloaded dictionary cache',async()=>{const w=worker();await w.run('install');await w.request('data/dictionary.json.gz');await w.run('activate');w.setOffline();const r=await w.request('data/dictionary.json.gz');assert.equal(r.status,200);});
 
+test('WordNet shards load on demand and remain available offline after activation',async()=>{
+ const w=worker();await w.run('install');
+ assert.ok([...w.stores.values()].every(store=>![...store.keys()].some(url=>url.endsWith('/wordnet/h.json.gz'))));
+ await w.request('data/wordnet/index.json.gz');await w.request('data/wordnet/h.json.gz');await w.run('activate');w.setOffline();
+ assert.equal((await w.request('data/wordnet/h.json.gz')).status,200);
+ assert.equal((await w.request('data/wordnet/index.json.gz')).status,200);
+ await assert.rejects(()=>w.request('data/wordnet/z.json.gz'),/offline/);
+ assert.equal(await w.request('data/wordnet/not-a-shard.json.gz'),null);
+});
+
 test('Font warmup caches Be Vietnam Pro for offline use and preserves it across activation',async()=>{
  const w=worker();await w.run('install');await w.run('message',{data:{type:'CACHE_FONTS'}});await w.run('activate');w.setOffline();
  const css=await w.request('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');assert.match(await css.text(),/@font-face/);

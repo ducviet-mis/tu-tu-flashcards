@@ -5,6 +5,7 @@ const scope=self.registration.scope;
 const prefix='tu-tu:'+encodeURIComponent(new URL(scope).pathname)+':';
 const cacheName=prefix+self.TUTU_BUILD;
 const dictionaryCache=prefix+'dictionary-'+self.TUTU_DICTIONARY_REV;
+const lexiconCache=prefix+'wordnet-'+self.TUTU_LEXICON_REV;
 const fontCache=prefix+'fonts-v1';
 const fontStylesheet='https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap';
 function isFontRequest(url){return url.href===fontStylesheet||(url.origin==='https://fonts.gstatic.com'&&url.pathname.startsWith('/s/bevietnampro/'));}
@@ -20,11 +21,12 @@ async function warmFonts(){
 const shell=self.TUTU_PRECACHE;
 const allowed=new Set(shell.map(path=>new URL(path,scope).href));
 const dictionaryURL=new URL('./data/dictionary.json.gz',scope).href;
+const lexiconURLs=new Set(self.TUTU_LEXICON.map(path=>new URL(path,scope).href));
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(cacheName).then(cache=>cache.addAll(shell)));
 });
 self.addEventListener('activate',event=>{
-  event.waitUntil((async()=>{for(const name of await caches.keys())if(name.startsWith(prefix)&&name!==cacheName&&name!==dictionaryCache&&name!==fontCache)await caches.delete(name);await self.clients.claim();})());
+  event.waitUntil((async()=>{for(const name of await caches.keys())if(name.startsWith(prefix)&&name!==cacheName&&name!==dictionaryCache&&name!==lexiconCache&&name!==fontCache)await caches.delete(name);await self.clients.claim();})());
 });
 self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting();if(event.data?.type==='CACHE_FONTS')event.waitUntil(warmFonts());});
 self.addEventListener('fetch',event=>{
@@ -36,9 +38,9 @@ self.addEventListener('fetch',event=>{
   if(request.mode==='navigate'){
     event.respondWith((async()=>{const cache=await caches.open(cacheName);const saved=await cache.match(new URL('./index.html',scope).href);return saved||fetch(request);})());return;
   }
-  if(!allowed.has(url.href)&&url.href!==dictionaryURL)return;
+  if(!allowed.has(url.href)&&url.href!==dictionaryURL&&!lexiconURLs.has(url.href))return;
   event.respondWith((async()=>{
-    const cache=await caches.open(url.href===dictionaryURL?dictionaryCache:cacheName),saved=await cache.match(request);
+    const cache=await caches.open(url.href===dictionaryURL?dictionaryCache:lexiconURLs.has(url.href)?lexiconCache:cacheName),saved=await cache.match(request);
     if(saved)return saved;
     const response=await fetch(request);
     if(response.ok){try{await cache.put(request,response.clone());}catch{/* Storage pressure must not block online use. */}}

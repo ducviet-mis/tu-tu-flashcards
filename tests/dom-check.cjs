@@ -24,16 +24,16 @@ class El{
  showModal(){this.open=true;(this.querySelector('button')||this).focus();}close(){this.open=false;this.dispatchEvent({type:'close',bubbles:false});}
 }
 function parse(markup,parent){const stack=[parent];let skipping=false;for(const m of markup.matchAll(/<!--[\s\S]*?-->|<![^>]*>|<\/?[a-zA-Z][^>]*>|[^<]+/g)){const token=m[0];if(token.startsWith('<!--')||token.startsWith('<!'))continue;if(token.startsWith('</')){if(stack.length>1)stack.pop();continue;}if(token.startsWith('<')){const tag=token.match(/^<([\w-]+)/)[1],attrs={};for(const a of token.slice(tag.length+1,-1).matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g))attrs[a[1]]=decode(a[2]??a[3]??a[4]??'');const el=new El(tag,parent.doc,attrs);stack.at(-1).append(el);if(!/^(input|link|meta|br|hr|img|source|path)$/i.test(tag)&&!token.endsWith('/>'))stack.push(el);}else stack.at(-1)._text+=decode(token);}}
-function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech=false}={}){
+function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech=false,lexicon=false}={}){
  const doc={activeElement:null,downloads:[],blobs:new Map()};doc.body=new El('body',doc);doc.documentElement=new El('html',doc);doc.querySelector=s=>doc.body.querySelector(s);doc.querySelectorAll=s=>doc.body.querySelectorAll(s);doc.createElement=s=>new El(s,doc);doc.addEventListener=(...args)=>doc.body.addEventListener(...args);
  parse(html.replace(/<style>[\s\S]*?<\/style>/g,'').replace(/<script[^>]*>[\s\S]*?<\/script>/g,''),doc.body);
  if(bankRows){const node=new El('script',doc,{id:'dictionary-data'});node.textContent=require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})).toString('base64');doc.body.append(node);}
  const events={},timers=[];let currentHash=hash;
  const location={get hash(){return currentHash;},set hash(v){currentHash=v;for(const fn of events.hashchange||[])fn();}};
  const storage={getItem:k=>{if(blocked)throw Error('blocked');return map.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');map.set(k,v);}};
- const box={document:doc,location,history:{replaceState:(s,t,v)=>{currentHash=v;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
+ const box={document:doc,location,history:{replaceState:(s,t,v)=>{currentHash=v;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(lexicon&&/^\.\/data\/wordnet(?:\/|\-vi)/.test(String(url)))return new Response(fs.readFileSync(String(url)));if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
  const spoken=[];if(speech){box.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};box.speechSynthesis={cancel(){},getVoices:()=>[{lang:'en-US'}],speak:utterance=>spoken.push(utterance)};}box.performance=performance;box.Response=Response;box.DecompressionStream=DecompressionStream;box.window=box;vm.createContext(box);const scripts=[...html.matchAll(/<script id="(?:core|application)">([\s\S]*?)<\/script>/g)].map(m=>m[1]);vm.runInContext(scripts[0],box);
- const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},get cloud(){return cloud;},getCloudForm,cloudAction,readImport,applyImport,route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,exportFile,configureCloud,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;}};`);vm.runInContext(src,box);
+ const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},get cloud(){return cloud;},getCloudForm,cloudAction,readImport,applyImport,route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,exportFile,configureCloud,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;}};`);vm.runInContext(src,box);
  return{box,doc,spoken,q:s=>doc.querySelector(s),qa:box.QA,map,click:s=>{const e=doc.querySelector(s);assert.ok(e,'Missing element '+s);e.click();},flush:ms=>{for(const t of timers.splice(0))if(!t.cancelled&&t.ms<=ms)t.fn();},key:code=>doc.body.dispatchEvent({type:'keydown',code,target:doc.activeElement||doc.body})};
 }
 function demo(){const e=environment();e.click('[data-action="sample"]');return e;}
@@ -84,6 +84,55 @@ test('Dictionary searches all words, opens full meanings and plays English pronu
  e.q('#bank-custom-meaning').value='bến tàu';e.click('[data-action="bank-save"][data-bank="1"]');
  assert.equal(e.qa.days[0].words[0].en,'dock');assert.equal(e.qa.days[0].words[0].vi,'bến tàu');assert.equal(e.q('[data-action="bank-save"]').disabled,true);
  e.click('[data-action="close-utility"]');assert.match(e.q('#app').textContent,/dock/);
+});
+
+test('Vietnamese lookup displays the matching sense and keeps it when saving a flashcard',async()=>{
+ const e=environment({bankRows:[['all Canadian company','công ty toàn vốn','',0],['meal','bột\nlượng sữa\nbữa ăn\năn, ăn cơm','',0]]});await e.qa.bankOpen();
+ e.q('#bank-search').value='ăn cơm';e.q('#bank-search-form').dispatchEvent({type:'submit'});
+ assert.equal(e.q('#bank-list').querySelectorAll('[data-action="bank-detail"]').length,1);
+ assert.match(e.q('.bank-meaning').textContent,/ăn cơm/);
+ e.click('[data-action="bank-detail"]');const meaning=e.q('#bank-custom-meaning');assert.match(meaning.textContent,/ăn cơm/);
+ meaning.value=meaning.textContent; // The minimal DOM harness does not initialize textarea values from markup.
+ e.click('[data-action="bank-save"]');assert.match(e.qa.days[0].words[0].vi,/ăn cơm/);
+});
+
+test('Word relations stay attached to the selected sense and Back restores the lookup',async()=>{
+ const rows=[['light','nhẹ\nsáng\nnhạt màu','tính từ',1],['heavy','nặng nề về tâm trạng\nnặng về trọng lượng','tính từ',1],['dark','tối\nđậm màu','tính từ',1]];
+ const e=environment({bankRows:rows,lexicon:true});await e.qa.bankOpen();
+ e.q('#bank-search').value='light';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"][data-bank="0"]');await e.qa.bankRelationsPending;
+ const weight=e.q('[data-sense="light%3:00:01::"]');assert.ok(weight);assert.match(weight.textContent,/Nhẹ/);assert.match(weight.textContent,/heavy/);assert.doesNotMatch(weight.textContent,/dark/);
+ weight.querySelector('[data-relation="antonyms"]').querySelector('[data-action="bank-related"]').click();await e.qa.bankRelationsPending;
+ assert.match(e.q('#utility-title').textContent,/heavy/);assert.equal(e.q('.dictionary-sense').dataset.sense,'heavy%3:00:01::');
+ assert.match(e.q('#bank-custom-meaning').value,/trọng lượng/);assert.doesNotMatch(e.q('#bank-custom-meaning').value,/tâm trạng/);
+ e.click('[data-action="bank-back"]');await e.qa.bankRelationsPending;assert.equal(e.q('#utility-title').textContent,'light');
+ e.click('[data-action="bank-back"]');assert.equal(e.q('#bank-search').value,'light');
+});
+
+test('Missing relation download preserves the dictionary and can be retried',async()=>{
+ const e=environment({bankRows:[['hello','xin chào','',1]]});await e.qa.bankOpen();
+ e.q('#bank-search').value='hello';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');await e.qa.bankRelationsPending;
+ assert.match(e.q('.bank-senses').textContent,/xin chào/);assert.ok(e.q('[data-action="bank-relations-retry"]'));
+ e.box.fetch=async url=>new Response(fs.readFileSync(String(url)));e.click('[data-action="bank-relations-retry"]');await e.qa.bankRelationsPending;
+ assert.match(e.q('#bank-relations').textContent,/hi/);assert.equal(e.q('#bank-relations').getAttribute('aria-busy'),'false');
+});
+
+test('A late word relation response cannot overwrite another word or the user’s edited meaning',async()=>{
+ const e=environment({bankRows:[['light','nhẹ','',1],['heavy','nặng','',1]],lexicon:true});await e.qa.bankOpen();
+ const original=e.box.fetch;let release,notify;const started=new Promise(resolve=>notify=resolve);
+ e.box.fetch=async url=>{if(String(url).endsWith('/l.json.gz')){notify();return new Promise(resolve=>release=()=>resolve(new Response(fs.readFileSync(String(url)))));}return original(url);};
+ e.q('#bank-search').value='light';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');const stale=e.qa.bankRelationsPending;await started;
+ e.click('[data-action="bank-back"]');e.q('#bank-search').value='heavy';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');
+ e.q('#bank-custom-meaning').value='nghĩa tôi tự viết';e.q('#bank-custom-meaning').dispatchEvent({type:'input'});await e.qa.bankRelationsPending;
+ release();await stale;assert.equal(e.q('#utility-title').textContent,'heavy');assert.equal(e.q('#bank-custom-meaning').value,'nghĩa tôi tự viết');
+ assert.ok(e.q('.dictionary-sense[data-sense="heavy%3:00:01::"]'));assert.equal(e.q('.dictionary-sense[data-sense="light%3:00:01::"]'),null);
+});
+
+test('Inflections link to their root and words without antonyms never show invented opposites',async()=>{
+ const e=environment({bankRows:[['ate','ăn','động từ',0],['eat','ăn','động từ',1],['apple','quả táo','danh từ',1]],lexicon:true});await e.qa.bankOpen();
+ e.q('#bank-search').value='ate';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');await e.qa.bankRelationsPending;
+ assert.match(e.q('.dictionary-root').textContent,/eat/);assert.match(e.q('#bank-relations').textContent,/eaten/);
+ e.click('[data-action="bank-back"]');e.q('#bank-search').value='apple';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');await e.qa.bankRelationsPending;
+ assert.equal(e.q('#bank-relations').querySelector('[data-relation="antonyms"]'),null);
 });
 
 test('Dictionary paginates lookup results, preserves query/focus on Back and does not store the whole bank',async()=>{

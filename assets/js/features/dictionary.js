@@ -84,7 +84,7 @@ function bankApplyResults(result){
   $('#bank-prev').disabled=result.page===0;$('#bank-next').disabled=result.page>=result.pages-1;
   list.innerHTML=result.indices.length?result.indices.map(i=>{
     const row=bankData.entries[i];
-    return `<article class="dictionary-row"><button class="dictionary-result" data-action="bank-detail" data-bank="${i}" aria-label="Tra nghĩa ${esc(row[0])}"><strong class="bank-word">${esc(row[0])}</strong>${row[2]?`<span class="bank-pos">${esc(row[2])}</span>`:''}<span class="bank-meaning">${esc(C.bankSummary(row))}</span></button>${speakerSupported?`<button class="round dictionary-sound" data-action="bank-speak" data-bank="${i}" aria-label="Nghe phát âm ${esc(row[0])}">${icon('sound')}</button>`:''}</article>`;
+    return `<article class="dictionary-row"><button class="dictionary-result" data-action="bank-detail" data-bank="${i}" aria-label="Tra nghĩa ${esc(row[0])}"><strong class="bank-word">${esc(row[0])}</strong>${row[2]?`<span class="bank-pos">${esc(row[2])}</span>`:''}<span class="bank-meaning">${esc(C.bankSummary(row,bankState.q))}</span></button>${speakerSupported?`<button class="round dictionary-sound" data-action="bank-speak" data-bank="${i}" aria-label="Nghe phát âm ${esc(row[0])}">${icon('sound')}</button>`:''}</article>`;
   }).join(''):'<div class="dictionary-empty">Không tìm thấy từ phù hợp. Thử kiểm tra chính tả hoặc nhập nghĩa tiếng Việt.</div>';
   list.scrollTop=bankPendingFocus===null?0:bankScrollTop;
   if(bankPendingFocus!==null){
@@ -92,29 +92,20 @@ function bankApplyResults(result){
     target?.focus({preventScroll:true});bankPendingFocus=null;
   }
 }
-function bankDetail(i){
-  const row=bankData?.entries[i];if(!row)return;
-  if($('#bank-list'))bankScrollTop=$('#bank-list').scrollTop||0;
-  bankReturnIndex=i;
-  bankSearchToken++;clearTimeout(bankDebounce);
-  const saved=day(C.isoToday()).words.some(w=>C.wordKey(w.en)===C.wordKey(row[0]));
-  utility.setAttribute('data-view','bank-detail');
-  utility.innerHTML=`<div class="dictionary-header"><button class="round" data-action="bank-back" aria-label="Quay lại kết quả">${icon('back')}</button><span class="tiny muted">Từ điển</span><button class="round" data-action="close-utility" aria-label="Đóng từ điển">${icon('close')}</button></div><div class="dictionary-word-head"><h2 id="utility-title" tabindex="-1">${esc(row[0])}</h2>${row[2]?`<p class="bank-pos">${esc(row[2])}</p>`:''}<button class="btn outline dictionary-pronounce" data-action="bank-speak" data-bank="${i}" ${speakerSupported?'':'disabled'}>${icon('sound')}Nghe phát âm</button>${speakerSupported?'':'<p class="dictionary-speech-note">Trình duyệt này chưa hỗ trợ phát âm.</p>'}</div><ol class="bank-senses">${row[1].split('\n').filter(Boolean).map(meaning=>`<li>${esc(meaning)}</li>`).join('')}</ol><div class="dictionary-save"><details ${saved?'hidden':''}><summary>Sửa nghĩa để lưu vào bộ học</summary><label class="sr-only" for="bank-custom-meaning">Nghĩa lưu vào bộ học</label><textarea id="bank-custom-meaning" maxlength="1000">${esc(C.bankSummary(row))}</textarea></details><button class="btn outline wfull" data-action="bank-save" data-bank="${i}" ${saved?'disabled':''}>${icon(saved?'check':'plus')}${saved?'Đã có trong hôm nay':'Lưu vào hôm nay'}</button></div>`;
-  $('#utility-title').focus({preventScroll:true});utility.scrollTop=0;
-}
+function bankDetail(i,options={}){return bankWordDetail(i,options);}
 function bankSave(i){
-  const row=bankData?.entries[i];if(!row)return;
+  const row=bankData?.entries[i]||(bankWordState?.index===i?bankWordState.row:null);if(!row)return;
   if(day(C.isoToday()).words.some(w=>C.wordKey(w.en)===C.wordKey(row[0])))return;
   const vi=$('#bank-custom-meaning')?.value.trim()||'';
   if(!vi||vi.length>1000){toast('Nhập nghĩa từ 1 đến 1.000 ký tự.',null,'',true);return;}
   if(days.reduce((sum,d)=>sum+d.words.length,0)>=50000){toast('Bộ học đã đạt giới hạn 50.000 từ.',null,'',true);return;}
   ensureDay(C.isoToday()).words.push({id:C.uid(),en:row[0],vi,remembered:false});persist();bankChanged=true;
-  bankDetail(i);toast('Đã lưu '+row[0]+' vào hôm nay.');
+  bankDetail(i,{word:row[0],sense:bankWordState?.focus||''});toast('Đã lưu '+row[0]+' vào hôm nay.');
 }
 function bankAbout(){
   bankReturnIndex=null;
   utility.setAttribute('data-view','bank-about');
-  utility.innerHTML=`<div class="dialog-head"><button class="round white" data-action="bank-back" aria-label="Quay lại kho từ">${icon('back')}</button><span class="eyebrow muted">Nguồn dữ liệu</span></div><h2 id="utility-title">Một kho từ.<br>Nhiều cách dùng.</h2><p class="hint">Kho có ${bankData.count.toLocaleString('vi-VN')} mục từ và cụm từ. Độ bao phủ gồm cả thuật ngữ, cách dùng cũ và từ hiếm. Mỗi từ có thể có nhiều nghĩa; hãy xem nghĩa và sửa nội dung thẻ theo ngữ cảnh.</p><div class="note bank-source-links"><strong>Free Vietnamese Dictionary Project — Hồ Ngọc Đức và các cộng tác viên.</strong><br>Copyright (C) 1997–2003 The Free Vietnamese Dictionary Project. Bản đóng gói SQLite: tecxmate/vnme-data v1.0.0, GPL-3.0.<br><a href="https://github.com/tecxmate/vnme-data" target="_blank" rel="noopener noreferrer">Xem nguồn và bản dữ liệu gốc</a><br><br>Bản tích hợp đã trích nghĩa dạng chữ, gộp nghĩa trùng, bỏ mục siêu dữ liệu; chỉ lấy phần gắn nhãn FVDP (GPL), bỏ nguồn AI_Generated_EN.<br><br>Nhãn “Phổ biến” lấy từ danh sách Common Words của Darius Kazemi / Corpora (CC0), có ${bankData.commonCount} mục khớp trong kho. Nhãn này không phải cấp độ CEFR hay danh sách TOEIC chính thức.<br><a href="https://github.com/dariusk/corpora/blob/master/data/words/common.json" target="_blank" rel="noopener noreferrer">Nguồn danh sách từ phổ biến</a><br><br>Dữ liệu phái sinh và bản app kèm kho được phát hành theo GPL-3.0; mã HTML/JS/CSS nằm sẵn trong file. Không có bảo đảm từ điển đầy đủ mọi từ hoặc mọi nghĩa và không có bảo hành.</div><details style="margin-top:20px"><summary style="cursor:pointer;min-height:44px">Xem toàn bộ giấy phép GPL-3.0</summary><pre class="bank-license">${esc(bankData.licenseText||'https://www.gnu.org/licenses/gpl-3.0.html')}</pre></details>`;
+  utility.innerHTML=`<div class="dialog-head"><button class="round white" data-action="bank-back" aria-label="Quay lại kho từ">${icon('back')}</button><span class="eyebrow muted">Nguồn dữ liệu</span></div><h2 id="utility-title">Một kho từ.<br>Nhiều cách dùng.</h2><p class="hint">Kho có ${bankData.count.toLocaleString('vi-VN')} mục từ và cụm từ. Độ bao phủ gồm cả thuật ngữ, cách dùng cũ và từ hiếm. Mỗi từ có thể có nhiều nghĩa; hãy xem nghĩa và sửa nội dung thẻ theo ngữ cảnh.</p><div class="note bank-source-links"><strong>Quan hệ từ: Open English WordNet 2025.</strong><br>Dữ liệu phát triển từ Princeton WordNet. Bản tích hợp giữ định danh từng nghĩa; trích quan hệ gần nghĩa, trái nghĩa và các dạng từ. Các bản dịch riêng theo nghĩa được biên soạn trong TỪ TỪ; không tự ghép với danh sách nghĩa Việt bên dưới.<br><a href="https://en-word.net/downloads" target="_blank" rel="noopener noreferrer">Nguồn WordNet</a> · <a href="./data/WORDNET-NOTICE.txt" target="_blank" rel="noopener noreferrer">Giấy phép CC BY 4.0 và Princeton WordNet</a><br><br><strong>Free Vietnamese Dictionary Project — Hồ Ngọc Đức và các cộng tác viên.</strong><br>Copyright (C) 1997–2003 The Free Vietnamese Dictionary Project. Bản đóng gói SQLite: tecxmate/vnme-data v1.0.0, GPL-3.0.<br><a href="https://github.com/tecxmate/vnme-data" target="_blank" rel="noopener noreferrer">Xem nguồn và bản dữ liệu gốc</a><br><br>Bản tích hợp đã trích nghĩa dạng chữ, gộp nghĩa trùng, bỏ mục siêu dữ liệu; chỉ lấy phần gắn nhãn FVDP (GPL), bỏ nguồn AI_Generated_EN.<br><br>Nhãn “Phổ biến” lấy từ danh sách Common Words của Darius Kazemi / Corpora (CC0), có ${bankData.commonCount} mục khớp trong kho. Nhãn này không phải cấp độ CEFR hay danh sách TOEIC chính thức.<br><a href="https://github.com/dariusk/corpora/blob/master/data/words/common.json" target="_blank" rel="noopener noreferrer">Nguồn danh sách từ phổ biến</a><br><br>Kho Anh–Việt phái sinh và mã ứng dụng được phát hành theo GPL-3.0; phần dữ liệu WordNet giữ giấy phép riêng đã ghi ở trên. Không có bảo đảm từ điển đầy đủ mọi từ hoặc mọi nghĩa và không có bảo hành.</div><details style="margin-top:20px"><summary style="cursor:pointer;min-height:44px">Xem toàn bộ giấy phép GPL-3.0</summary><pre class="bank-license">${esc(bankData.licenseText||'https://www.gnu.org/licenses/gpl-3.0.html')}</pre></details>`;
   $('#utility-title').setAttribute('tabindex','-1');
   $('#utility-title').focus({
     preventScroll:true
@@ -141,9 +132,9 @@ document.addEventListener('click',event=>{
   const action=button.dataset.action,index=Number(button.dataset.bank);
   if(action==='bank-open')bankOpen();
   else if(action==='bank-detail')bankDetail(index);
-  else if(action==='bank-speak'){const row=bankData?.entries[index];if(row)speak(row[0]);}
+  else if(action==='bank-speak'){const row=bankData?.entries[index]||(bankWordState?.index===index?bankWordState.row:null);if(row)speak(row[0]);}
   else if(action==='bank-save')bankSave(index);
-  else if(action==='bank-back'){bankRender({returnTo:bankReturnIndex});bankReturnIndex=null;}
+  else if(action==='bank-back'){if(utility.getAttribute('data-view')==='bank-detail')bankWordBack();else{bankRender({returnTo:bankReturnIndex});bankReturnIndex=null;}}
   else if(action==='bank-prev'||action==='bank-next'){bankState.page+=action==='bank-prev'?-1:1;bankRenderResults();}
   else if(action==='bank-reset'){clearTimeout(bankDebounce);bankState.q='';bankState.page=0;bankPendingFocus=null;$('#bank-search').value='';bankRenderResults();$('#bank-search').focus();}
   else if(action==='bank-about'){bankSearchToken++;clearTimeout(bankDebounce);bankAbout();}

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "count": 128009,
+  "stats": {
+    "senses": 185129,
+    "synonyms": 285546,
+    "similar": 51685,
+    "antonyms": 7988,
+    "related": 74688
+  },
+  "source": {
+    "name": "Open English WordNet 2025",
+    "url": "https://en-word.net/downloads",
+    "download": "https://en-word.net/static/english-wordnet-2025-json.zip",
+    "sha256": "7d749f6e2c39e6970e4997839dcf6e42fd281f3c2fae0171d2192bae8cfa4b51",
+    "license": "CC-BY-4.0 + Princeton WordNet License",
+    "changes": "Grouped by headword; retained exact sense identifiers; extracted synonyms, adjective similarity, direct antonyms, derivations and explicit forms; compressed into alphabetical shards."
+  }
+}

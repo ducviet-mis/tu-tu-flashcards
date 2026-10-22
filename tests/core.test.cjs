@@ -36,3 +36,29 @@ test('Dictionary both mode searches Vietnamese without accents and ranks English
  assert.deepEqual(plain(C.bankSearch(rows,{q:'hello',kind:'all',mode:'both'}).indices),[1,2,0]);
  assert.deepEqual(plain(C.bankSearch(rows,{q:'ben tau',kind:'all',mode:'both'}).indices),[3]);
 });
+
+test('Vietnamese lookup matches complete words and ranks direct senses before incidental mentions',()=>{
+ const rows=[
+  ['all Canadian company','công ty toàn vốn của Ca-na-đa','',0],
+  ['compact space','không gian compac','',0],
+  ['ante-room','phòng khách (ở nơi ăn cơm của sĩ quan)','',0],
+  ['mutton','thịt cừu\n⟦cụm: to eat mutton⟧ ăn cơm với ai','',0],
+  ['meal','bột\nlượng sữa\nbữa ăn\năn, ăn cơm','',0],
+  ['dine','ăn cơm (trưa, chiều)\nthết cơm (ai)','',0],
+  ['eat','ăn; (từ Mỹ,nghĩa Mỹ) ăn cơm','',1],
+  ['metadata only','⟦cụm: an com⟧ không có nghĩa phù hợp','',0]];
+ for(const q of ['ăn cơm','an com','  ăn   cơm  ']){
+  const result=plain(C.bankSearch(rows,{q,mode:'both'}));
+  assert.equal(result.total,5);assert.equal(result.indices[0],5);
+  for(const i of [4,6])assert.ok(result.indices.indexOf(i)<result.indices.indexOf(2));
+  const job=C.bankQuery(rows,{q,mode:'both'});while(!job.step(2)){}assert.deepEqual(plain(job.result()),result);
+ }
+ assert.equal(C.bankSearch([['an','mạo từ','',0],['eat','ăn','',1]],{q:'ăn',mode:'both'}).indices[0],1);
+});
+
+test('Lookup summary shows the matching sense even when it is buried in the definition',()=>{
+ const row=['meal','bột\nlượng sữa\nbữa ăn\năn, ăn cơm'];
+ assert.match(C.bankSummary(row,'an com'),/ăn cơm/);
+ assert.equal(C.bankSummary(row),'bột; lượng sữa; bữa ăn');
+ assert.equal(C.bankSummary(['x','⟦cụm: an com⟧ nghĩa khác'],'an com'),'⟦cụm: an com⟧ nghĩa khác');
+});

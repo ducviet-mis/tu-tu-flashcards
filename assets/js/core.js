@@ -115,7 +115,35 @@ globalThis.FlashCore=(()=>{
   }
   ;
   const bankFold=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d').toLowerCase().trim();
-  const bankSummary=row=>{
+  const bankCompare=(a,b)=>{
+    for(let i=0;i<Math.max(a.length,b.length);i++)if((a[i]||0)!==(b[i]||0))return(a[i]||0)-(b[i]||0);
+    return 0;
+  };
+  const bankWords=q=>new RegExp('(^|[^\\p{L}\\p{N}])'+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?=$|[^\\p{L}\\p{N}])','u');
+  function bankMeaningMatch(meaning,q,words=bankWords(q)){
+    if(!bankFold(meaning).replace(/\s+/g,' ').includes(q))return null;
+    let best=null;
+    meaning.split('\n').forEach((line,index)=>{
+      const phrase=line.startsWith('⟦cụm:');
+      const text=bankFold(line.replace(/^⟦cụm:[^⟧]*⟧\s*/,'')),flat=text.replace(/\s+/g,' ');
+      if(!words.test(flat))return;
+      // Labels in parentheses describe usage, rather than the sense itself.
+      const senses=text.replace(/\([^)]*\)/g,' ').split(/[;,]/).map(s=>s.replace(/\s+/g,' ').trim());
+      let quality=2,length=flat.length;
+      for(const sense of senses){
+        if(!words.test(sense))continue;
+        const level=sense===q?0:sense.startsWith(q)?1:2;
+        if(level<quality||level===quality&&sense.length<length){quality=level;length=sense.length;}
+      }
+      const rank=[2+(phrase?3:0)+quality,length,index,flat.length];
+      if(!best||bankCompare(rank,best.rank)<0)best={line,rank};
+    });
+    return best;
+  }
+  const bankSummary=(row,q='')=>{
+    q=bankFold(q).replace(/\s+/g,' ');
+    const match=q&&bankMeaningMatch(row[1],q);
+    if(match)return match.line.slice(0,900);
     const all=row[1].split('\n').filter(Boolean),base=all.filter(t=>!t.startsWith('⟦cụm:'));
     return(base.length?base:all).slice(0,3).join('; ').slice(0,900);
   }
@@ -126,8 +154,11 @@ globalThis.FlashCore=(()=>{
   ={
   }
   ){
-    q=bankFold(q);
-    const exact=[],prefix=[],other=[];
+    const original=String(q).normalize('NFC').toLowerCase().trim().replace(/\s+/g,' ');
+    q=bankFold(q).replace(/\s+/g,' ');
+    // Preserve accents on the English side of bilingual lookup: "ăn" is not "an".
+    const enQuery=mode==='both'&&original!==q?original:q;
+    const words=q?bankWords(q):null,enWords=q?bankWords(enQuery):null,matches=[];
     let cursor=0;
     return{
       step(count=2000){
@@ -137,18 +168,25 @@ globalThis.FlashCore=(()=>{
         cursor++){
           const r=rows[cursor];
           if(kind==='common'&&!r[3]||kind==='single'&&r[0].includes(' ')||kind==='phrase'&&!r[0].includes(' '))continue;
-            const text=q?bankFold(mode==='vi'?r[1]:r[0]):'';
-            if(q&&!text.includes(q)&&!(mode==='both'&&bankFold(r[1]).includes(q)))continue;
-          if(q&&text===q)exact.push(cursor);
-          else if(q&&text.startsWith(q))prefix.push(cursor);
-          else other.push(cursor);
+          let rank=q?null:[0];
+          if(q&&mode!=='vi'){
+            const text=enQuery===q?bankFold(r[0]):r[0].normalize('NFC').toLowerCase();
+            if(text===enQuery)rank=[0];
+            else if(text.startsWith(enQuery))rank=[1];
+            else if(enWords.test(text))rank=[8];
+          }
+          if(q&&(mode==='vi'||mode==='both')){
+            const match=bankMeaningMatch(r[1],q,words);
+            if(match&&(!rank||bankCompare(match.rank,rank)<0))rank=match.rank;
+          }
+          if(rank)matches.push({index:cursor,rank});
         }
         return cursor>=rows.length;
       }
       ,result(){
-        const all=exact.concat(prefix,other),total=all.length,pages=Math.max(1,Math.ceil(total/size)),safePage=Math.min(Math.max(0,page),pages-1);
+        const all=matches.slice().sort((a,b)=>bankCompare(a.rank,b.rank)||a.index-b.index),total=all.length,pages=Math.max(1,Math.ceil(total/size)),safePage=Math.min(Math.max(0,page),pages-1);
         return{
-          total,page:safePage,pages,indices:all.slice(safePage*size,(safePage+1)*size)
+          total,page:safePage,pages,indices:all.slice(safePage*size,(safePage+1)*size).map(item=>item.index)
         }
         ;
       }

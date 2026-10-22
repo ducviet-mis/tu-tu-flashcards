@@ -10,10 +10,12 @@ test('HTML uses existing relative assets and every deployment script parses',()=
 });
 test('Precache has current build and dictionary hashes and only existing shell resources',()=>{
  const box={self:{}};vm.runInNewContext(fs.readFileSync(path.join(root,'precache-manifest.js'),'utf8'),box);const s=box.self,hash=crypto.createHash('sha256');
- const normalized=file=>{const bytes=fs.readFileSync(file);return /\.(?:css|js|html|webmanifest|svg)$/.test(file)?Buffer.from(bytes.toString('utf8').replace(/\r\n/g,'\n')):bytes;};
+ const normalized=file=>{const bytes=fs.readFileSync(file);return /\.(?:css|js|html|webmanifest|svg|json|txt)$/.test(file)?Buffer.from(bytes.toString('utf8').replace(/\r\n/g,'\n')):bytes;};
  for(const name of s.TUTU_PRECACHE){assert.notEqual(name,'./data/dictionary.json.gz');const rel=name.replace(/^\.\//,'');assert.ok(fs.statSync(path.join(root,rel)).isFile(),name);hash.update(rel);hash.update(normalized(path.join(root,rel)));}
  hash.update(normalized(path.join(root,'sw.js')));assert.equal(s.TUTU_BUILD,hash.digest('hex').slice(0,16));
  assert.equal(s.TUTU_DICTIONARY_REV,crypto.createHash('sha256').update(fs.readFileSync(path.join(root,'data/dictionary.json.gz'))).digest('hex').slice(0,16));
+ const lex=crypto.createHash('sha256');for(const name of s.TUTU_LEXICON){assert.ok(!s.TUTU_PRECACHE.includes(name));const file=path.join(root,name);lex.update(path.basename(file));lex.update(fs.readFileSync(file));}
+ assert.equal(s.TUTU_LEXICON_REV,lex.digest('hex').slice(0,16));
 });
 test('Manifest icons have the declared PNG dimensions and repository-relative scope',()=>{
  const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));assert.equal(manifest.scope,'./');assert.equal(manifest.start_url,'./#/');assert.equal(manifest.display,'standalone');
