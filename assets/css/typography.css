@@ -1,0 +1,46 @@
+/* One reading family, comfortable Vietnamese spacing, consistent small labels. */
+:root{--sans:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;--mono:var(--sans);--muted:#bcbcb4}
+[data-theme=light]{--muted:#595950}
+body{font:400 16px/1.6 var(--sans)}
+button,input,textarea,select{font-family:var(--sans)}
+input,textarea,select{font-size:16px;line-height:1.6}
+h1,h2,h3{font-weight:600;line-height:1.35;letter-spacing:-.015em}
+h1,.welcome h1,.empty-home h2,.page-head h1{font-size:clamp(28px,3.2vw,36px)}
+h2,dialog h2,.bank-dialog h2,.study-panel h2{font-size:26px}
+h3{font-size:20px}
+.mono,.eyebrow,.pill,.tiny,.field-label{font-family:var(--sans);font-size:13px;line-height:1.65;letter-spacing:0;text-transform:none}
+.eyebrow,.field-label{font-weight:500}
+.btn,.btn.small,.text-btn{font-size:14px;font-weight:500;line-height:1.5;letter-spacing:0;text-transform:none;white-space:normal}
+.btn{gap:8px}
+.main-nav>a{font-size:14px;font-weight:500}
+.word-content strong,.word-heading h3,.bank-word,.review-row strong{font-weight:600;letter-spacing:0;line-height:1.5}
+.word-content small,.bank-meaning,.review-row p,.card-example{font-size:16px;line-height:1.6;font-weight:400}
+.word-content strong,.bank-word{font-size:19px}
+.face .word{font-family:var(--sans);font-size:clamp(32px,4.6vw,40px);font-weight:600;line-height:1.45;letter-spacing:0}
+.face .eyebrow,.face .card-example,.face .review-schedule,.face .translation-small,.face .flip-hint{font-size:14px;line-height:1.6}
+.match-cell{font-size:16px;line-height:1.6;font-weight:500}
+.review-row>small,.review-schedule,.progress-caption,.older-heading,.footer,.bank-pager,.bank-info-link,.bank-dialog .hint,.suggestion-status,.suggestion-tip{font-family:var(--sans);font-size:13px;line-height:1.65;letter-spacing:0}
+.day-tile .eyebrow,.preview-card .eyebrow,.review-card .eyebrow,.welcome .eyebrow,.empty-home .eyebrow,.stats-grid .eyebrow{font-size:13px}
+.review-row>small{white-space:normal;min-width:100px}
+.suggestion-option strong{font-weight:600}
+.suggestion-option span{font-size:14px;line-height:1.6}
+.day-tile .day-num,.giant-date,.total strong,.result-card .score,.timer,.stats-grid strong,.feature-number{font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.timer{font:500 24px/1.4 var(--sans)}
+.weekly-bars>div,.activity-day{font-family:var(--sans);font-size:13px;line-height:1.5}
+.activity-day{min-width:0}
+.session-tools .btn,.bank-toolbar .btn,.bank-row .btn,.bank-bottom .btn,.mobile-study-buttons .btn{font-size:14px}
+.bank-row .btn{white-space:normal;flex-shrink:0;max-width:140px}
+.session-tools{flex-wrap:wrap}
+.footer{gap:16px}
+@media(max-width:767px){
+ .main-nav>a{font-size:13px;padding:10px 7px}
+ .main-nav .quick-plus{font-size:30px}
+ .page-head h1,.welcome h1,.empty-home h2{font-size:28px}
+ .study-heading{font-size:28px;line-height:1.4}
+ dialog h2,.bank-dialog h2{font-size:24px}
+ .match-cell{font-size:15px;padding:10px 8px}
+ .word-content small,.bank-meaning,.card-example{font-size:16px}
+ .activity-grid{gap:6px}
+ .activity-day{font-size:12px}
+ .footer{flex-wrap:wrap}
+}

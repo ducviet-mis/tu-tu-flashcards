@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "count": 371705,
+  "commonCount": 972,
+  "source": "Free Vietnamese Dictionary Project / Hồ Ngọc Đức; bản đóng gói tecxmate/vnme-data v1.0.0",
+  "license": "GPL-3.0",
+  "sourceUrl": "https://github.com/tecxmate/vnme-data",
+  "changes": "Chỉ lấy nguồn FVDP (GPL), bỏ nguồn AI_Generated_EN; giữ tiêu đề cụm cho nghĩa phụ thuộc ngữ cảnh, trích nghĩa dạng chữ, gộp nghĩa trùng, thêm nhãn từ phổ biến Corpora CC0.",
+  "sourceSha256": "b030f464e3b451e410fbde74f354fead17ca19bf8ac6dda05a224f025cfe5dcc",
+  "excludedRows": 494,
+  "jsonBytes": 30231831,
+  "gzipBytes": 7725550,
+  "base64Bytes": 10300736,
+  "singleWordCount": 117302,
+  "glossCount": 668511
+}

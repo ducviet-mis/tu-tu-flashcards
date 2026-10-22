@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="vi">
+<!-- Vocabulary: FVDP (C) 1997-2003, packaged by tecxmate/vnme-data.
+     App and bundled derivative data: GPL-3.0. See LICENSE and data/NGUON-DU-LIEU.md. -->
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#1A1A1A">
+<meta name="description" content="Góc học từ vựng tiếng Anh cá nhân. Thêm từ mỗi ngày, lật thẻ, ghép cặp và tự theo dõi tiến độ.">
+<title>Từ Từ — Học từ vựng</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./assets/css/base.css">
+<link rel="stylesheet" href="./assets/css/v2.css">
+<link rel="stylesheet" href="./assets/css/typography.css">
+<meta name="application-name" content="Từ Từ"><link rel="icon" type="image/svg+xml" href="./assets/images/icon.svg"><link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./assets/images/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+<div class="shell" id="shell">
+<header class="topbar"><a class="brand" href="#/" aria-label="Từ Từ — Trang chủ"><img class="brand-logo" src="./assets/images/logo.svg" width="210" height="69" alt="Từ Từ — Từ từ mà chắc"></a><div class="top-actions"><button class="btn outline small" data-action="bank-open" aria-label="Mở kho từ vựng có sẵn"><span data-icon="book"></span><span class="desktop-label">Kho từ</span></button><button class="btn outline small" data-action="cloud" aria-label="Đồng bộ Supabase"><span data-icon="cloud"></span><span class="cloud-label">Đồng bộ</span></button><button class="btn outline small" data-action="backup" aria-label="Sao lưu dữ liệu"><span data-icon="archive"></span><span class="desktop-label">Sao lưu</span></button></div></header>
+<div id="storage-warning" class="storage-warning" role="status" hidden></div>
+<main id="app"></main>
+<footer class="footer"><span>Mỗi từ mới, một bước tiến.</span><span class="footer-right" id="save-indicator">Lưu trên thiết bị của bạn</span></footer>
+</div>
+<dialog id="study-dialog" class="study-dialog" aria-labelledby="study-title"></dialog>
+<dialog id="utility-dialog" aria-labelledby="utility-title"></dialog>
+<div id="toasts" class="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
+
+
+
+<nav id="main-nav" class="main-nav" aria-label="Điều hướng chính">
+<a href="#/" data-nav="days">Ngày</a><a href="#/review" data-nav="review">Ôn tập</a>
+<button type="button" class="quick-plus" data-action="quick-add" aria-label="Thêm từ nhanh">+</button>
+<a href="#/progress" data-nav="progress">Tiến độ</a><a href="#/settings" data-nav="settings">Cài đặt</a>
+</nav><div id="pwa-notice" class="pwa-notice" role="status" hidden></div>
+<noscript><p>Bật JavaScript để dùng Từ Từ.</p></noscript>
+<script defer src="./assets/js/review-engine.js"></script>
+<script defer src="./assets/js/core.js"></script>
+<script defer src="./assets/js/state.js"></script>
+<script defer src="./assets/js/ui.js"></script>
+<script defer src="./assets/js/storage.js"></script>
+<script defer src="./assets/js/speech.js"></script>
+<script defer src="./assets/js/features/days.js"></script>
+<script defer src="./assets/js/features/words.js"></script>
+<script defer src="./assets/js/features/backup.js"></script>
+<script defer src="./assets/js/features/study.js"></script>
+<script defer src="./assets/js/features/cloud.js"></script>
+<script defer src="./assets/js/events.js"></script>
+<script defer src="./assets/js/features/dictionary.js"></script>
+<script defer src="./assets/js/features/autocomplete.js"></script>
+<script defer src="./assets/js/features/review.js"></script>
+<script defer src="./assets/js/features/progress.js"></script>
+<script defer src="./assets/js/features/settings.js"></script>
+<script defer src="./assets/js/features/quick-add.js"></script>
+<script defer src="./assets/js/navigation.js"></script>
+<script defer src="./assets/js/pwa.js"></script>
+<script defer src="./assets/js/main.js"></script>
+</body>
+</html>
