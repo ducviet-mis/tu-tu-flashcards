@@ -30,3 +30,9 @@ test('Kho từ tìm Anh/Việt bỏ dấu, ưu tiên khớp chính xác và phâ
 test('Nghĩa gợi ý cho flashcard lấy 3 nghĩa đầu, giữ giới hạn 1000 ký tự',()=>{assert.equal(C.bankSummary(['word','một\nhai\nba\nbốn']), 'một; hai; ba');assert.ok(C.bankSummary(['x','a'.repeat(2000)]).length<=1000);});
 test('Tìm kho theo từng đợt có cùng kết quả khi thực hiện nhiều bước nhỏ',()=>{const rows=Array.from({length:127},(_,i)=>['word'+i,'nghĩa '+i,'',1]);const q=C.bankQuery(rows,{q:'word1',size:7,page:1});let loops=0;while(!q.step(9))loops++;assert.ok(loops>1);assert.deepEqual(plain(q.result()),plain(C.bankSearch(rows,{q:'word1',size:7,page:1})));});
 test('Nghĩa cụm không bị dùng làm nghĩa độc lập của từ gốc',()=>{const row=['apple','quả táo\n⟦cụm: apple of discord⟧ mối bất hoà\ncây táo'];assert.equal(C.bankSummary(row),'quả táo; cây táo');});
+
+test('Dictionary both mode searches Vietnamese without accents and ranks English exact and prefix first',()=>{
+ const rows=[['other','hello trong lời chào','',0],['hello','xin chào','',0],['hello there','chào bạn','',0],['dock','bến tàu','',0]];
+ assert.deepEqual(plain(C.bankSearch(rows,{q:'hello',kind:'all',mode:'both'}).indices),[1,2,0]);
+ assert.deepEqual(plain(C.bankSearch(rows,{q:'ben tau',kind:'all',mode:'both'}).indices),[3]);
+});

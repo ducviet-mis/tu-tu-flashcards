@@ -1,11 +1,9 @@
-// features/dictionary.js — phần chức năng của Từ Từ. Trạng thái chung được khai báo trong state.js.
+/* Dictionary lookup. Shared compressed data also powers word autocomplete. */
 'use strict';
-let bankData=null,bankPromise=null,bankToken=0,bankDebounce=null,bankSearchToken=0,bankReturnIndex=null,bankPendingFocus=null;
-const bankState={
-  q:'',kind:'common',mode:'en',page:0,size:30
-}
-,bankSelected=new Set(),bankMeanings=new Map();
-let bankVisible=[];
+let bankData=null,bankPromise=null,bankToken=0,bankDebounce=null,bankSearchToken=0;
+let bankReturnIndex=null,bankPendingFocus=null,bankScrollTop=0;
+let bankChanged=false;
+const bankState={q:'',kind:'all',mode:'both',page:0,size:30};
 async function loadBank(){
   if(bankData)return bankData;
   if(bankPromise)return bankPromise;
@@ -29,155 +27,89 @@ async function loadBank(){
     throw error;
   }
 }
+
+function bankHeader(){
+  return `<div class="dictionary-header"><h2 id="utility-title">${icon('search')}Từ điển</h2><button class="round" data-action="close-utility" aria-label="Đóng từ điển">${icon('close')}</button></div>`;
+}
 async function bankOpen(){
   bankReturnIndex=null;
   const token=++bankToken;
-  utilityOpen(utilityHeader('Kho từ có sẵn.','371.705 mục từ & cụm từ')+'<div class="bank-loading"><div>Đang mở kho từ...<br><span class="tiny">Lần đầu cần mạng để tải; các lần sau dùng bản đã lưu.</span></div></div>');
+  utilityOpen(bankHeader()+'<div class="bank-loading" role="status">Đang mở từ điển…</div>');
   utility.classList.add('bank-dialog');
   utility.setAttribute('data-view','bank');
   try{
     await loadBank();
     if(utility.open&&utility.getAttribute('data-view')==='bank'&&token===bankToken)bankRender();
-  }
-  catch(e){
-    if(utility.open&&token===bankToken)utility.innerHTML=utilityHeader('Chưa mở được kho.')+'<p class="hint">'+esc(e.message)+'</p>';
-    toast(e.message,null,'',true);
+  }catch(error){
+    if(utility.open&&token===bankToken)utility.innerHTML=bankHeader()+`<div class="dictionary-empty"><p>${esc(error.message)}</p><button class="btn outline" data-action="bank-open">Thử lại</button></div>`;
   }
 }
-function bankRender({
-  returnTo=null
-}
-={
-}
-){
+function bankRender({returnTo=null}={}){
   bankPendingFocus=returnTo;
-  utility.classList.add('bank-dialog');
-  utility.setAttribute('data-view','bank');
-  utility.innerHTML=utilityHeader('Tìm từ mới.<br>Chọn từ muốn nhớ.',bankData.count.toLocaleString('vi-VN')+' Mục từ & cụm từ')+`<p class="hint">Chọn từ để học trong hôm nay. Mỗi lượt tối đa 200 từ. Bấm <strong>Xem nghĩa</strong> để đọc các nghĩa và chọn nội dung phù hợp cho thẻ.</p><label class="search bank-search"><span class="sr-only">Tìm trong kho từ</span>${icon('search')}<input id="bank-search" type="search" placeholder="Tìm từ tiếng Anh hoặc nghĩa tiếng Việt..." value="${esc(bankState.q)}" autocomplete="off"></label><div class="bank-tools"><div><label class="field-label" for="bank-kind">Bộ lọc</label><select id="bank-kind"><option value="all" ${bankState.kind==='all'?'selected':''}>Tất cả ${bankData.count.toLocaleString('vi-VN')} mục từ</option><option value="common" ${bankState.kind==='common'?'selected':''}>Từ phổ biến (${bankData.commonCount})</option><option value="single" ${bankState.kind==='single'?'selected':''}>Từ đơn</option><option value="phrase" ${bankState.kind==='phrase'?'selected':''}>Cụm từ</option></select></div><div><label class="field-label" for="bank-mode">Tìm theo</label><select id="bank-mode"><option value="en" ${bankState.mode==='en'?'selected':''}>Tiếng Anh</option><option value="vi" ${bankState.mode==='vi'?'selected':''}>Nghĩa tiếng Việt</option></select></div></div><div class="bank-toolbar"><span class="eyebrow muted" id="bank-results-count" role="status"></span><div class="row" style="gap:7px"><button class="btn outline small" data-action="bank-pick-page">Chọn trang này</button><button class="btn outline small" data-action="bank-suggest">Gợi ý 10 từ</button></div></div><div class="bank-list" id="bank-list"></div><div class="bank-pager"><button class="round" data-action="bank-prev" id="bank-prev" aria-label="Trang từ trước">${icon('back')}</button><span class="eyebrow muted" id="bank-page-label"></span><button class="round" data-action="bank-next" id="bank-next" aria-label="Trang từ tiếp theo">${icon('arrow')}</button></div><div class="bank-bottom"><button class="btn outline" data-action="bank-clear">Bỏ chọn</button><button class="btn purple" data-action="bank-add" id="bank-add" disabled>Thêm 0 từ vào hôm nay</button></div><button class="bank-info-link" data-action="bank-about">Nguồn từ điển, giấy phép & lưu ý về nghĩa</button>`;
+  bankState.kind='all';bankState.mode='both';
+  utility.classList.add('bank-dialog');utility.setAttribute('data-view','bank');
+  utility.innerHTML=bankHeader()+`<form id="bank-search-form" class="dictionary-search-form" role="search"><label class="search bank-search" for="bank-search">${icon('search')}<span class="sr-only">Tra từ tiếng Anh hoặc nghĩa tiếng Việt</span><input id="bank-search" type="search" placeholder="Từ tiếng Anh hoặc nghĩa tiếng Việt" value="${esc(bankState.q)}" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" aria-controls="bank-list"><button type="button" class="round dictionary-reset" id="bank-reset" data-action="bank-reset" aria-label="Xóa tìm kiếm" ${bankState.q?'':'hidden'}>${icon('close')}</button></label></form><div class="dictionary-status" id="bank-results-count" role="status" aria-live="polite"></div><div class="bank-list dictionary-list" id="bank-list" aria-label="Kết quả tra từ"></div><div class="bank-pager" id="bank-pager" hidden><button class="round" data-action="bank-prev" id="bank-prev" aria-label="Trang kết quả trước">${icon('back')}</button><span id="bank-page-label"></span><button class="round" data-action="bank-next" id="bank-next" aria-label="Trang kết quả tiếp theo">${icon('arrow')}</button></div><button class="bank-info-link" data-action="bank-about">Nguồn & giấy phép</button>`;
   bankRenderResults();
-  if(returnTo===null||!$('#bank-list')?.querySelector('[data-action="bank-detail"]'))$('#bank-search')?.focus({
-    preventScroll:true
-  }
-  );
+  if(returnTo===null)$('#bank-search')?.focus({preventScroll:true});
 }
 function bankRenderResults(){
   if(!bankData||!$('#bank-list'))return;
   const token=++bankSearchToken;
-  if(bankState.q.trim()&&bankState.kind!=='common'){
-    const job=C.bankQuery(bankData.entries,{
-      ...bankState
-    }
-    );
-    $('#bank-results-count').textContent='Đang tìm trong toàn kho...';
-    $('#bank-list').innerHTML='<div class="empty-list">Đang tìm từ phù hợp...</div>';
-    $('#bank-list').setAttribute('aria-busy','true');
-    bankVisible=[];
-    $('#bank-prev').disabled=true;
-    $('#bank-next').disabled=true;
-    const step=()=>{
-      if(token!==bankSearchToken||!utility.open||utility.getAttribute('data-view')!=='bank')return;
-      const started=performance.now();
-      let done=false;
-      do{
-        done=job.step(2000);
-      }
-      while(!done&&performance.now()-started<8);
-      if(done)bankApplyResults(job.result());
-      else requestAnimationFrame(step);
-    }
-    ;
-    step();
+  $('#bank-reset').hidden=!bankState.q;
+  if(!bankState.q.trim()){
+    bankState.page=0;
+    $('#bank-results-count').textContent=bankData.count.toLocaleString('vi-VN')+' mục từ';
+    $('#bank-list').innerHTML='<div class="dictionary-empty">Nhập từ để tra nghĩa.</div>';
+    $('#bank-list').setAttribute('aria-busy','false');$('#bank-pager').hidden=true;return;
   }
-  else bankApplyResults(C.bankSearch(bankData.entries,bankState));
+  const job=C.bankQuery(bankData.entries,{...bankState,kind:'all',mode:'both'});
+  $('#bank-results-count').textContent='Đang tìm…';
+  $('#bank-list').setAttribute('aria-busy','true');
+  $('#bank-list').innerHTML='<div class="dictionary-empty">Đang tra từ…</div>';
+  $('#bank-pager').hidden=true;
+  const step=()=>{
+    if(token!==bankSearchToken||!utility.open||utility.getAttribute('data-view')!=='bank')return;
+    const started=performance.now();let done=false;
+    do{done=job.step(1500);}while(!done&&performance.now()-started<8);
+    if(done)bankApplyResults(job.result());else requestAnimationFrame(step);
+  };
+  step();
 }
 function bankApplyResults(result){
-  if(!$('#bank-list'))return;
-  $('#bank-list').setAttribute('aria-busy','false');
-  bankState.page=result.page;
-  bankVisible=result.indices;
-  const existing=new Set(day(C.isoToday()).words.map(w=>C.wordKey(w.en)));
-  $('#bank-results-count').textContent=result.total.toLocaleString('vi-VN')+' Kết quả';
+  const list=$('#bank-list');if(!list)return;
+  list.setAttribute('aria-busy','false');bankState.page=result.page;
+  $('#bank-results-count').textContent=result.total.toLocaleString('vi-VN')+' kết quả';
+  $('#bank-pager').hidden=result.pages<=1;
   $('#bank-page-label').textContent=(result.page+1)+' / '+result.pages;
-  $('#bank-prev').disabled=result.page===0;
-  $('#bank-next').disabled=result.page>=result.pages-1;
-  $('#bank-list').innerHTML=result.indices.length?result.indices.map(i=>{
-    const r=bankData.entries[i],known=existing.has(C.wordKey(r[0])),meaning=bankMeanings.get(i)||C.bankSummary(r);
-    if(known)bankSelected.delete(i);
-    return `<div class="bank-row"><div><label class="bank-pick"><input type="checkbox" data-bank="${i}" ${bankSelected.has(i)?'checked':''} ${known?'disabled':''} aria-label="Chọn từ ${esc(r[0])}"><span><span class="bank-word">${esc(r[0])}</span><span class="bank-pos">${esc(r[2]||'Từ / cụm từ')}${r[3]?' · phổ biến':''}</span></span></label><p class="bank-meaning">${esc(meaning)}</p>${known?'<span class="bank-known">Đã có trong hôm nay</span>':''}</div><button class="btn outline small" data-action="bank-detail" data-bank="${i}">Xem nghĩa</button></div>`;
-  }
-  ).join(''):'<div class="empty-list">Chưa có kết quả. Thử đổi bộ lọc sang Tất cả hoặc đổi cách tìm Anh / Việt.</div>';
-  $('#bank-list').scrollTop=0;
-  bankUpdateSelection();
+  $('#bank-prev').disabled=result.page===0;$('#bank-next').disabled=result.page>=result.pages-1;
+  list.innerHTML=result.indices.length?result.indices.map(i=>{
+    const row=bankData.entries[i];
+    return `<article class="dictionary-row"><button class="dictionary-result" data-action="bank-detail" data-bank="${i}" aria-label="Tra nghĩa ${esc(row[0])}"><strong class="bank-word">${esc(row[0])}</strong>${row[2]?`<span class="bank-pos">${esc(row[2])}</span>`:''}<span class="bank-meaning">${esc(C.bankSummary(row))}</span></button>${speakerSupported?`<button class="round dictionary-sound" data-action="bank-speak" data-bank="${i}" aria-label="Nghe phát âm ${esc(row[0])}">${icon('sound')}</button>`:''}</article>`;
+  }).join(''):'<div class="dictionary-empty">Không tìm thấy từ phù hợp. Thử kiểm tra chính tả hoặc nhập nghĩa tiếng Việt.</div>';
+  list.scrollTop=bankPendingFocus===null?0:bankScrollTop;
   if(bankPendingFocus!==null){
-    utility.querySelector('[data-action="bank-detail"][data-bank="'+bankPendingFocus+'"]')?.focus({
-      preventScroll:true
-    }
-    );
-    bankPendingFocus=null;
+    const target=utility.querySelector('[data-action="bank-detail"][data-bank="'+bankPendingFocus+'"]')||$('#bank-search');
+    target?.focus({preventScroll:true});bankPendingFocus=null;
   }
-}
-function bankUpdateSelection(){
-  const b=$('#bank-add');
-  if(b){
-    b.disabled=!bankSelected.size;
-    b.textContent='Thêm '+bankSelected.size+' Từ vào hôm nay';
-  }
-}
-function bankSelect(i,checked=true){
-  if(!bankData?.entries[i])return;
-  if(checked){
-    if(bankSelected.size>=200&&!bankSelected.has(i)){
-      toast('Mỗi lượt chọn tối đa 200 từ.');
-      return;
-    }
-    if(day(C.isoToday()).words.some(w=>C.wordKey(w.en)===C.wordKey(bankData.entries[i][0])))return;
-    bankSelected.add(i);
-  }
-  else bankSelected.delete(i);
-  bankUpdateSelection();
 }
 function bankDetail(i){
+  const row=bankData?.entries[i];if(!row)return;
+  if($('#bank-list'))bankScrollTop=$('#bank-list').scrollTop||0;
   bankReturnIndex=i;
-  const r=bankData?.entries[i];
-  if(!r)return;
-  utility.innerHTML=`<div class="dialog-head"><button class="round white" data-action="bank-back" aria-label="Quay lại kho từ">${icon('back')}</button><span class="eyebrow muted">Các nghĩa trong từ điển</span>${speakerSupported?`<button class="round" data-action="bank-speak" data-bank="${i}" aria-label="Nghe phát âm ${esc(r[0])}">${icon('sound')}</button>`:''}</div><h2 id="utility-title" style="overflow-wrap:anywhere">${esc(r[0])}</h2><p class="hint">${esc(r[2]||'Từ / cụm từ')} · Chọn nghĩa theo ngữ cảnh bạn muốn học. Dòng ghi “cụm” thuộc ngữ cảnh của cụm tương ứng.</p><ol class="bank-senses">${r[1].split('\n').map(t=>'<li>'+esc(t)+'</li>').join('')}</ol><label class="field-label" for="bank-custom-meaning">Nghĩa sẽ đưa lên flashcard (có thể sửa)</label><textarea id="bank-custom-meaning" maxlength="1000" style="min-height:110px">${esc(bankMeanings.get(i)||C.bankSummary(r))}</textarea><button class="btn purple wfull" style="margin-top:18px" data-action="bank-use-meaning" data-bank="${i}">Chọn từ với nghĩa này</button>`;
+  bankSearchToken++;clearTimeout(bankDebounce);
+  const saved=day(C.isoToday()).words.some(w=>C.wordKey(w.en)===C.wordKey(row[0]));
   utility.setAttribute('data-view','bank-detail');
-  $('#utility-title').setAttribute('tabindex','-1');
-  $('#utility-title').focus({
-    preventScroll:true
-  }
-  );
+  utility.innerHTML=`<div class="dictionary-header"><button class="round" data-action="bank-back" aria-label="Quay lại kết quả">${icon('back')}</button><span class="tiny muted">Từ điển</span><button class="round" data-action="close-utility" aria-label="Đóng từ điển">${icon('close')}</button></div><div class="dictionary-word-head"><h2 id="utility-title" tabindex="-1">${esc(row[0])}</h2>${row[2]?`<p class="bank-pos">${esc(row[2])}</p>`:''}<button class="btn outline dictionary-pronounce" data-action="bank-speak" data-bank="${i}" ${speakerSupported?'':'disabled'}>${icon('sound')}Nghe phát âm</button>${speakerSupported?'':'<p class="dictionary-speech-note">Trình duyệt này chưa hỗ trợ phát âm.</p>'}</div><ol class="bank-senses">${row[1].split('\n').filter(Boolean).map(meaning=>`<li>${esc(meaning)}</li>`).join('')}</ol><div class="dictionary-save"><details ${saved?'hidden':''}><summary>Sửa nghĩa để lưu vào bộ học</summary><label class="sr-only" for="bank-custom-meaning">Nghĩa lưu vào bộ học</label><textarea id="bank-custom-meaning" maxlength="1000">${esc(C.bankSummary(row))}</textarea></details><button class="btn outline wfull" data-action="bank-save" data-bank="${i}" ${saved?'disabled':''}>${icon(saved?'check':'plus')}${saved?'Đã có trong hôm nay':'Lưu vào hôm nay'}</button></div>`;
+  $('#utility-title').focus({preventScroll:true});utility.scrollTop=0;
 }
-function bankAdd(){
-  if(!bankSelected.size)return;
-  const target=C.isoToday(),d=day(target),keys=new Set(d.words.map(w=>C.wordKey(w.en))),newWords=[];
-  let skipped=0;
-  for(const i of bankSelected){
-    const row=bankData.entries[i],en=row[0],key=C.wordKey(en);
-    if(keys.has(key)){
-      skipped++;
-      continue;
-    }
-    const vi=(bankMeanings.get(i)||C.bankSummary(row)).trim();
-    if(!vi||vi.length>1000)continue;
-    newWords.push({
-      id:C.uid(),en,vi,remembered:false
-    }
-    );
-    keys.add(key);
-  }
-  const total=days.reduce((n,d)=>n+d.words.length,0);
-  if(total+newWords.length>50000){
-    toast('Bộ thẻ cá nhân hỗ trợ tối đa 50.000 từ. Hãy sao lưu và giảm số từ trước khi thêm.',null,'',true);
-    return;
-  }
-  if(newWords.length)ensureDay(target).words.push(...newWords);
-  persist();
-  bankSelected.clear();
-  utility.close();
-  selected=target;
-  go('#/day/'+target);
-  toast('Đã thêm '+newWords.length+' từ vào hôm nay.'+(skipped?' Bỏ qua '+skipped+' từ trùng.':''));
+function bankSave(i){
+  const row=bankData?.entries[i];if(!row)return;
+  if(day(C.isoToday()).words.some(w=>C.wordKey(w.en)===C.wordKey(row[0])))return;
+  const vi=$('#bank-custom-meaning')?.value.trim()||'';
+  if(!vi||vi.length>1000){toast('Nhập nghĩa từ 1 đến 1.000 ký tự.',null,'',true);return;}
+  if(days.reduce((sum,d)=>sum+d.words.length,0)>=50000){toast('Bộ học đã đạt giới hạn 50.000 từ.',null,'',true);return;}
+  ensureDay(C.isoToday()).words.push({id:C.uid(),en:row[0],vi,remembered:false});persist();bankChanged=true;
+  bankDetail(i);toast('Đã lưu '+row[0]+' vào hôm nay.');
 }
 function bankAbout(){
   bankReturnIndex=null;
@@ -189,79 +121,30 @@ function bankAbout(){
   }
   );
 }
-utility.addEventListener('input',e=>{
-  if(e.target.id==='bank-search'){
-    bankState.q=e.target.value;
-    bankState.page=0;
-    bankSearchToken++;
-    clearTimeout(bankDebounce);
-    bankDebounce=setTimeout(()=>{
-      if(utility.open&&utility.getAttribute('data-view')==='bank')bankRenderResults();
-    }
-    ,180);
-  }
-}
-);
-utility.addEventListener('change',e=>{
-  if(e.target.dataset.bank!==undefined){
-    const i=Number(e.target.dataset.bank);
-    bankSelect(i,e.target.checked);
-    e.target.checked=bankSelected.has(i);
-  }
-  else if(e.target.id==='bank-kind'||e.target.id==='bank-mode'){
-    bankState[e.target.id==='bank-kind'?'kind':'mode']=e.target.value;
-    bankState.page=0;
-    bankRenderResults();
-  }
-}
-);
-document.addEventListener('click',e=>{
-  const b=e.target.closest('[data-action]');
-  if(!b||b.disabled)return;
-  const action=b.dataset.action,i=Number(b.dataset.bank);
+
+utility.addEventListener('input',event=>{
+  if(event.target.id!=='bank-search')return;
+  bankState.q=event.target.value;bankState.page=0;bankPendingFocus=null;bankSearchToken++;
+  $('#bank-reset').hidden=!bankState.q;clearTimeout(bankDebounce);
+  bankDebounce=setTimeout(()=>{if(utility.open&&utility.getAttribute('data-view')==='bank')bankRenderResults();},180);
+});
+utility.addEventListener('submit',event=>{
+  if(event.target.id!=='bank-search-form')return;event.preventDefault();clearTimeout(bankDebounce);
+  bankState.q=$('#bank-search').value;bankState.page=0;bankRenderResults();
+});
+utility.addEventListener('close',()=>{
+  bankToken++;bankSearchToken++;clearTimeout(bankDebounce);
+  if(bankChanged){bankChanged=false;if(!location.hash.startsWith('#/settings'))route();}
+});
+document.addEventListener('click',event=>{
+  const button=event.target.closest('[data-action]');if(!button||button.disabled)return;
+  const action=button.dataset.action,index=Number(button.dataset.bank);
   if(action==='bank-open')bankOpen();
-  else if(action==='bank-prev'||action==='bank-next'){
-    bankState.page+=action==='bank-prev'?-1:1;
-    bankRenderResults();
-  }
-  else if(action==='bank-back'){
-    bankRender({
-      returnTo:bankReturnIndex
-    }
-    );
-    bankReturnIndex=null;
-  }
-  else if(action==='bank-detail')bankDetail(i);
-  else if(action==='bank-speak')speak(bankData.entries[i][0]);
-  else if(action==='bank-use-meaning'){
-    const meaning=$('#bank-custom-meaning').value.trim();
-    if(!meaning||meaning.length>1000){
-      toast('Nhập nghĩa từ 1 đến 1.000 ký tự.',null,'',true);
-      return;
-    }
-    bankMeanings.set(i,meaning);
-    bankSelect(i);
-    bankRender({
-      returnTo:i
-    }
-    );
-  }
-  else if(action==='bank-add')bankAdd();
-  else if(action==='bank-clear'){
-    bankSelected.clear();
-    bankRenderResults();
-  }
-  else if(action==='bank-pick-page'){
-    bankVisible.forEach(i=>bankSelect(i));
-    bankRenderResults();
-  }
-  else if(action==='bank-suggest'){
-    const existing=new Set(day(C.isoToday()).words.map(w=>C.wordKey(w.en)));
-    const available=bankData.entries.flatMap((r,i)=>r[3]&&!existing.has(C.wordKey(r[0]))?[i]:[]);
-    C.shuffle(available).slice(0,10).forEach(i=>bankSelect(i));
-    bankRenderResults();
-    toast('Đã chọn gợi ý. Bạn có thể xem lại hoặc thêm vào hôm nay.');
-  }
-  else if(action==='bank-about')bankAbout();
-}
-);
+  else if(action==='bank-detail')bankDetail(index);
+  else if(action==='bank-speak'){const row=bankData?.entries[index];if(row)speak(row[0]);}
+  else if(action==='bank-save')bankSave(index);
+  else if(action==='bank-back'){bankRender({returnTo:bankReturnIndex});bankReturnIndex=null;}
+  else if(action==='bank-prev'||action==='bank-next'){bankState.page+=action==='bank-prev'?-1:1;bankRenderResults();}
+  else if(action==='bank-reset'){clearTimeout(bankDebounce);bankState.q='';bankState.page=0;bankPendingFocus=null;$('#bank-search').value='';bankRenderResults();$('#bank-search').focus();}
+  else if(action==='bank-about'){bankSearchToken++;clearTimeout(bankDebounce);bankAbout();}
+});

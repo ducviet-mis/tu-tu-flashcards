@@ -6,6 +6,7 @@
 | `assets/css/base.css` | Kiểu giao diện gốc: thẻ, form, modal, responsive |
 | `assets/css/v2.css` | Menu mới, ôn tập, tiến độ, cài đặt, theme sáng |
 | `assets/css/typography.css` | Font Be Vietnam Pro, cỡ chữ, độ đậm, giãn dòng và chữ nhỏ trên điện thoại |
+| `assets/css/dictionary.css` | Từ điển tra cứu gọn trên điện thoại, danh sách kết quả, phát âm và trang nghĩa |
 | `assets/images/` | Logo SVG và bộ icon PWA PNG |
 | `assets/js/core.js` | Kiểm tra bản sao, xử lý từ trùng, tìm kho, thuật toán thuần |
 | `assets/js/review-engine.js` | Quy tắc lịch ôn, hàng chờ và chuỗi ngày; không dùng DOM |
@@ -18,7 +19,7 @@
 | `assets/js/features/study.js` | Phiên học, lật thẻ, ghép cặp, kết quả |
 | `assets/js/features/backup.js` | Xuất/nhập file và hoàn tác nhập |
 | `assets/js/features/cloud.js` | Cấu hình và yêu cầu Supabase tùy chọn |
-| `assets/js/features/dictionary.js` | Tải kho riêng, bộ lọc, chọn nghĩa, thêm nhiều từ |
+| `assets/js/features/dictionary.js` | Tải kho riêng, tra Anh/Việt trong toàn kho, phát âm và lưu từng từ từ trang nghĩa |
 | `assets/js/features/autocomplete.js` | Gợi ý ở ô thêm từ trong ngày |
 | `assets/js/features/review.js` | Hàng chờ nhiều ngày và ghi nhận lịch ôn |
 | `assets/js/features/progress.js` | Hiển thị thống kê từ dữ liệu học thật |

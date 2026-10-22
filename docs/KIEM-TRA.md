@@ -1,6 +1,6 @@
 # Kết quả kiểm tra
 
-Ngày kiểm tra: 22/10/2026. Node test runner: **49 kiểm thử đạt, 0 lỗi**.
+Ngày kiểm tra: 22/10/2026. Node test runner: **50 kiểm thử đạt, 0 lỗi**.
 
 Lệnh chạy từ thư mục gốc dự án:
 
@@ -27,8 +27,8 @@ node --test tests/*.test.cjs tests/dom-check.cjs
 
 | Phần | Kích thước |
 |---|---:|
-| `index.html` | 4.506 byte |
-| 31 tài nguyên giao diện trong precache | 158.255 byte |
+| `index.html` | 4.569 byte |
+| 32 tài nguyên giao diện trong precache | 158.050 byte |
 | Kho từ nén tải riêng | 7.725.550 byte |
 
 Kho từ được giữ nguyên nội dung từ bản HTML trước; đã chuyển ra file gzip riêng, không đưa cả kho vào localStorage.
@@ -44,3 +44,9 @@ Tệp thiết kế tham chiếu hiển thị được các tiêu đề màn hìn
 ## Bản cập nhật font
 
 Đã chuyển giao diện sang Be Vietnam Pro, tăng cỡ chữ phụ, chỉnh giãn dòng và nhãn câu thường. Kiểm thử service worker bổ sung xác minh CSS/font được giữ khi ngoại tuyến và qua activation bằng phản hồi giả lập. Truy cập nhị phân tới Google Fonts/GitHub thất bại trong môi trường làm việc, nên chưa đóng gói file font cục bộ hoặc xác nhận font hiển thị thật trên trình duyệt. Font được lấy từ Google Fonts rồi cache sau khi có kết nối thành công; nếu chưa tải được sẽ dùng font hệ thống.
+
+## Bản cập nhật từ điển
+
+Bộ kiểm thử DOM cũ cho chức năng chọn hàng loạt đã thay bằng các luồng tra cứu mới: tìm trong tất cả từ kể cả mục không phổ biến, tìm nghĩa Việt không dấu, phát âm tiếng Anh với Web Speech giả lập, mở nghĩa đầy đủ, lưu riêng một từ, chặn lưu trùng, cập nhật bộ ngày khi đóng từ điển, phân trang, giữ từ khóa/focus khi quay lại, xóa tìm kiếm, không có kết quả và trường hợp trình duyệt không hỗ trợ phát âm. Kiểm thử thuật toán bổ sung xác minh thứ tự kết quả khi tìm Anh/Việt cùng lúc.
+
+Chưa xác minh bố cục trên điện thoại hay giọng đọc thật trong trình duyệt; kết quả phát âm trong kiểm thử là mô phỏng.

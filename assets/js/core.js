@@ -137,8 +137,8 @@ globalThis.FlashCore=(()=>{
         cursor++){
           const r=rows[cursor];
           if(kind==='common'&&!r[3]||kind==='single'&&r[0].includes(' ')||kind==='phrase'&&!r[0].includes(' '))continue;
-          const text=q?bankFold(mode==='vi'?r[1]:r[0]):'';
-          if(q&&!text.includes(q))continue;
+            const text=q?bankFold(mode==='vi'?r[1]:r[0]):'';
+            if(q&&!text.includes(q)&&!(mode==='both'&&bankFold(r[1]).includes(q)))continue;
           if(q&&text===q)exact.push(cursor);
           else if(q&&text.startsWith(q))prefix.push(cursor);
           else other.push(cursor);

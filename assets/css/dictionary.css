@@ -1,0 +1,52 @@
+/* Compact lookup: one search field, readable results and a separate word view. */
+dialog.bank-dialog{width:min(720px,calc(100vw - 32px));padding:22px;max-height:calc(100dvh - 32px)}
+dialog.bank-dialog[open][data-view=bank]{display:flex;flex-direction:column;height:min(740px,calc(100dvh - 32px));overflow:hidden;gap:0}
+.bank-dialog [hidden]{display:none!important}
+.dictionary-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none}
+.bank-dialog .dictionary-header h2{display:flex;align-items:center;gap:10px;margin:0;font-size:22px;line-height:1.4;letter-spacing:0;font-weight:600}
+.dictionary-header h2>.icon{width:24px;height:24px;color:var(--blue)}
+.dictionary-header>.round{flex-shrink:0}
+.dictionary-search-form{flex:none;margin:16px 0 0}
+.bank-dialog .bank-search{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:16px;margin:0;padding:0 12px;min-height:56px}
+.bank-dialog .bank-search:focus-within{border-color:var(--blue);box-shadow:0 0 0 2px color-mix(in srgb,var(--blue) 20%,transparent)}
+.bank-dialog .bank-search>.icon{width:21px;height:21px;color:var(--muted)}
+.bank-dialog .bank-search input{flex:1;min-width:0;min-height:54px;font-size:16px;background:transparent;border:0;box-shadow:none;padding:10px 0;border-radius:0;outline:none}
+.bank-search input::-webkit-search-cancel-button{-webkit-appearance:none}
+.bank-search .dictionary-reset{width:36px;height:44px;min-width:36px;background:none;color:var(--muted)}
+.dictionary-reset .icon{width:18px;height:18px}
+.dictionary-status{font-size:13px;line-height:1.6;color:var(--muted);margin:12px 0 8px;flex:none;min-height:21px}
+.bank-dialog .dictionary-list{flex:1;min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain;padding-right:4px;scrollbar-width:thin}
+.dictionary-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:8px;border-bottom:1px solid var(--line)}
+.dictionary-result{display:block;width:100%;text-align:left;background:transparent;color:var(--ink);padding:16px 4px;border-radius:8px;min-height:80px;cursor:pointer}
+.dictionary-result:hover{background:var(--panel)}
+.dictionary-result:focus-visible,.dictionary-sound:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.dictionary-result .bank-word{display:block;font-size:19px;line-height:1.5;font-weight:600;overflow-wrap:anywhere}
+.dictionary-result .bank-pos,.dictionary-word-head .bank-pos{display:block;font-family:var(--sans);font-size:13px;line-height:1.6;color:var(--muted);margin:2px 0 0}
+.dictionary-result .bank-meaning{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;font-size:15px;line-height:1.65;margin:6px 0 0;color:var(--muted)}
+.dictionary-sound{margin-top:14px;color:var(--blue);background:var(--panel);min-width:44px;min-height:44px}
+.dictionary-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:140px;text-align:center;color:var(--muted);font-size:15px;line-height:1.7;padding:24px 12px}
+.bank-dialog .bank-pager{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);flex:none;margin:8px 0 0;padding-top:8px;font-size:13px;color:var(--muted)}
+.bank-dialog .bank-info-link{display:block;flex:none;background:none;color:var(--muted);text-decoration:underline;text-underline-offset:3px;margin:6px auto 0;font-size:12px;min-height:36px;padding:6px 10px;line-height:1.6}
+.dictionary-word-head{margin:22px 0 0}
+.bank-dialog .dictionary-word-head h2{font-size:clamp(26px,5vw,34px);line-height:1.45;margin:0;overflow-wrap:anywhere;letter-spacing:0}
+.dictionary-pronounce{margin-top:14px;min-height:44px;padding:10px 16px;font-size:14px}
+.dictionary-speech-note{font-size:13px;color:var(--muted);margin-top:8px}
+.bank-dialog .bank-senses{max-height:none;overflow:visible;margin:22px 0;padding-left:24px;font-size:16px;line-height:1.75}
+.bank-dialog .bank-senses li{padding:10px 6px;border-bottom:1px solid var(--line);overflow-wrap:anywhere;white-space:pre-line}
+.dictionary-save{border-top:1px solid var(--line);padding-top:16px}
+.dictionary-save details{margin-bottom:14px;color:var(--muted);font-size:13px}
+.dictionary-save summary{cursor:pointer;padding:8px 0;min-height:40px}
+.dictionary-save textarea{min-height:100px;margin-top:8px;font-size:16px}
+[data-theme=light] .dictionary-header h2>.icon,[data-theme=light] .dictionary-sound{color:#5046d4}
+@media(max-width:767px){
+ dialog.bank-dialog{width:100%;max-width:none;max-height:100dvh;margin:0;border:0;border-radius:0;padding:16px 16px max(16px,env(safe-area-inset-bottom))}
+ dialog.bank-dialog[open][data-view=bank]{height:100dvh;max-height:100dvh}
+ .bank-dialog .dictionary-header h2{font-size:20px}
+ .dictionary-search-form{margin-top:12px}
+ .dictionary-status{margin-top:10px}
+ .dictionary-result{padding:13px 2px;min-height:76px}
+ .dictionary-result .bank-word{font-size:18px}
+ .dictionary-result .bank-meaning{font-size:15px}
+ .dictionary-word-head{margin-top:18px}
+ .bank-dialog .bank-senses{margin-top:18px}
+}
