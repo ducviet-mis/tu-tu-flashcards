@@ -235,6 +235,10 @@ globalThis.FlashCore=(()=>{
     const extra={
     }
     ;
+    if(word.topic!==undefined){
+      if(typeof word.topic!=='string'||word.topic.trim().length>60)throw Error('Chủ đề phải có tối đa 60 ký tự.');
+      extra.topic=word.topic.trim().normalize('NFC');
+    }
     for(const key of ['example','exampleVi'])if(word[key]!==undefined){
       if(typeof word[key]!=='string'||word[key].length>1000)throw Error('Ví dụ của từ không hợp lệ.');
       extra[key]=word[key];

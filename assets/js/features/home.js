@@ -20,7 +20,7 @@ function rememberLookup(word){
 function notebookDayTile(d,index=0,compact=false){
   const today=d.date===C.isoToday(),n=remembered(d),total=d.words.length,pct=total?Math.round(n/total*100):0;
   const color=today?'purple':['orange','blue','yellow','mint'][index%4];
-  return `<a href="#/day/${d.date}" class="notebook-day ${color} ${compact?'home-day-row':''}" aria-label="Sổ từ ngày ${esc(fullDate(d.date))}: ${total} từ, đã nhớ ${n}"><div class="notebook-day-top"><span class="notebook-day-date">${dateLabel(d.date)}</span><span class="notebook-day-count">${total} từ</span></div><div class="notebook-day-bottom"><span class="notebook-known">Đã nhớ ${n}/${total}</span>${icon('arrow')}</div>${compact?'':`<div class="notebook-day-progress" role="progressbar" aria-label="Tiến độ ngày ${dateLabel(d.date)}" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pct}%"></span></div>`}</a>`;
+  return `<a href="#/day/${d.date}" class="notebook-day ${color} ${compact?'home-day-row':''}" aria-label="Sổ từ ngày ${esc(fullDate(d.date))}: ${total} từ, đã nhớ ${n}"><div class="notebook-day-top"><span class="notebook-day-date">${dateLabel(d.date)}</span><span class="notebook-day-count">${total} từ</span></div><div class="notebook-day-bottom"><span class="notebook-known"><span class="notebook-known-label">Đã nhớ </span>${n}/${total}</span>${icon('arrow')}</div>${compact?'':`<div class="notebook-day-progress" role="progressbar" aria-label="Tiến độ ngày ${dateLabel(d.date)}" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pct}%"></span></div>`}</a>`;
 }
 function renderHome(){
   closeHomeSuggestions();closeSuggestions();suggestionAutoMeaning=null;$('#shell').classList.remove('mobile-day');
@@ -29,17 +29,6 @@ function renderHome(){
   const pct=today.words.length?Math.round(known/today.words.length*100):0;
   app.innerHTML=`<div class="home-layout"><section class="home-lookup-panel" aria-labelledby="home-title"><div class="home-intro"><div class="eyebrow muted">${esc(fullDate(date))}</div><h1 id="home-title">Trang chủ</h1></div>${homeLookupMarkup()}<section id="home-history" class="home-history" aria-label="Các từ vừa tra" hidden><h2>Tra gần đây</h2><div id="recent-lookups" class="lookup-chips"></div></section><div class="home-desktop-note">${mascot()}<p>Tra nghĩa, nghe phát âm.<br>Lưu lại từ bạn muốn nhớ.</p></div></section><section class="home-summary" aria-label="Việc học hôm nay"><a href="#/review" class="home-due"><span class="home-card-label">Ôn hôm nay</span><div><strong data-home-count="due">${due}</strong><span class="home-card-unit"> từ</span></div><span class="home-card-arrow" aria-hidden="true">${icon('arrow')}</span>${mascot()}<span class="home-due-caption">${due?'Đến lịch gặp lại những từ đã lưu.':'Chưa có từ đến lịch ôn.'}</span></a><a href="#/day/${date}" class="home-today"><div><span class="home-card-label">Hôm nay</span><strong>${dateLabel(date)}</strong></div><div class="home-today-progress"><span>${today.words.length} từ · Đã nhớ ${known}</span><div class="notebook-day-progress" role="progressbar" aria-label="Tiến độ hôm nay" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pct}%"></span></div></div></a></section><section class="home-recent-section" aria-labelledby="home-recent-title"><div class="home-section-heading"><h2 id="home-recent-title">Sổ từ gần đây</h2><a href="#/notebook">Xem tất cả ${icon('arrow')}</a></div>${recent.length?`<div class="home-recent-days">${recent.map((d,i)=>notebookDayTile(d,i,true)).join('')}</div>`:`<div class="home-first-note"><div><h3>${total?'Mỗi ngày, một trang sổ.':'Từ nhỏ hôm nay. Tiến bộ ngày mai.'}</h3><p>${total?'Những sổ từ của các ngày trước sẽ hiện ở đây.':'Lưu từ đầu tiên để bắt đầu sổ từ của bạn.'}</p></div><button class="btn white small" data-action="add-today">${icon('plus')}Thêm từ mới</button>${total?'':'<button class="text-btn" data-action="sample">Thử với từ mẫu</button>'}</div>`}</section></div>`;
   renderLookupHistory();
-}
-function renderNotebook(){
-  closeSuggestions();suggestionAutoMeaning=null;$('#shell').classList.remove('mobile-day');
-  const today=C.isoToday(),total=days.reduce((n,d)=>n+d.words.length,0),known=days.reduce((n,d)=>n+remembered(d),0);
-  const list=C.sortDays(days.some(d=>d.date===today)?days:[...days,day(today)]);
-  let month='';
-  const cards=list.map((d,i)=>{
-    const next=d.date.slice(0,7),heading=next!==month?`<h2 class="notebook-month">Tháng ${Number(d.date.slice(5,7))} · ${d.date.slice(0,4)}</h2>`:'';month=next;
-    return heading+notebookDayTile(d,Math.max(0,i-(list[0].date===today?1:0)));
-  }).join('');
-  app.innerHTML=`<section class="notebook-heading"><div><div class="eyebrow muted">Góp nhặt từng ngày</div><h1>Sổ từ</h1><p>${days.length} ngày đã lưu · ${total} từ · Đã nhớ ${known}</p></div><button class="btn white" data-action="add-today">${icon('plus')}Thêm từ mới</button></section><div class="notebook-grid">${cards}</div>`;
 }
 function renderBase(){
   const page=(location.hash||'#/').split('/')[1]?.split('?')[0];

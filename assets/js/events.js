@@ -34,7 +34,7 @@ document.addEventListener('click',e=>{
       const p=bulkParsed();
       if(!p.words.length)return;
       ensureDay(bulkDate).words.push(...p.words.map(w=>({
-        ...w,id:C.uid(),remembered:false
+        ...w,id:C.uid(),remembered:false,topic:$('#bulk-topic').value.trim().normalize('NFC')
       }
       )));
       persist();
@@ -117,6 +117,7 @@ utility.addEventListener('submit',e=>{
     w.vi=vi;
     w.example=$('#edit-example').value.trim();
     w.exampleVi=$('#edit-example-vi').value.trim();
+    w.topic=$('#edit-topic').value.trim().normalize('NFC');
     if(changed)ReviewEngine.setRemembered(w,false,C.isoToday());
     persist();
     utility.close();

@@ -2,7 +2,7 @@
 'use strict';
 function bulkOpen(){
   bulkDate=selected;
-  utilityOpen(utilityHeader('GÓP NHẶT<br>Nhiều từ mới.')+`<p class="hint">Mỗi dòng một từ và nghĩa. Dùng dấu <strong> - </strong>, <strong> – </strong>, <strong> : </strong>, <strong> = </strong> hoặc Tab để ngăn cách.</p><label class="field-label" for="bulk-text">Dán danh sách từ của bạn</label><textarea id="bulk-text" placeholder="apple - quả táo&#10;dock : bến tàu&#10;assemble = lắp ráp"></textarea><div class="preview-caption eyebrow" id="bulk-count" role="status">Nhận diện được 0 từ</div><div class="preview-list" id="bulk-preview"></div><p class="muted tiny" id="bulk-skipped"></p><button class="btn purple wfull" style="margin-top:22px" id="bulk-add" data-action="bulk-add" disabled>Thêm 0 từ</button>`);
+  utilityOpen(utilityHeader('GÓP NHẶT<br>Nhiều từ mới.')+`<p class="hint">Mỗi dòng một từ và nghĩa. Dùng dấu <strong> - </strong>, <strong> – </strong>, <strong> : </strong>, <strong> = </strong> hoặc Tab để ngăn cách.</p>${topicField('bulk-topic')}<label class="field-label" for="bulk-text">Dán danh sách từ của bạn</label><textarea id="bulk-text" placeholder="apple - quả táo&#10;dock : bến tàu&#10;assemble = lắp ráp"></textarea><div class="preview-caption eyebrow" id="bulk-count" role="status">Nhận diện được 0 từ</div><div class="preview-list" id="bulk-preview"></div><p class="muted tiny" id="bulk-skipped"></p><button class="btn purple wfull" style="margin-top:22px" id="bulk-add" data-action="bulk-add" disabled>Thêm 0 từ</button>`);
 }
 function bulkParsed(){
   const p=C.parseBulk($('#bulk-text').value);
@@ -31,7 +31,7 @@ function editOpen(id){
     id,date:selected
   }
   ;
-  utilityOpen(utilityHeader('Sửa từ vựng.')+`<form id="edit-form" class="dialog-form"><div><label class="field-label" for="edit-en">Tiếng Anh</label><input id="edit-en" value="${esc(w.en)}" maxlength="200" required></div><div><label class="field-label" for="edit-vi">Tiếng Việt</label><input id="edit-vi" value="${esc(w.vi)}" maxlength="1000" required></div><div><label class="field-label" for="edit-example">Ví dụ tiếng Anh</label><textarea id="edit-example" maxlength="1000">${esc(w.example||'')}</textarea><label class="field-label" for="edit-example-vi">Dịch ví dụ</label><input id="edit-example-vi" maxlength="1000" value="${esc(w.exampleVi||'')}"></div><button type="submit" class="btn purple">Lưu thay đổi</button></form>`);
+  utilityOpen(utilityHeader('Sửa từ vựng.')+`<form id="edit-form" class="dialog-form"><div><label class="field-label" for="edit-en">Tiếng Anh</label><input id="edit-en" value="${esc(w.en)}" maxlength="200" required></div><div><label class="field-label" for="edit-vi">Tiếng Việt</label><input id="edit-vi" value="${esc(w.vi)}" maxlength="1000" required></div>${topicField('edit-topic',w.topic||'')}<div><label class="field-label" for="edit-example">Ví dụ tiếng Anh</label><textarea id="edit-example" maxlength="1000">${esc(w.example||'')}</textarea><label class="field-label" for="edit-example-vi">Dịch ví dụ</label><input id="edit-example-vi" maxlength="1000" value="${esc(w.exampleVi||'')}"></div><button type="submit" class="btn purple">Lưu thay đổi</button></form>`);
 }
 function deleteWord(id){
   const date=selected,d=day(date),index=d.words.findIndex(w=>w.id===id);

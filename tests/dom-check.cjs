@@ -479,3 +479,83 @@ test('V3 home and notebook are separate routes and use real counts without creat
  const count=e.qa.days.length;e.box.location.hash='#/';assert.ok(e.q('#home-lookup-form'));assert.equal(e.qa.days.length,count);
  e.box.location.hash='#/day/'+e.qa.days[0].date;assert.ok(e.q('#add-form'));assert.equal(e.q('[data-nav="notebook"]').getAttribute('aria-current'),'page');
 });
+
+test('Notebook switches between day and topic views without creating saved days',()=>{
+ const e=environment({hash:'#/notebook'});
+ assert.ok(e.q('a[href="#/notebook?view=days"]'));
+ assert.ok(e.q('a[href="#/notebook?view=topics"]'));
+ e.box.location.hash='#/notebook?view=topics';
+ assert.equal(e.q('a[href="#/notebook?view=topics"]').getAttribute('aria-current'),'page');
+ assert.match(e.q('#notebook-content').textContent,/Chưa có từ/);
+ assert.equal(e.qa.days.length,0);
+ e.box.location.hash='#/notebook?view=days';
+ assert.equal(e.q('.notebook-grid').querySelectorAll('.notebook-day').length,1);
+ assert.equal(e.qa.days.length,0);
+});
+
+test('Topic labels survive quick add, reload and editing without resetting review progress',()=>{
+ const e=environment();e.qa.quickAddOpen();
+ assert.ok(e.q('#quick-topic'));
+ e.q('#quick-en').value='hello';e.q('#quick-vi').value='xin chào';e.q('#quick-topic').value='  Giao tiếp  ';
+ e.q('#quick-add-form').dispatchEvent({type:'submit'});
+ const word=e.qa.days[0].words[0];assert.equal(word.topic,'Giao tiếp');
+ e.box.location.hash='#/day/'+e.qa.days[0].date;
+ e.click('[data-action="toggle"][data-id="'+word.id+'"]');
+ const progress=JSON.stringify([word.remembered,word.reviewLevel,word.nextReview,word.reviewCount]);
+ e.click('[data-action="edit"][data-id="'+word.id+'"]');assert.equal(e.q('#edit-topic').value,'Giao tiếp');
+ e.q('#edit-topic').value='Đời sống';e.q('#edit-form').dispatchEvent({type:'submit'});
+ assert.equal(JSON.stringify([word.remembered,word.reviewLevel,word.nextReview,word.reviewCount]),progress);
+ const reloaded=environment({map:e.map});assert.equal(reloaded.qa.days[0].words[0].topic,'Đời sống');
+});
+
+test('Notebook groups words across dates and keeps unlabeled words in a separate topic',()=>{
+ const e=demo(),first=e.qa.days[0],second=e.qa.days[1];
+ first.words[0].topic='Du lịch';second.words[0].topic='du lịch';
+ e.box.location.hash='#/notebook?view=topics';
+ assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-topic').length,2);
+ e.box.location.hash='#/notebook?view=topics&topic='+encodeURIComponent('du lịch');
+ assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,2);
+ e.box.location.hash='#/notebook?view=topics&topic=';
+ assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,12);
+});
+
+test('Notebook search finds Vietnamese without accents and safely displays topic labels',()=>{
+ const e=demo(),word=e.qa.days[0].words[0];word.en='departure';word.vi='khởi hành';word.topic='<img src=x onerror=alert(1)>';
+ e.box.location.hash='#/notebook?view=topics';
+ assert.ok(!e.q('#notebook-content').querySelector('img'));
+ const input=e.q('#notebook-search');input.value='khoi hanh';input.dispatchEvent({type:'input'});
+ assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,1);
+ assert.match(e.q('#notebook-content').textContent,/departure/);
+ input.value='không có từ này';input.dispatchEvent({type:'input'});
+ assert.match(e.q('#notebook-content').textContent,/Không tìm thấy/);
+});
+
+test('Topic word actions target the correct day and retain the notebook route',()=>{
+ const e=environment({speech:true});e.click('[data-action="sample"]');
+ const d=e.qa.days[1],w=d.words[0];w.topic='Công việc';
+ e.box.location.hash='#/notebook?view=topics&topic='+encodeURIComponent('Công việc');
+ e.click('[data-action="notebook-speak"][data-id="'+w.id+'"]');assert.equal(e.spoken.at(-1).text,w.en);
+ const wasKnown=w.remembered;e.click('[data-action="notebook-toggle"][data-id="'+w.id+'"]');assert.equal(w.remembered,!wasKnown);
+ e.click('[data-action="notebook-edit"][data-id="'+w.id+'"]');assert.equal(e.q('#edit-en').value,w.en);
+ e.q('#edit-topic').value='Công việc mới';e.q('#edit-form').dispatchEvent({type:'submit'});
+ assert.match(e.box.location.hash,/notebook/);assert.equal(w.topic,'Công việc mới');
+});
+
+test('Notebook reveals long topic lists in batches and resets the batch when searching',()=>{
+ const e=demo(),d=e.qa.days[0];
+ d.words=Array.from({length:85},(_,i)=>({id:'topic-word-'+i,en:'word'+i,vi:'từ '+i,remembered:false,topic:'Công việc'}));
+ e.box.location.hash='#/notebook?view=topics&topic='+encodeURIComponent('Công việc');
+ assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,40);
+ e.click('[data-action="notebook-more"]');assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,80);
+ const input=e.q('#notebook-search');input.value='word';input.dispatchEvent({type:'input'});
+ assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,40);
+ input.value='word84';input.dispatchEvent({type:'input'});assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,1);
+ assert.ok(!e.q('[data-action="notebook-more"]'));
+});
+
+test('Day add and bulk add assign the selected topic to each new word',()=>{
+ const e=demo();assert.ok(e.q('#word-topic'));e.q('#english').value='topic example';e.q('#vietnamese').value='ví dụ chủ đề';e.q('#word-topic').value='Giao tiếp';
+ e.q('#add-form').dispatchEvent({type:'submit'});assert.equal(e.qa.days[0].words.at(-1).topic,'Giao tiếp');
+ e.click('[data-action="bulk"]');e.q('#bulk-topic').value='Ẩm thực';e.q('#bulk-text').value='soup - súp\nbread - bánh mì';e.q('#bulk-text').dispatchEvent({type:'input'});e.click('[data-action="bulk-add"]');
+ assert.equal(e.qa.days[0].words.at(-1).topic,'Ẩm thực');assert.equal(e.qa.days[0].words.at(-2).topic,'Ẩm thực');
+});

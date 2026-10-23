@@ -1,0 +1,89 @@
+/* Compact cards; the rounded bottom navigation remains in navigation.css. */
+.notebook-page{max-width:1104px;margin:0 auto}
+.notebook-page .notebook-heading{padding:12px 0 22px;align-items:center;gap:16px}
+.notebook-page .notebook-heading h1{font-size:40px;line-height:1.25;margin:5px 0 4px;text-transform:none}
+.notebook-page .notebook-heading .eyebrow{font-size:11px}
+.notebook-page .notebook-heading p{font-size:12px}
+.notebook-page .notebook-heading .btn{min-height:44px;padding:10px 18px;flex-shrink:0}
+.notebook-toolbar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:24px}
+.notebook-search{flex:1;max-width:540px;margin:0;min-width:0}
+.notebook-search input{height:48px;min-height:48px;padding-left:48px;border-radius:999px;background:var(--panel);font-size:14px}
+.notebook-search>.icon{left:18px;width:19px;height:19px}
+.notebook-tabs{display:flex;align-items:center;gap:4px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--panel);flex-shrink:0}
+.notebook-tabs a{display:grid;place-items:center;min-height:40px;padding:8px 20px;border-radius:999px;font-size:13px;line-height:1.5;font-weight:600;white-space:nowrap}
+.notebook-tabs a[aria-current=page]{background:var(--yellow);color:var(--dark)}
+.notebook-tabs a:hover{box-shadow:inset 0 0 0 1px var(--field-line)}
+.notebook-page .notebook-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.notebook-page .notebook-month{display:flex;justify-content:space-between;align-items:center;margin:4px 0 0;font-size:11px;gap:16px}
+.notebook-page .notebook-month:not(:first-child){margin-top:16px}
+.notebook-page .notebook-month>span:last-child{font-weight:400;text-transform:none}
+.notebook-page .notebook-day{height:96px;position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px 22px;border-radius:28px}
+.notebook-page .notebook-day-top{display:block;margin:0;min-width:0}
+.notebook-page .notebook-day-date{display:block;font-size:30px;line-height:1.25}
+.notebook-page .notebook-day-count{display:block;margin:2px 0 0;font-size:10px}
+.notebook-page .notebook-day-bottom{gap:12px}
+.notebook-page .notebook-known{font-size:11px;padding:4px 10px;line-height:1.6}
+.notebook-page .notebook-known-label{display:none}
+.notebook-page .notebook-day-bottom>.icon{width:16px;height:16px}
+.notebook-page .notebook-day-progress{position:absolute;bottom:12px;left:20px;right:20px;height:3px;margin:0}
+.notebook-topic{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:96px;padding:18px 20px;border-radius:28px;outline-offset:4px;transition:transform .15s}
+.notebook-topic:hover{transform:translateY(-2px)}
+.notebook-topic-copy{min-width:0}.notebook-topic h2{font-size:17px;line-height:1.45;overflow-wrap:anywhere;margin:0}
+.notebook-topic-copy>span{display:block;font-size:11px;margin-top:4px}
+.notebook-topic-end{display:flex;align-items:center;gap:10px;flex-shrink:0}.notebook-topic-end>.icon{width:16px;height:16px}
+.notebook-hint{font-size:12px;color:var(--muted);margin-top:18px;max-width:650px}
+.notebook-empty{padding:40px 24px;text-align:center;border:1px dashed var(--field-line);border-radius:28px;background:var(--panel)}
+.notebook-empty h2{font-size:20px}.notebook-empty p{font-size:14px;color:var(--muted);margin:8px auto 18px;max-width:440px}
+.notebook-topic-heading>a{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:12px;color:var(--muted)}
+.notebook-topic-heading>a .icon{width:16px;height:16px}.notebook-topic-heading h2{font-size:24px;overflow-wrap:anywhere;margin:6px 0}
+.notebook-result-count{font-size:12px;color:var(--muted);margin:0 0 12px}
+.notebook-more{display:flex;margin:18px auto 0;min-height:44px}
+.notebook-words{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.notebook-word{display:flex;align-items:center;gap:8px;padding:16px 12px;background:var(--panel);border:1px solid var(--line);border-radius:24px;min-width:0}
+.notebook-word>.status-dot{align-self:flex-start;flex-shrink:0;min-width:40px;min-height:44px}
+.notebook-word-copy{flex:1;min-width:0}.notebook-word-copy>strong{font-size:16px;overflow-wrap:anywhere}
+.notebook-word-copy>p{font-size:13px;color:var(--muted);white-space:pre-line;overflow-wrap:anywhere;margin:3px 0 8px;line-height:1.6}
+.notebook-word-meta{display:flex;gap:4px 10px;flex-wrap:wrap;font-size:10px;color:var(--muted)}
+.notebook-word-meta a{color:var(--accent-text);text-decoration:underline;text-underline-offset:3px}
+.notebook-word-meta span{overflow-wrap:anywhere}
+.notebook-word-tools{display:flex;flex-direction:column;gap:4px;flex-shrink:0}.notebook-word-tools>.round{width:44px;height:44px}
+.topic-field{margin:14px 0}.topic-field .field-label{display:block;margin-bottom:6px}.topic-field .muted{font-weight:400;text-transform:none}
+.topic-field input{width:100%;min-width:0}.dialog-form .topic-field{margin:0}
+/* Keep the home summary proportionate to the smaller notebook cards. */
+.home-layout{gap:18px}.home-intro h1{font-size:42px;margin-bottom:18px}
+.home-lookup{min-height:60px;padding:6px 8px 6px 22px}.home-lookup input{font-size:18px}.home-lookup button{width:44px;height:44px;flex-basis:44px}
+.home-summary{gap:14px}.home-due,.home-today{min-height:156px;padding:18px 22px;border-radius:28px}
+.home-due strong,.home-today strong{font-size:54px}.home-card-unit{font-size:26px}
+.home-due>.home-card-label,.home-today .home-card-label{font-size:10px;padding:5px 11px;margin-bottom:6px}
+.home-due-caption{font-size:10px;margin-top:6px;line-height:1.6}
+.home-due>.mascot{width:110px;height:100px;right:16px;bottom:8px}
+.home-today-progress{font-size:11px}.home-today .notebook-day-progress{height:6px;bottom:22px;right:22px}
+.home-day-row{min-height:88px;padding:16px 20px}.home-day-row .notebook-day-date{font-size:30px}
+@media(max-width:1000px) and (min-width:768px){.notebook-page .notebook-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:767px){
+ .notebook-page .notebook-heading{padding:6px 0 18px;flex-wrap:nowrap;gap:12px}
+ .notebook-page .notebook-heading h1{font-size:30px}.notebook-page .notebook-heading .btn{font-size:12px;padding:10px 14px}
+ .notebook-page .notebook-heading .eyebrow{font-size:10px}.notebook-page .notebook-heading p{font-size:11px}
+ .notebook-toolbar{flex-direction:column;align-items:stretch;gap:12px;margin-bottom:20px}
+ .notebook-search{max-width:none;width:100%}.notebook-search input{font-size:16px}
+ .notebook-tabs{align-self:flex-start;max-width:100%}.notebook-tabs a{min-height:40px;padding:8px 20px;font-size:12px}
+ .notebook-page .notebook-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .notebook-page .notebook-day{padding:13px 14px 22px;height:96px;border-radius:24px;gap:6px}
+ .notebook-page .notebook-day-date{font-size:26px}.notebook-page .notebook-day-count{font-size:10px}
+ .notebook-page .notebook-day-bottom>.icon{display:none}.notebook-page .notebook-day-progress{left:14px;right:14px}
+ .notebook-page .notebook-known{padding:4px 7px;font-size:10px}
+ .notebook-topic{min-height:96px;padding:15px 14px;border-radius:24px;gap:7px;align-items:flex-start;flex-direction:column}
+ .notebook-topic h2{font-size:15px}.notebook-topic-copy>span{font-size:10px;margin-top:2px}
+ .notebook-topic-end{width:100%;justify-content:space-between}.notebook-topic-end>.icon{width:14px;height:14px}
+ .notebook-hint{font-size:11px;line-height:1.7}.notebook-words{grid-template-columns:1fr;gap:10px}
+ .notebook-empty{padding:28px 18px}.notebook-empty h2{font-size:18px}.notebook-empty p{font-size:13px}
+ .notebook-topic-heading h2{font-size:22px}.notebook-word{padding:12px 8px;border-radius:22px}
+ .notebook-word-copy>strong{font-size:15px}.notebook-word-tools{gap:0}
+ .home-layout{gap:14px}.home-summary{gap:12px}.home-due,.home-today{min-height:118px;padding:14px 18px;border-radius:26px}
+ .home-due strong,.home-today strong{font-size:42px}.home-due>.mascot{width:88px;height:82px;right:10px;bottom:5px}
+ .home-due-caption{font-size:9px}.home-card-unit{font-size:24px}.home-today-progress{font-size:10px;margin-top:5px}
+ .home-today .notebook-day-progress{width:90px;right:18px;bottom:18px}
+ .home-lookup{min-height:56px;padding-left:18px}.home-lookup input{font-size:16px}.home-lookup button{width:40px;height:40px;flex-basis:40px}
+ .home-day-row{min-height:68px;padding:13px 18px}.home-day-row .notebook-day-date{font-size:26px}
+}
+@media(prefers-reduced-motion:reduce){.notebook-topic{transition:none}}
