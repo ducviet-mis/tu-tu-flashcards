@@ -6,13 +6,15 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#1A1A1A">
 <meta name="description" content="Góc học từ vựng tiếng Anh cá nhân. Thêm từ mỗi ngày, lật thẻ, ghép cặp và tự theo dõi tiến độ.">
 <title>Từ Từ — Học từ vựng</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="./assets/css/fonts.css">
 <link rel="stylesheet" href="./assets/css/base.css">
 <link rel="stylesheet" href="./assets/css/v2.css">
 <link rel="stylesheet" href="./assets/css/typography.css">
 <link rel="stylesheet" href="./assets/css/dictionary.css">
 <link rel="stylesheet" href="./assets/css/v3.css">
+<link rel="stylesheet" href="./assets/css/v3-theme.css">
+<link rel="stylesheet" href="./assets/css/account.css">
 <link rel="stylesheet" href="./assets/css/navigation.css">
 <meta name="application-name" content="Từ Từ"><link rel="icon" type="image/svg+xml" href="./assets/images/icon.svg"><link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./assets/images/icon-192.png">
@@ -21,7 +23,7 @@
 </head>
 <body>
 <div class="shell" id="shell">
-<header class="topbar"><div class="brand-group"><a class="brand" href="#/" aria-label="Từ Từ - Trang chủ"><img class="brand-logo" src="./assets/images/logo.svg" width="210" height="69" alt="Từ Từ - Từ từ mà chắc"></a><span class="header-date" id="header-date"></span></div><div class="top-actions"><button class="btn outline small header-desktop-action" data-action="bank-open" aria-label="Mở từ điển tra cứu"><span data-icon="search"></span><span class="desktop-label">Từ điển</span></button><button class="btn outline small header-desktop-action" data-action="cloud" aria-label="Đồng bộ Supabase"><span data-icon="cloud"></span><span class="cloud-label">Đồng bộ</span></button><button class="btn outline small header-desktop-action" data-action="backup" aria-label="Sao lưu dữ liệu"><span data-icon="archive"></span><span class="desktop-label">Sao lưu</span></button><a href="#/progress" class="header-streak" aria-label="Chuỗi ngày ôn" id="header-streak"><span data-icon="streak"></span><span id="header-streak-count">0</span></a><a href="#/settings" class="round white header-settings" data-nav="settings" aria-label="Cài đặt"><span data-icon="settings"></span></a></div></header>
+<header class="topbar"><div class="brand-group"><a class="brand" href="#/" aria-label="Từ Từ - Trang chủ"><picture><source srcset="./assets/images/logo-light.svg" media="(prefers-color-scheme: light)" id="brand-light-source"><img class="brand-logo" src="./assets/images/logo.svg" width="210" height="69" alt="Từ Từ - Từ từ mà chắc"></picture></a><span class="header-date" id="header-date"></span></div><div class="top-actions"><a href="#/login" class="header-account" id="header-account" aria-label="Đăng nhập"><span data-icon="user"></span></a><button class="btn outline small header-desktop-action" data-action="bank-open" aria-label="Mở từ điển tra cứu"><span data-icon="search"></span><span class="desktop-label">Từ điển</span></button><button class="btn outline small header-desktop-action" data-action="cloud" aria-label="Đồng bộ Supabase"><span data-icon="cloud"></span><span class="cloud-label">Đồng bộ</span></button><button class="btn outline small header-desktop-action" data-action="backup" aria-label="Sao lưu dữ liệu"><span data-icon="archive"></span><span class="desktop-label">Sao lưu</span></button><a href="#/progress" class="header-streak" aria-label="Chuỗi ngày ôn" id="header-streak"><span data-icon="streak"></span><span id="header-streak-count">0</span></a><a href="#/settings" class="round white header-settings" data-nav="settings" aria-label="Cài đặt"><span data-icon="settings"></span></a></div></header>
 <div id="storage-warning" class="storage-warning" role="status" hidden></div>
 <main id="app"></main>
 <footer class="footer"><span>Mỗi từ mới, một bước tiến.</span><span class="footer-right" id="save-indicator">Lưu trên thiết bị của bạn</span></footer>
@@ -40,6 +42,9 @@
 <a href="#/progress" data-nav="progress"><span data-icon="chart"></span><span>Tiến độ</span></a>
 </nav><div id="pwa-notice" class="pwa-notice" role="status" hidden></div>
 <noscript><p>Bật JavaScript để dùng Từ Từ.</p></noscript>
+<script defer src="./assets/js/supabase-config.js"></script>
+<script defer src="./assets/vendor/supabase-2.118.0.js"></script>
+<script defer src="./assets/js/auth-service.js"></script>
 <script defer src="./assets/js/review-engine.js"></script>
 <script defer src="./assets/js/core.js"></script>
 <script defer src="./assets/js/lexicon.js"></script>
@@ -62,6 +67,7 @@
 <script defer src="./assets/js/features/quick-add.js"></script>
 <script defer src="./assets/js/features/home.js"></script>
 <script defer src="./assets/js/features/home-lookup.js"></script>
+<script defer src="./assets/js/features/account.js"></script>
 <script defer src="./assets/js/navigation.js"></script>
 <script defer src="./assets/js/pwa.js"></script>
 <script defer src="./assets/js/main.js"></script>

@@ -33,10 +33,53 @@ function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech
  const storage={getItem:k=>{if(blocked)throw Error('blocked');return map.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');map.set(k,v);}};
  const box={document:doc,location,history:{replaceState:(s,t,v)=>{currentHash=v;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(lexicon&&/^\.\/data\/wordnet(?:\/|\-vi)/.test(String(url)))return new Response(fs.readFileSync(String(url)));if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
  const spoken=[];if(speech){box.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};box.speechSynthesis={cancel(){},getVoices:()=>[{lang:'en-US'}],speak:utterance=>spoken.push(utterance)};}box.performance=performance;box.Response=Response;box.DecompressionStream=DecompressionStream;box.window=box;vm.createContext(box);const scripts=[...html.matchAll(/<script id="(?:core|application)">([\s\S]*?)<\/script>/g)].map(m=>m[1]);vm.runInContext(scripts[0],box);
- const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},get cloud(){return cloud;},getCloudForm,cloudAction,readImport,applyImport,route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,exportFile,configureCloud,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;}};`);vm.runInContext(src,box);
+ const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},get cloud(){return cloud;},getCloudForm,cloudAction,readImport,applyImport,route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,exportFile,configureCloud,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;},initializeAccount,get accountUser(){return accountUser;}};`);vm.runInContext(src,box);
  return{box,doc,spoken,q:s=>doc.querySelector(s),qa:box.QA,map,click:s=>{const e=doc.querySelector(s);assert.ok(e,'Missing element '+s);e.click();},flush:ms=>{for(const t of timers.splice(0))if(!t.cancelled&&t.ms<=ms)t.fn();},key:code=>doc.body.dispatchEvent({type:'keydown',code,target:doc.activeElement||doc.body})};
 }
 function demo(){const e=environment();e.click('[data-action="sample"]');e.box.location.hash='#/day/'+e.qa.days[0].date;return e;}
+
+async function accountEnvironment(handlers={},hash='#/login'){
+ const e=environment({hash});let callback;
+ const auth={onAuthStateChange(fn){callback=fn;return {data:{subscription:{unsubscribe(){}}}};},getSession:async()=>({data:{session:null},error:null}),signInWithPassword:async()=>({data:{user:{id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}}},error:null}),signUp:async()=>({data:{session:null,user:null},error:null}),signOut:async()=>{callback('SIGNED_OUT',null);return {error:null};},...handlers};
+ e.box.TUTU_SUPABASE={url:'https://demo.supabase.co',key:'sb_publishable_test'};e.box.supabase={createClient:()=>({auth})};await e.qa.initializeAccount();return e;
+}
+test('Login and registration routes preserve guest vocabulary and the existing rounded navigation',()=>{
+ const e=demo(),count=e.qa.days.length;e.box.location.hash='#/login';assert.ok(e.q('#auth-form'));assert.equal(e.q('#auth-form').dataset.mode,'login');
+ assert.equal(e.q('#auth-password').attrs.autocomplete,'current-password');e.box.location.hash='#/register';assert.ok(e.q('#auth-confirm'));assert.equal(e.q('#auth-password').attrs.autocomplete,'new-password');
+ e.box.location.hash='#/';assert.equal(e.qa.days.length,count);assert.ok(e.q('#home-lookup'));assert.ok(e.q('.quick-plus'));assert.equal(e.q('#main-nav').querySelectorAll('a').length,4);
+});
+test('Login without project configuration explains unavailability and keeps guest access',async()=>{
+ const e=environment({hash:'#/login'});e.q('#auth-email').value='ban@example.com';e.q('#auth-password').value='testpassword';e.q('#auth-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);
+ assert.match(e.q('#auth-message').textContent,/chưa sẵn sàng/);assert.equal(e.qa.accountUser,null);e.box.location.hash='#/';assert.ok(e.q('#home-lookup'));
+});
+test('Successful login displays real user details, escapes their name, and sign-out retains local vocabulary',async()=>{
+ const e=await accountEnvironment({signInWithPassword:async()=>({data:{user:{id:'u1',email:'ban@example.com',user_metadata:{display_name:'<img src=x onerror=alert(1)>'}}},error:null})});
+ e.box.location.hash='#/';e.click('[data-action="sample"]');const count=e.qa.days.length;e.box.location.hash='#/login';
+ e.q('#auth-email').value='ban@example.com';e.q('#auth-password').value='testpassword';e.q('#auth-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);
+ assert.equal(e.box.location.hash,'#/account');assert.match(e.q('.account-identity').textContent,/ban@example.com/);assert.equal(e.q('.account-identity').querySelector('img'),null);assert.equal(e.q('#header-account').href,'#/account');
+ e.click('[data-action="auth-signout"]');await new Promise(setImmediate);assert.equal(e.box.location.hash,'#/login');assert.equal(e.qa.accountUser,null);assert.equal(e.qa.days.length,count);
+});
+test('Login failure preserves the email, displays a localized error and re-enables submission',async()=>{
+ const e=await accountEnvironment({signInWithPassword:async()=>({error:{code:'invalid_credentials'}})});e.q('#auth-email').value='ban@example.com';e.q('#auth-password').value='wrong';const button=e.q('#auth-form').querySelector('button[type="submit"]');
+ e.q('#auth-form').dispatchEvent({type:'submit'});assert.equal(button.disabled,true);await new Promise(setImmediate);assert.match(e.q('#auth-message').textContent,/mật khẩu/);assert.equal(e.q('#auth-email').value,'ban@example.com');assert.equal(button.disabled,false);
+});
+test('Registration requires matching passwords and awaits email confirmation without pretending to sign in',async()=>{
+ const e=await accountEnvironment();e.box.location.hash='#/register';e.q('#auth-name').value='Việt';e.q('#auth-email').value='ban@example.com';e.q('#auth-password').value='testpassword';e.q('#auth-confirm').value='different';e.q('#auth-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);assert.match(e.q('#auth-message').textContent,/chưa khớp/);
+ e.q('#auth-confirm').value='testpassword';e.q('#auth-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);assert.match(e.q('#auth-message').textContent,/xác nhận email/);assert.equal(e.qa.accountUser,null);assert.equal(e.q('#auth-password').value,'');
+});
+test('Password visibility control changes only the chosen field and exposes its state',()=>{
+ const e=environment({hash:'#/register'});e.click('[data-action="auth-password"][data-target="auth-password"]');assert.equal(e.q('#auth-password').type,'text');assert.equal(e.q('#auth-confirm').type,'password');assert.equal(e.q('[data-target="auth-password"]').getAttribute('aria-pressed'),'true');
+});
+test('Forgot password uses a neutral confirmation and does not sign the user in',async()=>{
+ const e=await accountEnvironment({resetPasswordForEmail:async()=>({error:null})},'#/forgot');e.q('#auth-email').value='ban@example.com';e.q('#auth-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);
+ assert.match(e.q('#auth-message').textContent,/Nếu email này có tài khoản/);assert.equal(e.qa.accountUser,null);assert.equal(e.q('#auth-form').querySelector('button[type="submit"]').disabled,false);
+});
+test('An authenticated recovery page survives reload and accepts a new matching password',async()=>{
+ const user={id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}};
+ const e=await accountEnvironment({getSession:async()=>({data:{session:{user}},error:null}),updateUser:async()=>({data:{user},error:null})},'#/reset-password');
+ assert.equal(e.q('#auth-message').hidden,true);e.q('#auth-password').value='new-password';e.q('#auth-confirm').value='new-password';e.q('#auth-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);
+ assert.equal(e.box.location.hash,'#/account');assert.match(e.q('.account-identity').textContent,/ban@example.com/);
+});
 test('Typing he suggests hello; clicking fills both fields; keyboard selection and manual meanings work',async()=>{
  const e=environment({hash:'#/day/2026-10-22',bankRows:[['hello','xin chào','',1],['help','giúp đỡ','',1],['hero','anh hùng','',0]]});
  await e.qa.loadBank();
@@ -248,7 +291,7 @@ test('V3 home lookup submits into the existing dictionary and records only opene
  const e=environment({bankRows:[['hello','xin chào','',1],['help','giúp','',1]]});
  assert.ok(e.q('#home-lookup-form'));assert.equal(e.q('[data-nav="home"]').getAttribute('aria-current'),'page');
  e.q('#home-lookup').value='hello';e.q('#home-lookup-form').dispatchEvent({type:'submit'});
- await new Promise(setImmediate);await new Promise(setImmediate);
+ await e.qa.loadBank();await new Promise(setImmediate);
  assert.equal(e.q('#bank-search').value,'hello');assert.match(e.q('#bank-list').textContent,/hello/);
  e.click('[data-action="bank-detail"]');e.click('[data-action="close-utility"]');
  assert.equal(e.q('#recent-lookups').querySelectorAll('[data-action="home-lookup-recent"]').length,1);

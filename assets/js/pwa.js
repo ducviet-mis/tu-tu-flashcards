@@ -13,7 +13,7 @@ async function initPwa(){
     if(registration.waiting)showPwaUpdate(registration.waiting);
     registration.addEventListener('updatefound',()=>{const worker=registration.installing;worker?.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller)showPwaUpdate(worker);});});
     await navigator.serviceWorker.ready;
-    registration.active?.postMessage({type:'CACHE_FONTS'});
+    // V3 fonts are bundled with the shell and work offline without a font CDN.
     setPwaStatus('Giao diện đã sẵn sàng ngoại tuyến. Bộ thẻ của bạn được lưu trên thiết bị.');
   }catch{setPwaStatus('Chưa lưu được giao diện ngoại tuyến. Kiểm tra kết nối và mở bằng HTTPS hoặc localhost.');}
 }
@@ -42,7 +42,7 @@ document.addEventListener('click',async event=>{
   if(button.dataset.action==='offline-dictionary'){button.disabled=true;try{await downloadOfflineDictionary();}finally{button.disabled=false;}}
   if(button.dataset.action==='pwa-dismiss')$('#pwa-notice').hidden=true;
   if(button.dataset.action==='pwa-update'&&waitingWorker){
-    if(study.open||utility.open||pendingSettingsChanges||$('#english')?.value.trim()||$('#vietnamese')?.value.trim()||$('#word-example')?.value.trim()||$('#word-example-vi')?.value.trim()){toast('Hãy lưu phần đang nhập hoặc kết thúc lượt học trước khi cập nhật.');return;}
+    if(accountBusy||$('#auth-email')?.value.trim()||$('#auth-password')?.value||study.open||utility.open||pendingSettingsChanges||$('#english')?.value.trim()||$('#vietnamese')?.value.trim()||$('#word-example')?.value.trim()||$('#word-example-vi')?.value.trim()){toast('Hãy lưu phần đang nhập hoặc kết thúc lượt học trước khi cập nhật.');return;}
     navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload(),{once:true});
     waitingWorker.postMessage({type:'SKIP_WAITING'});
   }

@@ -13,7 +13,7 @@ function recordReview(word, known) {
 function renderReview() {
   const today = C.isoToday(), due = ReviewEngine.queue(days, today), unknown = ReviewEngine.queue(days, today, 'unknown');
   const list = ReviewEngine.queue(days, today, reviewFilter);
-  app.innerHTML = `<section class="page-head"><div class="eyebrow muted">Ôn tập mỗi ngày</div><h1>Gặp lại từ.<br><span>Nhớ lâu hơn.</span></h1><p>Các từ của tất cả các ngày được gom về một chỗ.</p></section>
+  app.innerHTML = `<section class="page-head"><div class="eyebrow muted">Ôn tập mỗi ngày</div><h1>Ôn tập</h1><p>Các từ của tất cả các ngày được gom về một chỗ.</p></section>
   <div class="view-grid"><section class="feature-card purple"><div class="eyebrow">Đến lịch ôn</div><strong class="feature-number">${due.length}</strong><p>Từ mới, từ chưa nhớ hoặc đã đến ngày ôn lại.</p><button class="btn white" data-action="review-start" data-mode="due" ${due.length ? '' : 'disabled'}>Bắt đầu ôn ${icon('arrow')}</button></section>
   <section class="feature-card yellow"><div class="eyebrow">Chưa nhớ</div><strong class="feature-number">${unknown.length}</strong><p>Dành thêm một lượt cho những từ còn vướng.</p><button class="btn dark" data-action="review-start" data-mode="unknown" ${unknown.length ? '' : 'disabled'}>Ôn từ chưa nhớ</button></section></div>
   <div class="filter-row" role="group" aria-label="Lọc hàng chờ ôn">${[['due','Đến lịch'],['unknown','Chưa nhớ'],['all','Tất cả']].map(([value,label])=>`<button class="btn outline small ${reviewFilter===value?'is-active':''}" data-action="review-filter" data-mode="${value}" aria-pressed="${reviewFilter===value}">${label}</button>`).join('')}</div>

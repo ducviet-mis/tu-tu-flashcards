@@ -141,3 +141,17 @@ Trang chi tiết có quan hệ theo từng nghĩa từ Open English WordNet 2025
 - Kết quả và nút ôn lại chỉ chứa các từ chưa nhớ trong chính lượt vừa học; giữ đúng sổ ngày gốc khi ôn nhiều ngày.
 - Chỉ đổi ví dụ hoặc lưu lại nội dung không đổi sẽ giữ lịch. Đổi từ hoặc nghĩa sẽ đưa từ về cần ôn lại.
 - Dừng ghép cặp giữa chừng không hiện thông báo đã nhớ hết; lịch của các từ chưa trả lời được giữ nguyên.
+
+### Supabase đăng nhập và dữ liệu cá nhân
+
+Chạy `supabase/tu_tu_supabase.sql` trong Supabase SQL Editor để tạo 7 bảng tiếng Việt không dấu và bảng xem `thong_ke_hoc_theo_ngay`. File `supabase/schema.sql` là cơ chế đồng bộ bằng mã cũ, được giữ nguyên.
+
+Bản SQL mới chỉ tạo cấu trúc, ràng buộc và quyền truy cập; chưa thay đổi app sang Supabase Auth và chưa tự tải dữ liệu localStorage lên. Khi nối app, tạo sổ trước, thêm từ sau, rồi cập nhật tiến trình. Lượt học mới ghi lịch sử với ID cố định để tránh đếm trùng khi thử đồng bộ lại.
+
+`thong_ke_hoc_cu` chỉ nhập số liệu trước thời điểm chuyển đổi, dùng UPSERT theo tài khoản/ngày; không ghi cùng một lượt vào cả bảng này và lịch sử. Xem cột `phien_ban` khi thiết kế kiểm tra xung đột; chỉ có cột phiên bản chưa tự ngăn việc ghi đè từ thiết bị cũ. Việc ghi tiến trình và lịch sử của một lượt học cần được nối bằng giao dịch/RPC ở bước tích hợp.
+
+## Giao diện V3 sáng/tối và đăng nhập
+
+Giao diện theo file mẫu V3, giữ menu bo tròn dưới màn hình. Có các trang `#/login`, `#/register`, `#/forgot`, `#/reset-password`, `#/account`; đăng nhập bằng Supabase Auth, tên hiển thị lưu trong Auth. Sổ từ và lịch ôn vẫn lưu trên thiết bị.
+
+Xem [hướng dẫn cấu hình Supabase và Vercel](supabase/HUONG-DAN-DANG-NHAP.md). Vercel dùng `npm run build`, xuất thư mục `dist`, đọc `SUPABASE_URL` và `SUPABASE_PUBLISHABLE_KEY`. Đăng nhập Google cần bật provider riêng; đăng ký/xác nhận email công khai cần Custom SMTP. SDK và phông chữ mẫu được lưu cùng mã nguồn để giao diện có thể dùng ngoại tuyến.

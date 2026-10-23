@@ -11,7 +11,12 @@ function updateNav(page='home'){
 }
 function route(){
   closeHomeSuggestions();
+  if(globalThis.TuTuAuth?.callbackKind(location.href||'https://local.invalid/'))return;
   const page=(location.hash||'#/').split('/')[1]?.split('?')[0];
+  if(accountPages.includes(page)){
+    closeSuggestions();if(study.open)study.close();stopSession();$('#shell').classList.remove('mobile-day');
+    if(page==='account')renderAccount();else renderAuth(page);updateNav(page);return;
+  }
   if(['review','progress','settings','notebook'].includes(page)){
     closeSuggestions();if(study.open)study.close();stopSession();$('#shell').classList.remove('mobile-day');
     if(page==='review')renderReview();if(page==='progress')renderProgress();if(page==='settings')renderSettings();if(page==='notebook')renderNotebook();lastBase=location.hash;updateNav(page);return;

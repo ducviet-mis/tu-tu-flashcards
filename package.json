@@ -6,6 +6,7 @@
   "license": "GPL-3.0-only",
   "scripts": {
     "start": "node tools/serve.cjs",
-    "test": "node --test tests/*.test.cjs tests/dom-check.cjs"
+    "test": "node --test tests/*.test.cjs tests/dom-check.cjs",
+    "build": "node tools/build-web.cjs"
   }
 }

@@ -1,5 +1,5 @@
 const fs=require('node:fs'),assert=require('node:assert/strict'),test=require('node:test');
-const html=require('./load-app.cjs')(),css=html.match(/<style>([\s\S]*?)<\/style>/)[1];
+const html=require('./load-app.cjs')(),css=[...html.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m=>m[1]).join('\n');
 test('The rotating span must form a full-size transformable box for its absolute card faces',()=>{
  const rule=css.match(/\.flip-inner\{([^}]*)\}/)[1];
  const declarations=Object.fromEntries(rule.split(';').filter(Boolean).map(s=>{const i=s.indexOf(':');return[s.slice(0,i).trim(),s.slice(i+1).trim()];}));
