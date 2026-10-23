@@ -109,7 +109,7 @@ globalThis.FlashCore=(()=>{
   const matchWords=words=>[...shuffle(words.filter(w=>!w.remembered)),...shuffle(words.filter(w=>w.remembered))].slice(0,6);
   const cardLabel=(w,reversed,flipped)=>{
     const english=reversed===flipped;
-    return(english?'Tiếng Anh: ':'Tiếng Việt: ')+(english?w.en:w.vi)+'. Bấm hoặc nhấn phím cách để lật thẻ.';
+    return(english?'Tiếng Anh: ':w.dictionary?.meaningLanguage==='en'?'Nghĩa tiếng Anh: ':w.dictionary?.meaningLanguage==='custom'?'Nghĩa của bạn: ':'Tiếng Việt: ')+(english?w.en:w.vi)+'. Bấm hoặc nhấn phím cách để lật thẻ.';
   }
   ;
   const bankFold=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d').toLowerCase().trim();
@@ -239,9 +239,21 @@ globalThis.FlashCore=(()=>{
       if(typeof word.topic!=='string'||word.topic.trim().length>60)throw Error('Chủ đề phải có tối đa 60 ký tự.');
       extra.topic=word.topic.trim().normalize('NFC');
     }
-    for(const key of ['example','exampleVi'])if(word[key]!==undefined){
+    for(const key of ['example','exampleVi','exampleRef'])if(word[key]!==undefined){
       if(typeof word[key]!=='string'||word[key].length>1000)throw Error('Ví dụ của từ không hợp lệ.');
       extra[key]=word[key];
+    }
+    for(const key of ['synonyms','antonyms'])if(word[key]!==undefined){
+      if(!Array.isArray(word[key])||word[key].length>10||word[key].some(v=>typeof v!=='string'||v.length>200))throw Error('Quan hệ từ không hợp lệ.');
+      extra[key]=word[key].slice();
+    }
+    if(word.dictionary?.source==='kaikki'){
+      const d=word.dictionary,out={source:'kaikki'};
+      for(const key of ['word','senseId','language','meaningLanguage','pos','ipa','audio','sourceUrl']){
+        if(d[key]!==undefined){if(typeof d[key]!=='string'||d[key].length>2000)throw Error('Thông tin nguồn từ không hợp lệ.');out[key]=d[key];}
+      }
+      if(out.audio&&!/^https:\/\/(upload|commons)\.wikimedia\.org\//.test(out.audio))out.audio='';
+      extra.dictionary=out;
     }
     for(const key of ['nextReview','lastReviewed'])if(word[key]!==undefined){
       if(!validDate(word[key]))throw Error('Lịch ôn không hợp lệ.');

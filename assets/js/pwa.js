@@ -17,22 +17,36 @@ async function initPwa(){
     setPwaStatus('Giao diện đã sẵn sàng ngoại tuyến. Bộ thẻ của bạn được lưu trên thiết bị.');
   }catch{setPwaStatus('Chưa lưu được giao diện ngoại tuyến. Kiểm tra kết nối và mở bằng HTTPS hoặc localhost.');}
 }
+async function offlineDictionaryFiles(){
+  const bank=await loadBank();return ['index',...bank.buckets].map(name=>'./data/kaikki/'+name+'.json.gz');
+}
 async function updateDictionaryStatus(){
-  const el=$('#dictionary-status');if(!el||!('caches'in window))return;
-  try{const url=new URL('./data/dictionary.json.gz',location.href);const cached=await caches.match(url.href);if(cached)el.textContent='Kho từ đã có trên thiết bị, sẵn sàng tra khi ngoại tuyến.';}catch{}
+  const el=$('#dictionary-status');if(!el||!('caches'in window))return false;
+  try{
+  const revision=(await loadBank()).revision;
+  const prefix='tu-tu:'+encodeURIComponent(new URL('./',location.href).pathname)+':kaikki-'+revision;
+  const cache=await caches.open(prefix),files=await offlineDictionaryFiles();let count=0;
+  for(const file of files)if(await cache.match(new URL(file,location.href).href))count++;
+  if(count===files.length){el.textContent='Kaikki đã sẵn sàng tra ngoại tuyến. Bản ghi âm cần mạng; thẻ đã lưu có thể dùng giọng thiết bị.';return true;}
+  el.textContent=`Kaikki đã lưu ${count}/${files.length} phần. Tải toàn bộ khoảng 59 MB để tra ngoại tuyến.`;return false;
+  }catch{el.textContent='Chưa kiểm tra được Kaikki ngoại tuyến. Kết nối mạng rồi thử tải kho từ.';return false;}
 }
 async function downloadOfflineDictionary(){
-  const el=$('#dictionary-status');if(el)el.textContent='Đang tải và kiểm tra kho từ…';
+  const el=$('#dictionary-status');if(el)el.textContent='Đang chuẩn bị tải Kaikki (khoảng 59 MB).';
   try{
     if(!('serviceWorker'in navigator))throw Error('Trình duyệt chưa hỗ trợ lưu ngoại tuyến.');
     await navigator.serviceWorker.ready;
-    if(!navigator.serviceWorker.controller){if(el)el.textContent='Giao diện vừa lưu lần đầu. Tải lại trang rồi bấm tải kho từ.';return;}
-    await loadBank();
-    // Ensure an in-memory dictionary opened before worker activation is fetched into its cache.
-    const response=await fetch('./data/dictionary.json.gz');if(!response.ok)throw Error('Không tải được kho từ.');await response.arrayBuffer();
-    await updateDictionaryStatus();toast('Kho từ đã tải xong.');
-  }catch(error){if(el)el.textContent=error.message||'Chưa tải được kho từ. Hãy thử lại khi có mạng.';toast('Chưa lưu xong kho từ ngoại tuyến.',null,'',true);}
+    if(!navigator.serviceWorker.controller)throw Error('Hãy tải lại trang rồi bấm tải kho từ để kích hoạt lưu ngoại tuyến.');
+    const files=await offlineDictionaryFiles();let count=0;
+    for(const file of files){
+      if(el)el.textContent=`Đang tải Kaikki: ${count}/${files.length} phần (khoảng 59 MB).`;
+      const response=await fetch(file,{signal:AbortSignal.timeout(60000)});if(!response.ok)throw Error('Chưa tải xong Kaikki. Bấm tải lại để tiếp tục.');await response.arrayBuffer();count++;
+    }
+    if(!await updateDictionaryStatus())throw Error('Thiết bị chưa lưu đủ kho từ, có thể do thiếu dung lượng. Bấm tải lại để tiếp tục.');
+    toast('Đã tải Kaikki để tra ngoại tuyến.');
+  }catch(error){if(el)el.textContent=error.message||'Chưa tải được Kaikki. Hãy thử lại khi có mạng.';toast('Chưa lưu xong kho từ ngoại tuyến.',null,'',true);}
 }
+
 document.addEventListener('click',async event=>{
   const button=event.target.closest('[data-action]');if(!button)return;
   if(button.dataset.action==='pwa-install'){

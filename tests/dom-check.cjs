@@ -1,6 +1,7 @@
 // Test harness mô phỏng DOM tối thiểu. Không thay cho QA trình duyệt hay đo bố cục.
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),test=require('node:test');
-const html=require('./load-app.cjs')();
+const normalHtml=require('./load-app.cjs')();
+const legacyHtml=require('./load-app.cjs')({legacyRelations:true});
 const decode=s=>String(s).replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/&#10;/g,'\n');
 class El{
  constructor(tag,doc,attrs={}){this.tagName=tag.toUpperCase();this.doc=doc;this.attrs=attrs;this.children=[];this.parentElement=null;this.events={};this._text='';this.value=attrs.value||'';this.disabled='disabled'in attrs;this.hidden='hidden'in attrs;this.checked='checked'in attrs;this.open=false;this.type=attrs.type||'';this.files=[];}
@@ -24,14 +25,15 @@ class El{
  showModal(){this.open=true;(this.querySelector('button')||this).focus();}close(){this.open=false;this.dispatchEvent({type:'close',bubbles:false});}
 }
 function parse(markup,parent){const stack=[parent];let skipping=false;for(const m of markup.matchAll(/<!--[\s\S]*?-->|<![^>]*>|<\/?[a-zA-Z][^>]*>|[^<]+/g)){const token=m[0];if(token.startsWith('<!--')||token.startsWith('<!'))continue;if(token.startsWith('</')){if(stack.length>1)stack.pop();continue;}if(token.startsWith('<')){const tag=token.match(/^<([\w-]+)/)[1],attrs={};for(const a of token.slice(tag.length+1,-1).matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g))attrs[a[1]]=decode(a[2]??a[3]??a[4]??'');const el=new El(tag,parent.doc,attrs);stack.at(-1).append(el);if(!/^(input|link|meta|br|hr|img|source|path)$/i.test(tag)&&!token.endsWith('/>'))stack.push(el);}else stack.at(-1)._text+=decode(token);}}
-function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech=false,lexicon=false}={}){
+function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech=false,lexicon=false,kaikkiEntries=null}={}){
+ const html=lexicon?legacyHtml:normalHtml;
  const doc={activeElement:null,downloads:[],blobs:new Map()};doc.body=new El('body',doc);doc.documentElement=new El('html',doc);doc.querySelector=s=>doc.body.querySelector(s);doc.querySelectorAll=s=>doc.body.querySelectorAll(s);doc.createElement=s=>new El(s,doc);doc.addEventListener=(...args)=>doc.body.addEventListener(...args);
  parse(html.replace(/<style>[\s\S]*?<\/style>/g,'').replace(/<script[^>]*>[\s\S]*?<\/script>/g,''),doc.body);
  if(bankRows){const node=new El('script',doc,{id:'dictionary-data'});node.textContent=require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})).toString('base64');doc.body.append(node);}
  const events={},timers=[];let currentHash=hash;
  const location={get hash(){return currentHash;},set hash(v){currentHash=v;for(const fn of events.hashchange||[])fn();}};
  const storage={getItem:k=>{if(blocked)throw Error('blocked');return map.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');map.set(k,v);}};
- const box={document:doc,location,history:{replaceState:(s,t,v)=>{currentHash=v;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(lexicon&&/^\.\/data\/wordnet(?:\/|\-vi)/.test(String(url)))return new Response(fs.readFileSync(String(url)));if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
+ const box={document:doc,location,history:{replaceState:(s,t,v)=>{currentHash=v;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(String(url).endsWith('data/kaikki/index.json.gz')&&bankRows)return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows,buckets:[...'abcdefghijklmnopqrstuvwxyz0']})));if(kaikkiEntries&&/^\.\/data\/kaikki\/[a-z0]\.json\.gz$/.test(String(url)))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',entries:kaikkiEntries})));if(lexicon&&/^\.\/data\/wordnet(?:\/|\-vi)/.test(String(url)))return new Response(fs.readFileSync(String(url)));if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
  const spoken=[];if(speech){box.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};box.speechSynthesis={cancel(){},getVoices:()=>[{lang:'en-US'}],speak:utterance=>spoken.push(utterance)};}box.performance=performance;box.Response=Response;box.DecompressionStream=DecompressionStream;box.window=box;vm.createContext(box);const scripts=[...html.matchAll(/<script id="(?:core|application)">([\s\S]*?)<\/script>/g)].map(m=>m[1]);vm.runInContext(scripts[0],box);
  const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;},initializeAccount,showPwaUpdate,get accountUser(){return accountUser;}};`);vm.runInContext(src,box);
  return{box,doc,spoken,q:s=>doc.querySelector(s),qa:box.QA,map,click:s=>{const e=doc.querySelector(s);assert.ok(e,'Missing element '+s);e.click();},flush:ms=>{for(const t of timers.splice(0))if(!t.cancelled&&t.ms<=ms)t.fn();},key:code=>doc.body.dispatchEvent({type:'keydown',code,target:doc.activeElement||doc.body})};
@@ -233,9 +235,9 @@ test('Dictionary searches all words, opens full meanings and plays English pronu
  assert.equal(e.q('#bank-list').querySelectorAll('[data-action="bank-detail"]').length,0);
  e.q('#bank-search').value='zoo';e.q('#bank-search').dispatchEvent({type:'input'});e.flush(180);
  assert.match(e.q('#bank-list').textContent,/zoo/);e.click('[data-action="bank-detail"][data-bank="2"]');
- assert.match(e.q('.bank-senses').textContent,/vườn thú/);e.click('[data-action="bank-speak"]');assert.equal(e.spoken[0].text,'zoo');assert.equal(e.spoken[0].lang,'en-US');
+ assert.match(e.q('.bank-senses').textContent,/vườn thú/);e.click('[data-action="bank-speak"]');await new Promise(setImmediate);assert.equal(e.spoken[0].text,'zoo');assert.equal(e.spoken[0].lang,'en-US');
  e.click('[data-action="bank-back"]');e.q('#bank-search').value='ben tau';e.q('#bank-search').dispatchEvent({type:'input'});e.flush(180);
- e.click('[data-action="bank-detail"][data-bank="1"]');assert.match(e.q('.bank-senses').textContent,/khấu đuôi/);
+ e.click('[data-action="bank-detail"][data-bank="1"]');await e.qa.bankRelationsPending;assert.match(e.q('.bank-senses').textContent,/khấu đuôi/);
  e.q('#bank-custom-meaning').value='bến tàu';e.click('[data-action="bank-save"][data-bank="1"]');
  assert.equal(e.qa.days[0].words[0].en,'dock');assert.equal(e.qa.days[0].words[0].vi,'bến tàu');assert.equal(e.q('[data-action="bank-save"]').disabled,true);
  e.click('[data-action="close-utility"]');assert.match(e.q('#app').textContent,/dock/);
@@ -247,7 +249,7 @@ test('Vietnamese lookup displays the matching sense and keeps it when saving a f
  assert.equal(e.q('#bank-list').querySelectorAll('[data-action="bank-detail"]').length,1);
  assert.match(e.q('.bank-meaning').textContent,/ăn cơm/);
  e.click('[data-action="bank-detail"]');const meaning=e.q('#bank-custom-meaning');assert.match(meaning.textContent,/ăn cơm/);
- meaning.value=meaning.textContent; // The minimal DOM harness does not initialize textarea values from markup.
+ meaning.value=meaning.textContent;await e.qa.bankRelationsPending; // Keep the custom meaning while detail loading fails.
  e.click('[data-action="bank-save"]');assert.match(e.qa.days[0].words[0].vi,/ăn cơm/);
 });
 
@@ -282,7 +284,8 @@ test('Word details show the new layout while loading and preserve the reader’s
 });
 
 test('Missing relation download preserves the dictionary and can be retried',async()=>{
- const e=environment({bankRows:[['hello','xin chào','',1]]});await e.qa.bankOpen();
+ const e=environment({bankRows:[['hello','xin chào','',1]],lexicon:true});await e.qa.bankOpen();
+ const original=e.box.fetch;e.box.fetch=async url=>{if(String(url).includes('/wordnet/'))throw Error('offline');return original(url);};
  e.q('#bank-search').value='hello';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');await e.qa.bankRelationsPending;
  assert.match(e.q('.bank-senses').textContent,/xin chào/);assert.ok(e.q('[data-action="bank-relations-retry"]'));
  e.box.fetch=async url=>new Response(fs.readFileSync(String(url)));e.click('[data-action="bank-relations-retry"]');await e.qa.bankRelationsPending;
@@ -439,7 +442,7 @@ test('Home lookup suggests Vietnamese meanings, supports keyboard selection and 
 test('Home suggestions discard stale downloads after a query is cleared or route changes',async()=>{
  const e=environment({bankRows:[['hello','xin chào','',1]]}),original=e.box.fetch;let release,notify;
  const started=new Promise(resolve=>notify=resolve);
- e.box.fetch=async url=>{if(String(url).includes('data/dictionary.json.gz')){notify();await new Promise(resolve=>release=resolve);}return original(url);};
+ e.box.fetch=async url=>{if(String(url).includes('data/kaikki/index.json.gz')){notify();await new Promise(resolve=>release=resolve);}return original(url);};
  const input=e.q('#home-lookup');input.focus();input.value='he';input.dispatchEvent({type:'input'});e.flush(180);
  assert.ok(e.q('#home-lookup-suggestions'),'Loading feedback must appear while the dictionary downloads');
  await started;
@@ -558,4 +561,56 @@ test('Day add and bulk add assign the selected topic to each new word',()=>{
  e.q('#add-form').dispatchEvent({type:'submit'});assert.equal(e.qa.days[0].words.at(-1).topic,'Giao tiếp');
  e.click('[data-action="bulk"]');e.q('#bulk-topic').value='Ẩm thực';e.q('#bulk-text').value='soup - súp\nbread - bánh mì';e.q('#bulk-text').dispatchEvent({type:'input'});e.click('[data-action="bulk-add"]');
  assert.equal(e.qa.days[0].words.at(-1).topic,'Ẩm thực');assert.equal(e.qa.days[0].words.at(-2).topic,'Ẩm thực');
+});
+
+function kaikkiLight(){return{word:'light',sounds:[{ipa:'/laɪt/',audio:'https://upload.wikimedia.org/test-light.ogg',tags:['US']}],forms:['lighter','lightest'],relations:{synonyms:[],antonyms:[]},senses:[
+ {id:'kk-weight',language:'vi',pos:'adj',gloss:'nhẹ',translations:[],examples:[{text:'a light bag',translation:'một chiếc túi nhẹ'}],synonyms:['lightweight'],antonyms:['heavy'],topics:[]},
+ {id:'kk-bright',language:'en',pos:'adj',gloss:'Giving light.',translations:[],examples:[{text:'a light room',translation:''}],synonyms:['bright'],antonyms:['dark'],topics:[]}
+]};}
+
+test('Kaikki is the only active lookup source and saves selected meaning with its own example',async()=>{
+ const entry=kaikkiLight(),e=environment({bankRows:[['light','nhẹ\nsáng','adj',1]],kaikkiEntries:{light:entry}}),requests=[];
+ const original=e.box.fetch;e.box.fetch=async url=>{requests.push(String(url));return original(url);};
+ await e.qa.bankOpen();e.q('#bank-search').value='light';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');await e.qa.bankRelationsPending;
+ assert.ok(e.q('.kaikki-source'));assert.ok(requests.every(url=>url.startsWith('./data/kaikki/')));
+ assert.match(e.q('.kaikki-ipa').textContent,/laɪt/);
+ const weight=e.q('[data-sense="kk-weight"]');assert.match(weight.textContent,/heavy/);assert.doesNotMatch(weight.textContent,/dark/);
+ e.click('[data-action="kaikki-select"][data-sense="kk-bright"]');assert.equal(e.q('#bank-custom-meaning').value,'Giving light.');
+ e.click('[data-action="bank-save"]');const w=e.qa.days[0].words[0];assert.equal(w.vi,'Giving light.');assert.equal(w.example,'a light room');assert.equal(w.dictionary.source,'kaikki');assert.equal(w.dictionary.senseId,'kk-bright');
+ const again=environment({map:e.map});assert.equal(again.qa.days[0].words[0].dictionary.senseId,'kk-bright');assert.deepEqual(Array.from(again.qa.days[0].words[0].antonyms),['dark']);
+});
+
+test('Kaikki late details cannot replace another word or a manually edited meaning',async()=>{
+ const light=kaikkiLight(),heavy={...kaikkiLight(),word:'heavy',senses:[{...kaikkiLight().senses[0],id:'kk-heavy',gloss:'nặng'}]};
+ const e=environment({bankRows:[['light','nhẹ','adj',1],['heavy','nặng','adj',1]],kaikkiEntries:{light,heavy}});
+ const original=e.box.fetch;let release,notify;const started=new Promise(resolve=>notify=resolve);
+ e.box.fetch=async url=>{if(String(url).endsWith('/l.json.gz')){notify();return new Promise(resolve=>release=()=>resolve(new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',entries:{light}})))));}return original(url);};
+ await e.qa.bankOpen();e.q('#bank-search').value='light';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');const stale=e.qa.bankRelationsPending;await started;
+ e.click('[data-action="bank-back"]');e.q('#bank-search').value='heavy';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');
+ e.q('#bank-custom-meaning').value='nghĩa tự viết';e.q('#bank-custom-meaning').dispatchEvent({type:'input'});await e.qa.bankRelationsPending;release();await stale;
+ assert.equal(e.q('#utility-title').textContent,'heavy');assert.equal(e.q('#bank-custom-meaning').value,'nghĩa tự viết');assert.ok(!e.q('[data-sense="kk-weight"]'));
+});
+
+test('A failed Kaikki detail shard keeps searchable meanings and retries without legacy fallback',async()=>{
+ const e=environment({bankRows:[['light','nhẹ','adj',1]]});await e.qa.bankOpen();e.q('#bank-search').value='light';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');await e.qa.bankRelationsPending;
+ assert.match(e.q('.bank-senses').textContent,/nhẹ/);assert.ok(e.q('[data-action="kaikki-retry"]'));
+ const original=e.box.fetch;e.box.fetch=async url=>String(url).endsWith('/l.json.gz')?new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',entries:{light:kaikkiLight()}}))):original(url);
+ e.click('[data-action="kaikki-retry"]');await e.qa.bankRelationsPending;assert.ok(e.q('[data-sense="kk-weight"]'));
+});
+
+test('Pending Kaikki details block incomplete saves and late pronunciation cannot play after closing',async()=>{
+ const light=kaikkiLight(),e=environment({bankRows:[['light','nhẹ','adj',1]],speech:true}),original=e.box.fetch;let release,notify;
+ const started=new Promise(resolve=>notify=resolve);
+ e.box.fetch=async url=>{if(String(url).endsWith('/l.json.gz')){notify();return new Promise(resolve=>release=()=>resolve(new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',entries:{light}})))));}return original(url);};
+ await e.qa.bankOpen();e.q('#bank-search').value='light';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');await started;
+ assert.ok(e.q('[data-action="bank-save"]').disabled);e.qa.bankSave(0);assert.equal(e.qa.days.length,0);
+ e.click('[data-action="bank-speak"]');e.click('[data-action="close-utility"]');release();await e.qa.bankRelationsPending;await new Promise(setImmediate);assert.equal(e.spoken.length,0);
+});
+
+test('Changing a saved Kaikki headword clears pronunciation and relations of the previous word',async()=>{
+ const e=environment({bankRows:[['light','nhẹ','adj',1]],kaikkiEntries:{light:kaikkiLight()}});await e.qa.bankOpen();
+ e.q('#bank-search').value='light';e.q('#bank-search-form').dispatchEvent({type:'submit'});e.click('[data-action="bank-detail"]');await e.qa.bankRelationsPending;
+ e.click('[data-action="bank-save"]');e.click('[data-action="close-utility"]');const w=e.qa.days[0].words[0];assert.equal(w.dictionary.source,'kaikki');
+ e.box.location.hash='#/day/'+e.qa.days[0].date;e.click('[data-action="edit"][data-id="'+w.id+'"]');e.q('#edit-en').value='different';e.q('#edit-form').dispatchEvent({type:'submit'});
+ assert.equal(w.dictionary,undefined);assert.equal(w.synonyms,undefined);assert.equal(w.antonyms,undefined);
 });

@@ -30,7 +30,7 @@ function renderNotebook(){
   renderNotebookContent();
 }
 function notebookWordRows(entries){
-  return `<div class="notebook-words">${entries.map(({date,word:w})=>`<article class="notebook-word"><button class="status-dot ${w.remembered?'known':''}" data-action="notebook-toggle" data-date="${date}" data-id="${esc(w.id)}" aria-label="${w.remembered?'Đánh dấu chưa nhớ':'Đánh dấu đã nhớ'}: ${esc(w.en)}" aria-pressed="${w.remembered}"><span></span></button><div class="notebook-word-copy"><strong>${esc(w.en)}</strong><p>${esc(w.vi)}</p><div class="notebook-word-meta"><a href="#/day/${date}" aria-label="Mở sổ từ ngày ${date}">${dateLabel(date)} · ${date.slice(0,4)}</a><span>${esc(w.topic||'Chưa phân chủ đề')}</span></div></div><div class="notebook-word-tools">${speakerSupported?`<button class="round" data-action="notebook-speak" data-date="${date}" data-id="${esc(w.id)}" aria-label="Nghe phát âm: ${esc(w.en)}">${icon('sound')}</button>`:''}<button class="round" data-action="notebook-edit" data-date="${date}" data-id="${esc(w.id)}" aria-label="Sửa từ: ${esc(w.en)}">${icon('edit')}</button></div></article>`).join('')}</div>`;
+  return `<div class="notebook-words">${entries.map(({date,word:w})=>`<article class="notebook-word"><button class="status-dot ${w.remembered?'known':''}" data-action="notebook-toggle" data-date="${date}" data-id="${esc(w.id)}" aria-label="${w.remembered?'Đánh dấu chưa nhớ':'Đánh dấu đã nhớ'}: ${esc(w.en)}" aria-pressed="${w.remembered}"><span></span></button><div class="notebook-word-copy"><strong>${esc(w.en)}</strong><p>${esc(w.vi)}</p><div class="notebook-word-meta"><a href="#/day/${date}" aria-label="Mở sổ từ ngày ${date}">${dateLabel(date)} · ${date.slice(0,4)}</a><span>${esc(w.topic||'Chưa phân chủ đề')}</span></div></div><div class="notebook-word-tools">${(speakerSupported||(typeof Audio!=='undefined'&&w.dictionary?.audio))?`<button class="round" data-action="notebook-speak" data-date="${date}" data-id="${esc(w.id)}" aria-label="Nghe phát âm: ${esc(w.en)}">${icon('sound')}</button>`:''}<button class="round" data-action="notebook-edit" data-date="${date}" data-id="${esc(w.id)}" aria-label="Sửa từ: ${esc(w.en)}">${icon('edit')}</button></div></article>`).join('')}</div>`;
 }
 function renderNotebookContent(){
   const content=$('#notebook-content');if(!content)return;
@@ -71,7 +71,7 @@ document.addEventListener('click',event=>{
   const {action,id,date}=button.dataset;
   if(action==='notebook-more'){notebookVisibleLimit+=40;renderNotebookContent();$('[data-action="notebook-more"]')?.focus();return;}
   const w=day(date).words.find(word=>word.id===id);if(!w)return;
-  if(action==='notebook-speak')speak(w.en);
+  if(action==='notebook-speak')speakWord(w);
   if(action==='notebook-edit'){selected=date;editOpen(id);}
   if(action==='notebook-toggle'){
     ReviewEngine.setRemembered(w,!w.remembered,C.isoToday());persist();renderNotebookContent();updateNav('notebook');

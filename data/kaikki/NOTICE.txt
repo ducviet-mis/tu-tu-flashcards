@@ -1,0 +1,39 @@
+Kaikki trial snapshot for Tu Tu - prepared 2026-10-23
+
+Source: Wiktionary entries extracted with Wiktextract and published by Kaikki.org.
+Vietnamese Wiktionary raw extract (English entries only):
+https://kaikki.org/viwiktionary/raw-wiktextract-data.jsonl.gz
+English dictionary extract (details for matching headwords only):
+https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl.gz
+See metadata.json for snapshot hashes, scope, revision and measured coverage.
+
+Wiktionary text is available under the Creative Commons Attribution-ShareAlike
+license and, where applicable, the GNU Free Documentation License. Contributors
+and revision history are accessible through each entry's Wiktionary page.
+https://creativecommons.org/licenses/by-sa/4.0/
+https://en.wiktionary.org/wiki/Wiktionary:Copyrights
+https://vi.wiktionary.org/wiki/Wiktionary:B%E1%BA%A3n_quy%E1%BB%81n
+
+This adaptation normalizes entries, filters languages, selects examples and
+trusted audio links, merges duplicate entries, and creates a search index and
+letter shards. It preserves separate source senses; it does not infer alignment
+between Vietnamese and English senses or generate missing definitions/examples.
+Share-alike requirements apply to adapted dictionary text. Application code and
+archived dictionaries retain their respective licenses.
+Illustrative quotations can have separate copyright terms or be included by
+Wiktionary under fair use. Their source references are retained and displayed;
+consult the originating entry and cited work for those materials.
+
+Audio files are linked from Wikimedia Commons, not bundled. Each file has its
+own author and license. The app links to the corresponding Commons file page
+for attribution. Device speech is an explicit fallback when source audio is
+missing or cannot play; it is not a Wiktionary recording.
+
+Common-word ranking: Darius Kazemi / Corpora, CC0.
+https://github.com/dariusk/corpora/blob/master/data/words/common.json
+This ranking is not a CEFR or exam syllabus.
+
+This is a limited trial of words with Vietnamese definitions. Coverage varies
+by word and sense. The English extract used for enrichment is a pinned legacy
+postprocessed Kaikki snapshot; current Kaikki recommends raw extracts. Rebuild
+deliberately from a reviewed snapshot rather than silently updating at runtime.

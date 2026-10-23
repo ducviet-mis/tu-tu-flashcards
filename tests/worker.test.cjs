@@ -7,17 +7,17 @@ function worker(){const events={},stores=new Map(),deleted=[],origin='https://ex
 }
 test('PWA installs shell, serves navigation offline on a repository subpath, and does not intercept APIs',async()=>{const w=worker();await w.run('install');w.setOffline();const r=await w.request('./',{mode:'navigate'});assert.equal(r.status,200);assert.match(await r.text(),/index.html/);assert.equal(await w.request('https://example.supabase.co/rest/v1/rpc/load',{method:'POST'}),null);assert.equal(await w.request('../other-project/',{mode:'navigate'}),null);});
 test('Activation only deletes caches owned by this app and this scope',async()=>{const w=worker();w.stores.set('other-app-v1',new Map());w.stores.set('tu-tu:%2Ftu-tu%2F:old',new Map());await w.run('install');await w.run('activate');assert.ok(w.stores.has('other-app-v1'));assert.ok(!w.stores.has('tu-tu:%2Ftu-tu%2F:old'));});
-test('Dictionary downloaded once can be loaded offline; missing static files do not return the HTML shell',async()=>{const w=worker();await w.run('install');await w.request('data/dictionary.json.gz');w.setOffline();const r=await w.request('data/dictionary.json.gz');assert.equal(r.status,200);assert.match(await r.text(),/network/);assert.equal(await w.request('not-a-script.js'),null);});
-test('Activating the current shell preserves the separately downloaded dictionary cache',async()=>{const w=worker();await w.run('install');await w.request('data/dictionary.json.gz');await w.run('activate');w.setOffline();const r=await w.request('data/dictionary.json.gz');assert.equal(r.status,200);});
+test('Dictionary downloaded once can be loaded offline; missing static files do not return the HTML shell',async()=>{const w=worker();await w.run('install');await w.request('data/kaikki/index.json.gz');w.setOffline();const r=await w.request('data/kaikki/index.json.gz');assert.equal(r.status,200);assert.match(await r.text(),/network/);assert.equal(await w.request('not-a-script.js'),null);});
+test('Activating the current shell preserves the separately downloaded dictionary cache',async()=>{const w=worker();await w.run('install');await w.request('data/kaikki/index.json.gz');await w.run('activate');w.setOffline();const r=await w.request('data/kaikki/index.json.gz');assert.equal(r.status,200);});
 
-test('WordNet shards load on demand and remain available offline after activation',async()=>{
+test('Kaikki shards load on demand and remain available offline after activation',async()=>{
  const w=worker();await w.run('install');
- assert.ok([...w.stores.values()].every(store=>![...store.keys()].some(url=>url.endsWith('/wordnet/h.json.gz'))));
- await w.request('data/wordnet/index.json.gz');await w.request('data/wordnet/h.json.gz');await w.run('activate');w.setOffline();
- assert.equal((await w.request('data/wordnet/h.json.gz')).status,200);
- assert.equal((await w.request('data/wordnet/index.json.gz')).status,200);
- await assert.rejects(()=>w.request('data/wordnet/z.json.gz'),/offline/);
- assert.equal(await w.request('data/wordnet/not-a-shard.json.gz'),null);
+ assert.ok([...w.stores.values()].every(store=>![...store.keys()].some(url=>url.endsWith('/kaikki/h.json.gz'))));
+ await w.request('data/kaikki/index.json.gz');await w.request('data/kaikki/h.json.gz');await w.run('activate');w.setOffline();
+ assert.equal((await w.request('data/kaikki/h.json.gz')).status,200);
+ assert.equal((await w.request('data/kaikki/index.json.gz')).status,200);
+ await assert.rejects(()=>w.request('data/kaikki/z.json.gz'),/offline/);
+ assert.equal(await w.request('data/kaikki/not-a-shard.json.gz'),null);
 });
 
 test('Font warmup caches Be Vietnam Pro for offline use and preserves it across activation',async()=>{

@@ -17,7 +17,7 @@ document.addEventListener('click',e=>{
     break;
     case'speak':{
       const w=day().words.find(w=>w.id===id);
-      if(w)speak(w.en);
+      if(w)speakWord(w);
       break;
     }
     case'toggle':{
@@ -58,7 +58,7 @@ document.addEventListener('click',e=>{
     break;
     case'answer-yes':answer(true);
     break;
-    case'session-speak':if(session?.type==='flip')speak(session.words[session.index].en);
+    case'session-speak':if(session?.type==='flip')speakWord(session.words[session.index]);
     break;
     case'shuffle':if(session?.type==='flip'){
       const s=session;
@@ -113,6 +113,7 @@ utility.addEventListener('submit',e=>{
       return;
     }
     const changed=C.wordKey(w.en)!==C.wordKey(en)||w.vi!==vi;
+    if(C.wordKey(w.en)!==C.wordKey(en)){delete w.dictionary;delete w.synonyms;delete w.antonyms;}
     w.en=en;
     w.vi=vi;
     w.example=$('#edit-example').value.trim();

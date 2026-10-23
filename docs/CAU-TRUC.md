@@ -13,7 +13,7 @@
 | `assets/js/state.js` | Trạng thái chung và tên khóa dữ liệu cũ |
 | `assets/js/storage.js` | Đọc/ghi localStorage, báo lỗi lưu, bộ thẻ theo ngày |
 | `assets/js/ui.js` | SVG biểu tượng, toast, khung hộp thoại và thoát ký tự HTML |
-| `assets/js/speech.js` | Đọc phát âm bằng Web Speech |
+| `assets/js/speech.js` | Bản ghi âm Kaikki và giọng đọc thiết bị dự phòng |
 | `assets/js/features/days.js` | Trang Ngày, form thêm từ và danh sách từ |
 | `assets/js/features/words.js` | Dán nhiều từ, sửa ví dụ/nghĩa, xóa và hoàn tác |
 | `assets/js/features/study.js` | Phiên học, lật thẻ, ghép cặp, kết quả |
@@ -27,7 +27,7 @@
 | `assets/js/navigation.js` | Điều phối hash route mới và route ngày/học |
 | `assets/js/pwa.js` | Cài app, lưu kho ngoại tuyến, chấp nhận bản cập nhật |
 | `assets/js/main.js` | Khởi động sau khi tất cả file đã tải |
-| `data/dictionary.json.gz` | Dữ liệu kho nén — không sửa bằng trình soạn thảo |
+| `data/dictionary.json.gz` | Kho FVDP lưu trữ, đang tắt |
 | `manifest.webmanifest` | Tên cài đặt, màu, scope và icon PWA |
 | `sw.js` | Quy tắc cache, ngoại tuyến, cập nhật |
 | `precache-manifest.js` | Danh sách file và phiên bản cache được tạo sẵn |
@@ -42,3 +42,16 @@
 Đây là cách chia theo chức năng bằng script cổ điển, không dùng ES Modules hoặc bundler. Các file cùng chia sẻ những biến/hàm được khai báo ở phạm vi ứng dụng; muốn đổi tên biến/hàm chung thì tìm toàn dự án trước khi sửa. Không tùy tiện đảo thứ tự các script.
 
 Các file cũ đã được xuống dòng để dễ đọc; những khối HTML trong template literal giữ nguyên nội dung để hạn chế thay đổi giao diện ngoài yêu cầu.
+
+## Kaikki đang hoạt động
+
+| File | Chức năng |
+|---|---|
+| `assets/js/kaikki.js` | Đọc chỉ mục, tải shard theo nhu cầu, kiểm tra phiên bản, tạo nội dung thẻ |
+| `assets/js/features/kaikki-word.js` | Chi tiết từng nghĩa, chọn nghĩa, âm thanh và quan hệ từ |
+| `assets/css/kaikki.css` | Trình bày phần chi tiết và dữ liệu Kaikki trên thẻ |
+| `data/kaikki/` | Chỉ mục, 27 phần dữ liệu, metadata và ghi nguồn |
+| `tools/build-kaikki.py` | Chuẩn hóa nguồn tải từ Kaikki, tạo snapshot cố định |
+| `docs/KAIKKI-THU-NGHIEM.md` | Phạm vi, hạn chế và cách thử |
+
+`lexicon.js`, `features/word-relations.js`, `data/dictionary.json.gz`, `data/wordnet/` và bản dịch WordNet chỉ được giữ để khôi phục; không nạp trong `index.html`, cache hoặc bản build Vercel hiện tại.

@@ -1,0 +1,17 @@
+.kaikki-source{font-size:11px;padding:5px 11px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+.kaikki-ipa{font-size:18px;line-height:1.5;margin:4px 0 12px;font-family:var(--sans);overflow-wrap:anywhere}
+.kaikki-audio-credit{display:block;font-size:11px;color:var(--muted);text-decoration:underline;margin-top:8px}
+.kaikki-missing{font-size:12px;line-height:1.65;color:var(--muted);margin:8px 0}
+.kaikki-sense-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.kaikki-select{min-height:36px;border:1px solid var(--field-line);border-radius:999px;padding:6px 11px;background:transparent;color:var(--ink);font-size:11px;flex-shrink:0}
+.kaikki-select[aria-pressed=true]{background:var(--yellow);border-color:var(--yellow);color:var(--dark)}
+.kaikki-english,.kaikki-forms,.kaikki-entry-relations{margin:16px 0;padding-top:14px;border-top:1px solid var(--line)}
+.kaikki-english>summary,.kaikki-forms>summary,.kaikki-entry-relations>summary,.kaikki-more-examples>summary{font-size:12px;line-height:1.7;cursor:pointer;min-height:40px;padding:8px 0;color:var(--accent-text)}
+.kaikki-more-examples{margin:8px 0}.dictionary-example small{display:block;margin-top:7px;font-size:12px;font-style:normal;color:var(--muted)}
+.kaikki-forms p{font-size:13px;overflow-wrap:anywhere}.dictionary-save .field-label{display:block;margin-bottom:8px}
+.card-pronunciation{display:block;font-size:16px;line-height:1.5;opacity:.8;margin:4px 0;overflow-wrap:anywhere}
+.card-relations{display:block;font-size:12px;line-height:1.6;margin-top:8px;overflow-wrap:anywhere}
+.flip-card .face{overflow:auto;scrollbar-width:thin}.flip-card .card-example{max-width:100%}
+@media(max-width:767px){.kaikki-select{min-height:40px}.kaikki-sense-heading{align-items:flex-start}.card-pronunciation{font-size:14px}.card-relations{font-size:11px}.kaikki-source{font-size:10px}}
+
+.dictionary-example cite,.card-reference{display:block;font-size:10px;line-height:1.6;font-style:normal;color:var(--muted);margin-top:8px;overflow-wrap:anywhere}

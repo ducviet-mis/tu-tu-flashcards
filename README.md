@@ -40,7 +40,7 @@ Tài liệu chính thức: [Cấu hình nguồn GitHub Pages](https://docs.githu
 - **Android/Chrome hoặc máy tính Chrome/Edge:** mở web → **Cài đặt → CÀI TỪ TỪ**, hoặc dùng mục cài ứng dụng trong menu trình duyệt khi được hỗ trợ.
 - **iPhone/iPad:** mở bằng Safari → **Chia sẻ → Thêm vào Màn hình chính**. Tên menu có thể khác theo phiên bản hệ điều hành.
 - Chờ Cài đặt hiển thị **giao diện đã sẵn sàng ngoại tuyến**.
-- Chọn **TẢI KHO TỪ DÙNG NGOẠI TUYẾN** nếu muốn tra và gợi ý từ khi mất mạng. Kho khoảng 7,7 MB; không tải cùng trang chủ lần đầu.
+- Chọn **TẢI KHO TỪ DÙNG NGOẠI TUYẾN** nếu muốn tra và gợi ý từ khi mất mạng. Kho Kaikki bản thử khoảng 59 MB; chỉ tải chỉ mục khoảng 2,6 MB khi bắt đầu tra, chi tiết tải theo chữ cái.
 - Sau khi tải thành công, mở app từ biểu tượng trên màn hình chính và thử bật chế độ máy bay.
 
 Giao diện và bộ thẻ cá nhân dùng ngoại tuyến sau khi cache sẵn sàng. Đăng nhập cần mạng; giọng đọc tùy thuộc các giọng có sẵn trên thiết bị. Font Be Vietnam Pro được đóng gói cùng ứng dụng. Trình duyệt/hệ điều hành có thể thu hồi bộ nhớ website.
@@ -48,6 +48,10 @@ Giao diện và bộ thẻ cá nhân dùng ngoại tuyến sau khi cache sẵn s
 PWA chỉ thêm khả năng cài đặt và ngoại tuyến. **Hẹn ôn là lịch trong app**, không tự gửi thông báo nền hoặc nhắc đúng giờ.
 
 Toàn bộ giao diện dùng Be Vietnam Pro, được lưu trong `assets/fonts/` và cache cùng giao diện để dùng ngoại tuyến.
+
+## Kaikki bản thử
+
+Từ điển hiện dùng duy nhất Kaikki: 119.032 từ/cụm từ có nghĩa Việt, kèm chi tiết từ bản tiếng Anh. FVDP và WordNet vẫn giữ trong mã nguồn nhưng không được nạp hoặc cache; bản build Vercel bỏ qua các kho cũ. Thẻ đã lưu và tiến trình học không bị thay đổi. Xem [phạm vi và cách kiểm tra](docs/KAIKKI-THU-NGHIEM.md).
 
 ## Những phần mới
 

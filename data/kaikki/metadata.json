@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "source": "kaikki",
+  "revision": "3adca4856d26ed1a",
+  "count": 119032,
+  "commonCount": 965,
+  "buckets": [
+    "0",
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "j",
+    "k",
+    "l",
+    "m",
+    "n",
+    "o",
+    "p",
+    "q",
+    "r",
+    "s",
+    "t",
+    "u",
+    "v",
+    "w",
+    "x",
+    "y",
+    "z"
+  ],
+  "scope": "English words with Vietnamese definitions; English-edition enrichment",
+  "coverage": {
+    "words": 119032,
+    "englishDetails": 102319,
+    "ipa": 42392,
+    "audio": 40463,
+    "examples": 55077,
+    "translatedExamples": 9987,
+    "synonyms": 29292
+  },
+  "sourceURLs": [
+    "https://kaikki.org/viwiktionary/",
+    "https://kaikki.org/dictionary/English/"
+  ],
+  "sourceSHA256": {
+    "vi": "dcdaf93d642ae1d1c4d495b68d90eb572fac86d00281044cf804e0d98147a25e",
+    "en": "cabb3a13b7179d5f8c5909e06b1dcd2e2ae6465d05f35de56509a5b4e2bf0a49"
+  },
+  "files": {
+    "index": [
+      10473513,
+      2647452
+    ],
+    "details": {
+      "0": [
+        153802,
+        35643
+      ],
+      "a": [
+        14078436,
+        3513331
+      ],
+      "b": [
+        12434111,
+        3303289
+      ],
+      "c": [
+        20828284,
+        5391623
+      ],
+      "d": [
+        12963243,
+        3317831
+      ],
+      "e": [
+        8864355,
+        2210146
+      ],
+      "f": [
+        10108479,
+        2652254
+      ],
+      "g": [
+        7243639,
+        1927097
+      ],
+      "h": [
+        7884517,
+        2060329
+      ],
+      "i": [
+        8663555,
+        2154685
+      ],
+      "j": [
+        2072660,
+        564083
+      ],
+      "k": [
+        1955545,
+        522524
+      ],
+      "l": [
+        6839189,
+        1805862
+      ],
+      "m": [
+        9968746,
+        2627776
+      ],
+      "n": [
+        3801102,
+        1003931
+      ],
+      "o": [
+        5778826,
+        1485066
+      ],
+      "p": [
+        18662278,
+        4770317
+      ],
+      "q": [
+        1281081,
+        340302
+      ],
+      "r": [
+        11231957,
+        2897515
+      ],
+      "s": [
+        26313981,
+        6892347
+      ],
+      "t": [
+        10936158,
+        2868947
+      ],
+      "u": [
+        6392693,
+        1623137
+      ],
+      "v": [
+        3415828,
+        873449
+      ],
+      "w": [
+        5696692,
+        1526860
+      ],
+      "x": [
+        104579,
+        28614
+      ],
+      "y": [
+        659027,
+        178564
+      ],
+      "z": [
+        357310,
+        95300
+      ]
+    }
+  },
+  "license": "Wiktionary CC BY-SA / GFDL; audio licensing is per Wikimedia Commons file",
+  "extractDate": "2026-10-21",
+  "builder": "tools/build-kaikki.py",
+  "trial": true
+}

@@ -9,10 +9,12 @@ function build({output=path.join(root,'dist'),env=process.env}={}){
  output=path.resolve(output);if(output===root)throw Error('Build output must differ from source.');fs.mkdirSync(output,{recursive:true});
  const files=['index.html','manifest.webmanifest','sw.js','precache-manifest.js','LICENSE'];
  for(const name of files)fs.copyFileSync(path.join(root,name),path.join(output,name));
- for(const name of ['assets','data'])fs.cpSync(path.join(root,name),path.join(output,name),{recursive:true});
+ const inactive=['assets/js/lexicon.js','assets/js/features/word-relations.js','data/dictionary.json.gz','data/wordnet','data/wordnet-vi.json','data/WORDNET-NOTICE.txt'];
+ for(const name of inactive){const target=path.resolve(output,name);if(!target.startsWith(output+path.sep))throw Error('Invalid build path');fs.rmSync(target,{recursive:true,force:true});}
+ for(const name of ['assets','data'])fs.cpSync(path.join(root,name),path.join(output,name),{recursive:true,filter:source=>!inactive.includes(path.relative(root,source).split(path.sep).join('/'))});
  fs.writeFileSync(path.join(output,'assets/js/supabase-config.js'),'/* Public configuration generated at build time. */\nglobalThis.TUTU_SUPABASE='+JSON.stringify(config).replace(/</g,'\\u003c')+';\n');
  const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]);
- const shell=['index.html','manifest.webmanifest',...walk(path.join(output,'assets')).map(p=>path.relative(output,p).split(path.sep).join('/')).sort(),'data/wordnet-vi.json','data/WORDNET-NOTICE.txt'];
+ const shell=['index.html','manifest.webmanifest',...walk(path.join(output,'assets')).map(p=>path.relative(output,p).split(path.sep).join('/')).sort(),'data/kaikki/metadata.json','data/kaikki/NOTICE.txt'];
  const hash=crypto.createHash('sha256');
  for(const name of shell){hash.update(name);const raw=fs.readFileSync(path.join(output,name));hash.update(/\.(css|js|html|webmanifest|svg|json|txt)$/.test(name)?raw.toString('utf8').replace(/\r\n/g,'\n'):raw);}
  hash.update(fs.readFileSync(path.join(output,'sw.js'),'utf8').replace(/\r\n/g,'\n'));const fingerprint=hash.digest('hex').slice(0,16);
