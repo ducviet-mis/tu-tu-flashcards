@@ -16,6 +16,8 @@
 <link rel="stylesheet" href="./assets/css/v3-theme.css">
 <link rel="stylesheet" href="./assets/css/account.css">
 <link rel="stylesheet" href="./assets/css/navigation.css">
+<link rel="stylesheet" href="./assets/css/account-menu.css">
+<link rel="stylesheet" href="./assets/css/profile.css">
 <meta name="application-name" content="Từ Từ"><link rel="icon" type="image/svg+xml" href="./assets/images/icon.svg"><link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./assets/images/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,13 +25,14 @@
 </head>
 <body>
 <div class="shell" id="shell">
-<header class="topbar"><div class="brand-group"><a class="brand" href="#/" aria-label="Từ Từ - Trang chủ"><picture><source srcset="./assets/images/logo-light.svg" media="(prefers-color-scheme: light)" id="brand-light-source"><img class="brand-logo" src="./assets/images/logo.svg" width="210" height="69" alt="Từ Từ - Từ từ mà chắc"></picture></a><span class="header-date" id="header-date"></span></div><div class="top-actions"><a href="#/login" class="header-account" id="header-account" aria-label="Đăng nhập"><span data-icon="user"></span></a><button class="btn outline small header-desktop-action" data-action="bank-open" aria-label="Mở từ điển tra cứu"><span data-icon="search"></span><span class="desktop-label">Từ điển</span></button><button class="btn outline small header-desktop-action" data-action="cloud" aria-label="Đồng bộ Supabase"><span data-icon="cloud"></span><span class="cloud-label">Đồng bộ</span></button><button class="btn outline small header-desktop-action" data-action="backup" aria-label="Sao lưu dữ liệu"><span data-icon="archive"></span><span class="desktop-label">Sao lưu</span></button><a href="#/progress" class="header-streak" aria-label="Chuỗi ngày ôn" id="header-streak"><span data-icon="streak"></span><span id="header-streak-count">0</span></a><a href="#/settings" class="round white header-settings" data-nav="settings" aria-label="Cài đặt"><span data-icon="settings"></span></a></div></header>
+<header class="topbar"><div class="brand-group"><a class="brand" href="#/" aria-label="Từ Từ - Trang chủ"><picture><source srcset="./assets/images/logo-light.svg" media="(prefers-color-scheme: light)" id="brand-light-source"><img class="brand-logo" src="./assets/images/logo.svg" width="210" height="69" alt="Từ Từ - Từ từ mà chắc"></picture></a><span class="header-date" id="header-date"></span></div><div class="top-actions"><div class="account-menu-anchor"><button type="button" class="header-account" id="header-account" data-action="account-menu-toggle" aria-label="Mở menu tài khoản" aria-expanded="false" aria-controls="account-menu"><span data-icon="user"></span></button><div id="account-menu" class="account-dropdown" role="region" aria-label="Menu tài khoản" hidden></div></div><button class="btn outline small header-desktop-action" data-action="bank-open" aria-label="Mở từ điển tra cứu"><span data-icon="search"></span><span class="desktop-label">Từ điển</span></button><button class="btn outline small header-desktop-action" data-action="cloud" aria-label="Đồng bộ Supabase"><span data-icon="cloud"></span><span class="cloud-label">Đồng bộ</span></button><button class="btn outline small header-desktop-action" data-action="backup" aria-label="Sao lưu dữ liệu"><span data-icon="archive"></span><span class="desktop-label">Sao lưu</span></button><a href="#/progress" class="header-streak" aria-label="Chuỗi ngày ôn" id="header-streak"><span data-icon="streak"></span><span id="header-streak-count">0</span></a><a href="#/settings" class="round white header-settings" data-nav="settings" aria-label="Cài đặt"><span data-icon="settings"></span></a></div></header>
 <div id="storage-warning" class="storage-warning" role="status" hidden></div>
 <main id="app"></main>
 <footer class="footer"><span>Mỗi từ mới, một bước tiến.</span><span class="footer-right" id="save-indicator">Lưu trên thiết bị của bạn</span></footer>
 </div>
 <dialog id="study-dialog" class="study-dialog" aria-labelledby="study-title"></dialog>
 <dialog id="utility-dialog" aria-labelledby="utility-title"></dialog>
+<button type="button" id="account-menu-backdrop" class="account-menu-backdrop" data-action="account-menu-close" aria-label="Đóng menu tài khoản" tabindex="-1" hidden></button>
 <div id="toasts" class="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
 
 
@@ -68,6 +71,8 @@
 <script defer src="./assets/js/features/home.js"></script>
 <script defer src="./assets/js/features/home-lookup.js"></script>
 <script defer src="./assets/js/features/account.js"></script>
+<script defer src="./assets/js/features/account-menu.js"></script>
+<script defer src="./assets/js/features/profile.js"></script>
 <script defer src="./assets/js/navigation.js"></script>
 <script defer src="./assets/js/pwa.js"></script>
 <script defer src="./assets/js/main.js"></script>

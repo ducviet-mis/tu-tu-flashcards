@@ -10,6 +10,7 @@ function updateNav(page='home'){
   if($('#nav-review-count')){$('#nav-review-count').hidden=!due;$('#nav-review-count').textContent=due>99?'99+':String(due);}
 }
 function route(){
+  closeAccountMenu();
   closeHomeSuggestions();
   if(globalThis.TuTuAuth?.callbackKind(location.href||'https://local.invalid/'))return;
   const page=(location.hash||'#/').split('/')[1]?.split('?')[0];

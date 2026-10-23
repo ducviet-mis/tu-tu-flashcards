@@ -33,7 +33,7 @@ function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech
  const storage={getItem:k=>{if(blocked)throw Error('blocked');return map.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');map.set(k,v);}};
  const box={document:doc,location,history:{replaceState:(s,t,v)=>{currentHash=v;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(lexicon&&/^\.\/data\/wordnet(?:\/|\-vi)/.test(String(url)))return new Response(fs.readFileSync(String(url)));if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
  const spoken=[];if(speech){box.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};box.speechSynthesis={cancel(){},getVoices:()=>[{lang:'en-US'}],speak:utterance=>spoken.push(utterance)};}box.performance=performance;box.Response=Response;box.DecompressionStream=DecompressionStream;box.window=box;vm.createContext(box);const scripts=[...html.matchAll(/<script id="(?:core|application)">([\s\S]*?)<\/script>/g)].map(m=>m[1]);vm.runInContext(scripts[0],box);
- const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},get cloud(){return cloud;},getCloudForm,cloudAction,readImport,applyImport,route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,exportFile,configureCloud,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;},initializeAccount,get accountUser(){return accountUser;}};`);vm.runInContext(src,box);
+ const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},get cloud(){return cloud;},getCloudForm,cloudAction,readImport,applyImport,route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,exportFile,configureCloud,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;},initializeAccount,showPwaUpdate,get accountUser(){return accountUser;}};`);vm.runInContext(src,box);
  return{box,doc,spoken,q:s=>doc.querySelector(s),qa:box.QA,map,click:s=>{const e=doc.querySelector(s);assert.ok(e,'Missing element '+s);e.click();},flush:ms=>{for(const t of timers.splice(0))if(!t.cancelled&&t.ms<=ms)t.fn();},key:code=>doc.body.dispatchEvent({type:'keydown',code,target:doc.activeElement||doc.body})};
 }
 function demo(){const e=environment();e.click('[data-action="sample"]');e.box.location.hash='#/day/'+e.qa.days[0].date;return e;}
@@ -41,7 +41,7 @@ function demo(){const e=environment();e.click('[data-action="sample"]');e.box.lo
 async function accountEnvironment(handlers={},hash='#/login'){
  const e=environment({hash});let callback;
  const auth={onAuthStateChange(fn){callback=fn;return {data:{subscription:{unsubscribe(){}}}};},getSession:async()=>({data:{session:null},error:null}),signInWithPassword:async()=>({data:{user:{id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}}},error:null}),signUp:async()=>({data:{session:null,user:null},error:null}),signOut:async()=>{callback('SIGNED_OUT',null);return {error:null};},...handlers};
- e.box.TUTU_SUPABASE={url:'https://demo.supabase.co',key:'sb_publishable_test'};e.box.supabase={createClient:()=>({auth})};await e.qa.initializeAccount();return e;
+ e.box.TUTU_SUPABASE={url:'https://demo.supabase.co',key:'sb_publishable_test'};e.box.supabase={createClient:()=>({auth})};await e.qa.initializeAccount();e.authEvent=(event,session)=>callback(event,session);return e;
 }
 test('Login and registration routes preserve guest vocabulary and the existing rounded navigation',()=>{
  const e=demo(),count=e.qa.days.length;e.box.location.hash='#/login';assert.ok(e.q('#auth-form'));assert.equal(e.q('#auth-form').dataset.mode,'login');
@@ -56,7 +56,7 @@ test('Successful login displays real user details, escapes their name, and sign-
  const e=await accountEnvironment({signInWithPassword:async()=>({data:{user:{id:'u1',email:'ban@example.com',user_metadata:{display_name:'<img src=x onerror=alert(1)>'}}},error:null})});
  e.box.location.hash='#/';e.click('[data-action="sample"]');const count=e.qa.days.length;e.box.location.hash='#/login';
  e.q('#auth-email').value='ban@example.com';e.q('#auth-password').value='testpassword';e.q('#auth-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);
- assert.equal(e.box.location.hash,'#/account');assert.match(e.q('.account-identity').textContent,/ban@example.com/);assert.equal(e.q('.account-identity').querySelector('img'),null);assert.equal(e.q('#header-account').href,'#/account');
+ assert.equal(e.box.location.hash,'#/account');assert.match(e.q('.account-identity').textContent,/ban@example.com/);assert.equal(e.q('.account-identity').querySelector('img'),null);assert.equal(e.q('#header-account').getAttribute('aria-expanded'),'false');
  e.click('[data-action="auth-signout"]');await new Promise(setImmediate);assert.equal(e.box.location.hash,'#/login');assert.equal(e.qa.accountUser,null);assert.equal(e.qa.days.length,count);
 });
 test('Login failure preserves the email, displays a localized error and re-enables submission',async()=>{
@@ -79,6 +79,95 @@ test('An authenticated recovery page survives reload and accepts a new matching 
  const e=await accountEnvironment({getSession:async()=>({data:{session:{user}},error:null}),updateUser:async()=>({data:{user},error:null})},'#/reset-password');
  assert.equal(e.q('#auth-message').hidden,true);e.q('#auth-password').value='new-password';e.q('#auth-confirm').value='new-password';e.q('#auth-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);
  assert.equal(e.box.location.hash,'#/account');assert.match(e.q('.account-identity').textContent,/ban@example.com/);
+});
+
+test('Avatar disclosure preserves the route and dismisses with outside click, Escape and navigation',()=>{
+ const e=environment(),start=e.box.location.hash;
+ e.click('#header-account');assert.equal(e.box.location.hash,start);assert.equal(e.q('#account-menu').hidden,false);assert.equal(e.q('#header-account').getAttribute('aria-expanded'),'true');
+ assert.ok(e.q('#account-menu').querySelector('a[href="#/login"]'));assert.ok(e.q('#account-menu').querySelector('a[href="#/register"]'));
+ e.doc.body.click();assert.equal(e.q('#account-menu').hidden,true);
+ e.click('#header-account');e.key('Escape');assert.equal(e.q('#account-menu').hidden,true);assert.equal(e.doc.activeElement.id,'header-account');
+ e.q('#header-account').dispatchEvent({type:'keydown',code:'ArrowDown'});assert.equal(e.q('#account-menu').hidden,false);assert.equal(e.doc.activeElement.tagName,'A');
+ e.box.location.hash='#/settings';assert.equal(e.q('#account-menu').hidden,true);assert.ok(e.q('#preferences-form'));
+});
+
+test('Avatar dropdown uses escaped real identity and does not claim vocabulary has synced',async()=>{
+ const user={id:'u1',email:'very.long.email@example.com',user_metadata:{display_name:'<img src=x onerror=alert(1)> Việt'}};
+ const e=await accountEnvironment({getSession:async()=>({data:{session:{user}},error:null})},'#/');
+ e.click('#header-account');const menu=e.q('#account-menu');assert.match(menu.textContent,/very.long.email@example.com/);assert.match(menu.textContent,/<img src=x/);assert.equal(menu.querySelector('img'),null);assert.doesNotMatch(menu.textContent,/ĐÃ ĐỒNG BỘ|Đã đồng bộ/);assert.ok(menu.querySelector('[data-action="auth-signout"]'));
+ e.click('[data-action="auth-signout"]');await new Promise(setImmediate);assert.equal(e.qa.accountUser,null);assert.equal(e.q('#account-menu').hidden,true);
+});
+
+test('Quick theme selection persists while keeping unsaved preference fields',()=>{
+ const e=environment({hash:'#/settings'});e.q('#pref-goal').value='27';e.q('#pref-goal').dispatchEvent({type:'input'});
+ e.click('#header-account');e.q('#account-menu').querySelector('[data-value="light"]').click();
+ assert.equal(e.doc.documentElement.getAttribute('data-theme'),'light');assert.equal(e.qa.preferences.theme,'light');assert.equal(e.qa.preferences.goal,10);assert.equal(e.q('#pref-goal').value,'27');assert.equal(e.q('#pref-theme').value,'light');
+ const reloaded=environment({map:e.map});assert.equal(reloaded.qa.preferences.theme,'light');assert.equal(reloaded.qa.preferences.goal,10);
+});
+
+test('Profile saving trims a real name, rejects blank names and refreshes the avatar',async()=>{
+ const user={id:'u1',email:'ban@example.com',email_confirmed_at:'2026-10-20T00:00:00Z',created_at:'2026-10-20T00:00:00Z',user_metadata:{display_name:'Việt'}};let writes=[];
+ const e=await accountEnvironment({getSession:async()=>({data:{session:{user}},error:null}),updateUser:async input=>{writes.push(input);return {data:{user:{...user,user_metadata:{display_name:input.data.display_name}}},error:null};}},'#/account');
+ assert.equal(e.q('#profile-email').getAttribute('readonly'),'');assert.match(e.q('.account-identity').textContent,/20.10.2026/);
+ e.q('#profile-name').value='   ';e.q('#profile-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);assert.equal(writes.length,0);assert.match(e.q('#auth-message').textContent,/tên/i);
+ e.q('#profile-name').value='  Đức Việt  ';e.q('#profile-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);
+ assert.equal(writes.length,1);assert.equal(writes[0].data.display_name,'Đức Việt');assert.equal(e.qa.accountUser.user_metadata.display_name,'Đức Việt');assert.match(e.q('#header-account').textContent,/Đ/);
+ e.click('#header-account');assert.match(e.q('#account-menu').textContent,/Đức Việt/);
+});
+
+test('Failed profile saves preserve the draft and allow a retry',async()=>{
+ const user={id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}};
+ const e=await accountEnvironment({getSession:async()=>({data:{session:{user}},error:null}),updateUser:async()=>({data:{user:null},error:{message:'network offline'}})},'#/account');
+ e.q('#profile-name').value='Tên mới';e.q('#profile-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);
+ assert.equal(e.q('#profile-name').value,'Tên mới');assert.equal(e.qa.accountUser.user_metadata.display_name,'Việt');assert.equal(e.q('#profile-form').querySelector('button[type="submit"]').disabled,false);assert.match(e.q('#auth-message').textContent,/kết nối/);
+});
+
+test('A late profile save cannot replace a page visited during the request',async()=>{
+ const user={id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}};let finish;
+ const e=await accountEnvironment({getSession:async()=>({data:{session:{user}},error:null}),updateUser:()=>new Promise(resolve=>finish=resolve)},'#/account');
+ e.q('#profile-name').value='Đức Việt';e.q('#profile-form').dispatchEvent({type:'submit'});e.box.location.hash='#/';
+ finish({data:{user:{...user,user_metadata:{display_name:'Đức Việt'}}},error:null});await new Promise(setImmediate);
+ assert.equal(e.box.location.hash,'#/');assert.ok(e.q('#home-lookup'));assert.match(e.q('#header-account').textContent,/Đ/);
+});
+
+test('Profile password action emails the authenticated account and reports completion',async()=>{
+ const user={id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}};let sent=[];
+ const e=await accountEnvironment({getSession:async()=>({data:{session:{user}},error:null}),resetPasswordForEmail:async(email,options)=>{sent.push({email,options});return {error:null};}},'#/account');
+ e.click('[data-action="profile-password"]');await new Promise(setImmediate);
+ assert.equal(sent.length,1);assert.equal(sent[0].email,'ban@example.com');assert.equal(sent[0].options.redirectTo,'https://local.invalid/');assert.match(e.q('#auth-message').textContent,/email/);assert.equal(e.q('[data-action="profile-password"]').disabled,false);
+});
+
+test('Preference goal controls enforce bounds and invalid theme values are not saved',()=>{
+ const e=environment({hash:'#/settings'});e.q('#pref-goal').value='200';e.click('[data-action="preference-goal"][data-step="1"]');assert.equal(Number(e.q('#pref-goal').value),200);
+ e.q('#pref-goal').value='1';e.click('[data-action="preference-goal"][data-step="-1"]');assert.equal(Number(e.q('#pref-goal').value),1);
+ e.q('#pref-theme').value='unknown';e.q('#preferences-form').dispatchEvent({type:'submit'});assert.equal(e.qa.preferences.theme,'dark');assert.equal(e.map.get('tutu.preferences.v1'),undefined);
+});
+
+test('Restoring a session on settings replaces the guest identity without losing preference drafts',async()=>{
+ const user={id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}};let resolve;
+ const pending=accountEnvironment({getSession:()=>new Promise(done=>resolve=done)},'#/settings');
+ resolve({data:{session:{user}},error:null});const e=await pending;
+ assert.equal(e.q('#profile-name').value,'Việt');e.q('#pref-goal').value='29';e.q('#pref-goal').dispatchEvent({type:'input'});
+ e.authEvent('SIGNED_OUT',null);assert.equal(e.q('#profile-form'),null);assert.equal(e.q('#pref-goal').value,'29');assert.ok(e.q('.profile-guest-card'));
+});
+
+test('A save from a previous account cannot overwrite the next signed-in identity',async()=>{
+ const user={id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}},next={id:'u2',email:'next@example.com',user_metadata:{display_name:'Người mới'}};let finish;
+ const e=await accountEnvironment({getSession:async()=>({data:{session:{user}},error:null}),updateUser:()=>new Promise(done=>finish=done)},'#/settings');
+ e.q('#profile-name').value='Tên đang lưu';e.q('#profile-form').dispatchEvent({type:'submit'});e.authEvent('SIGNED_IN',{user:next});
+ finish({data:{user:{...user,user_metadata:{display_name:'Tên đang lưu'}}},error:null});await new Promise(setImmediate);
+ assert.equal(e.qa.accountUser.id,'u2');assert.equal(e.q('#profile-name').value,'Người mới');assert.match(e.q('#header-account').textContent,/N/);
+});
+
+test('PWA update cannot discard an unsaved profile name',async()=>{
+ const user={id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}};const e=await accountEnvironment({getSession:async()=>({data:{session:{user}},error:null})},'#/account');
+ let posted=0;e.box.navigator.serviceWorker={addEventListener(){}};e.qa.showPwaUpdate({postMessage(){posted++;}});
+ e.q('#profile-name').value='Chưa lưu';e.q('#profile-name').dispatchEvent({type:'input'});e.click('[data-action="pwa-update"]');assert.equal(posted,0);assert.match(e.q('#toasts').textContent,/lưu phần đang nhập/);
+});
+
+test('Help can return to settings even when settings is already the active route',()=>{
+ const e=environment({hash:'#/settings'});e.click('#header-account');e.click('[data-action="account-help"]');assert.equal(e.q('#utility-dialog').open,true);
+ e.click('[data-action="account-help-settings"]');assert.equal(e.q('#utility-dialog').open,false);assert.equal(e.box.location.hash,'#/settings');assert.ok(e.q('#preferences-form'));assert.equal(e.doc.activeElement.id,'header-account');
 });
 test('Typing he suggests hello; clicking fills both fields; keyboard selection and manual meanings work',async()=>{
  const e=environment({hash:'#/day/2026-10-22',bankRows:[['hello','xin chào','',1],['help','giúp đỡ','',1],['hero','anh hùng','',0]]});

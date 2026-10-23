@@ -1,0 +1,34 @@
+/* Avatar disclosure uses the same surfaces and font as the rest of the app. */
+.account-menu-anchor{position:relative;flex-shrink:0}
+.account-menu-anchor.is-open{z-index:81}
+.header-account{font-family:var(--sans);cursor:pointer;flex-shrink:0}
+.header-account.is-signed-in{background:var(--yellow);color:var(--dark)}
+.header-account[aria-expanded=true]{box-shadow:0 0 0 3px var(--ink)}
+.account-menu-backdrop{position:fixed;inset:0;z-index:80;width:100%;height:100%;padding:0;background:rgb(0 0 0 / .4);cursor:default}
+.account-dropdown{position:absolute;top:calc(100% + 14px);right:0;z-index:82;width:326px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 130px);overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--control-line);border-radius:28px;background:var(--panel);color:var(--ink);padding:10px;box-shadow:0 18px 44px rgb(0 0 0 / .28);font:400 15px/1.6 var(--sans)}
+.account-menu-identity{display:flex;align-items:center;gap:12px;padding:12px 10px 16px;border-bottom:1px solid var(--line);margin-bottom:6px;border-radius:18px 18px 0 0}
+.account-menu-avatar{display:grid;place-items:center;flex:0 0 56px;width:56px;height:56px;border:3px solid var(--dark);border-radius:50%;background:var(--yellow);color:var(--dark);font-size:26px;font-weight:600}
+.account-menu-person{display:block;min-width:0}
+.account-menu-person>strong{display:block;font-size:20px;font-weight:600;line-height:1.4;overflow-wrap:anywhere}
+.account-menu-email{display:block;font-size:12px;line-height:1.65;color:var(--muted);overflow-wrap:anywhere;margin-top:2px}
+.account-menu-badge{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:3px 9px;border-radius:999px;background:var(--mint);color:var(--dark);font-size:10px;font-weight:500}
+.account-menu-badge .icon{width:12px;height:12px}
+.account-menu-links{display:flex;flex-direction:column}
+.account-menu-links>a,.account-menu-action{display:flex;align-items:center;gap:12px;min-height:50px;padding:11px 14px;border-radius:18px;background:transparent;color:var(--ink);text-align:left;font:500 15px/1.6 var(--sans);width:100%}
+.account-menu-links>a:hover,.account-menu-action:hover,.account-menu-identity:hover{background:var(--surface-hover)}
+.account-menu-links .icon,.account-menu-action .icon{width:21px;height:21px;flex:0 0 21px}
+.account-menu-theme{display:flex;flex-direction:column;gap:8px;padding:10px 14px}
+.account-menu-theme>span{font-size:14px;font-weight:500}
+.theme-switch{display:flex;gap:3px;padding:4px;border-radius:999px;background:var(--bg);min-width:0}
+.theme-switch>button{flex:1;min-width:0;min-height:40px;padding:7px 11px;border-radius:999px;background:transparent;color:var(--muted);font:500 12px/1.5 var(--sans);white-space:nowrap}
+.theme-switch>button:hover{color:var(--ink)}
+.theme-switch>button[aria-pressed=true]{background:var(--yellow);color:var(--dark)}
+.account-menu-divider{height:1px;background:var(--line);margin:6px}
+.account-menu-signout{color:var(--orange)}
+.account-help-content{display:flex;flex-direction:column;gap:14px;margin-top:20px}
+.account-help-content h3{font-size:18px;line-height:1.5}
+.account-help-content p{font-size:15px;line-height:1.7;color:var(--muted);margin:0 0 8px}
+[data-theme=light] .account-menu-backdrop{background:rgb(21 21 21 / .2)}
+[data-theme=light] .account-dropdown{box-shadow:0 18px 44px rgb(45 35 20 / .15)}
+[data-theme=light] .account-menu-signout{color:#b43b2c}
+@media(max-width:767px){.account-dropdown{position:fixed;top:90px;right:16px;width:min(326px,calc(100vw - 32px));max-height:calc(100dvh - 106px - env(safe-area-inset-bottom,0px))}.account-menu-person>strong{font-size:19px}.theme-switch>button{min-height:44px}}

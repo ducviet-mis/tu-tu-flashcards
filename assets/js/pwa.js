@@ -42,7 +42,7 @@ document.addEventListener('click',async event=>{
   if(button.dataset.action==='offline-dictionary'){button.disabled=true;try{await downloadOfflineDictionary();}finally{button.disabled=false;}}
   if(button.dataset.action==='pwa-dismiss')$('#pwa-notice').hidden=true;
   if(button.dataset.action==='pwa-update'&&waitingWorker){
-    if(accountBusy||$('#auth-email')?.value.trim()||$('#auth-password')?.value||study.open||utility.open||pendingSettingsChanges||$('#english')?.value.trim()||$('#vietnamese')?.value.trim()||$('#word-example')?.value.trim()||$('#word-example-vi')?.value.trim()){toast('Hãy lưu phần đang nhập hoặc kết thúc lượt học trước khi cập nhật.');return;}
+    if(accountBusy||profileHasUnsavedChanges()||$('#auth-email')?.value.trim()||$('#auth-password')?.value||study.open||utility.open||pendingSettingsChanges||$('#english')?.value.trim()||$('#vietnamese')?.value.trim()||$('#word-example')?.value.trim()||$('#word-example-vi')?.value.trim()){toast('Hãy lưu phần đang nhập hoặc kết thúc lượt học trước khi cập nhật.');return;}
     navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload(),{once:true});
     waitingWorker.postMessage({type:'SKIP_WAITING'});
   }
