@@ -27,7 +27,7 @@ function refreshProfileInfo(){
 }
 function profileHasUnsavedChanges(){const input=$('#profile-name');return !!(input&&accountUser&&input.value.trim().normalize('NFC')!==accountDisplayName());}
 function renderProfile(section='info'){
- pendingSettingsChanges=false;
+ pendingSettingsChanges=preferenceWriteFailed;
  app.innerHTML=`<div class="profile-page" data-section="${section}"><header class="profile-heading"><a href="#/" class="round white" aria-label="Quay lại trang chủ">${icon('back')}</a><h1><span class="profile-title-desktop">Hồ sơ & cài đặt</span><span class="profile-title-mobile">${section==='settings'?'Cài đặt':'Hồ sơ'}</span></h1></header>
  <nav class="profile-tabs" aria-label="Hồ sơ và cài đặt"><a href="#/account" ${section==='info'?'aria-current="page"':''}>Thông tin</a><a href="#/settings" ${section==='settings'?'aria-current="page"':''}>Cài đặt</a></nav>
  <div class="profile-columns">${profileInfoMarkup()}<section class="profile-column profile-preferences" id="profile-settings" aria-labelledby="profile-settings-title"><h2 class="profile-section-label" id="profile-settings-title">Cài đặt học</h2>${preferencesFormMarkup()}${profileAppMarkup()}</section></div><p class="profile-footer">TỪ TỪ · Mỗi ngày một chút.</p></div>`;

@@ -43,11 +43,11 @@ Tài liệu chính thức: [Cấu hình nguồn GitHub Pages](https://docs.githu
 - Chọn **TẢI KHO TỪ DÙNG NGOẠI TUYẾN** nếu muốn tra và gợi ý từ khi mất mạng. Kho khoảng 7,7 MB; không tải cùng trang chủ lần đầu.
 - Sau khi tải thành công, mở app từ biểu tượng trên màn hình chính và thử bật chế độ máy bay.
 
-Giao diện và bộ thẻ cá nhân dùng ngoại tuyến sau khi cache sẵn sàng. Đồng bộ cần mạng; giọng đọc tùy thuộc các giọng có sẵn trên thiết bị. Font có thể dùng font thay thế nếu chưa tải được Google Fonts. Trình duyệt/hệ điều hành có thể thu hồi bộ nhớ website; xuất bản sao định kỳ.
+Giao diện và bộ thẻ cá nhân dùng ngoại tuyến sau khi cache sẵn sàng. Đăng nhập cần mạng; giọng đọc tùy thuộc các giọng có sẵn trên thiết bị. Font Be Vietnam Pro được đóng gói cùng ứng dụng. Trình duyệt/hệ điều hành có thể thu hồi bộ nhớ website.
 
 PWA chỉ thêm khả năng cài đặt và ngoại tuyến. **Hẹn ôn là lịch trong app**, không tự gửi thông báo nền hoặc nhắc đúng giờ.
 
-Toàn bộ giao diện dùng Be Vietnam Pro, với nội dung 16 px và giãn dòng 1,6. Font hiện lấy từ Google Fonts ở lần truy cập có mạng, sau đó service worker cố gắng lưu cả CSS và font để dùng ngoại tuyến. Nếu chưa tải thành công, app dùng font hệ thống. Bản ZIP chưa kèm file font: môi trường tạo bản này không tải được dữ liệu nhị phân từ nguồn font.
+Toàn bộ giao diện dùng Be Vietnam Pro, được lưu trong `assets/fonts/` và cache cùng giao diện để dùng ngoại tuyến.
 
 ## Những phần mới
 
@@ -64,21 +64,11 @@ Toàn bộ giao diện dùng Be Vietnam Pro, với nội dung 16 px và giãn d�
 
 Tiến độ lượt học được tính từ thao tác thực tế trong bản v2; không dựng lại lịch sử cũ bằng số giả. Khi ghép sai, từ trở về cần ôn; sau khi ghép xong cặp, lượt tự đánh giá được ghi vào tiến độ.
 
-## Chuyển dữ liệu từ bản HTML cũ
+## Dữ liệu trên thiết bị
 
-1. Mở **bản cũ**, chọn **Sao lưu → Xuất file**.
-2. Mở **địa chỉ web mới**, chọn **Cài đặt → Sao lưu / Khôi phục → Nhập file**.
-3. Chọn gộp hoặc thay thế theo nhu cầu.
+Chức năng xuất/nhập file sao lưu đã được gỡ khỏi ứng dụng. Dữ liệu đang lưu vẫn được giữ trên cùng trình duyệt và địa chỉ website; không xóa khóa localStorage khi cập nhật.
 
-Trình duyệt lưu dữ liệu theo địa chỉ website. Dữ liệu ở file trên máy không tự xuất hiện ở địa chỉ GitHub Pages. App giữ nguyên các khóa cũ, vì vậy dữ liệu tiếp tục được dùng nếu bạn thay phiên bản trên đúng cùng địa chỉ.
-
-Bản sao mới giữ từ, nghĩa, trạng thái, ví dụ và lịch ôn. Thống kê lượt học và cài đặt giao diện hiện lưu riêng theo thiết bị, không đi theo bản sao từ hoặc Supabase.
-
-## Đồng bộ Supabase (tùy chọn)
-
-SQL nằm trong `supabase/schema.sql`. Chạy SQL trên dự án của bạn rồi mở mục đồng bộ trong app. Chỉ dùng URL dự án và khóa publishable/anon, cùng mã đồng bộ riêng. Không đưa khóa secret/service role hoặc mã kho cá nhân vào repository.
-
-App vẫn dùng được nếu không cấu hình Supabase. Không cache các yêu cầu đồng bộ trong service worker.
+Đăng nhập hiện quản lý hồ sơ Supabase Auth. Sổ từ, lịch ôn, thống kê và cài đặt vẫn lưu trên thiết bị; chúng chưa tự tách hoặc đồng bộ theo tài khoản. Cơ chế đồng bộ thủ công bằng mã kho đã được gỡ khỏi ứng dụng.
 
 ## Sửa mã nguồn
 
@@ -118,7 +108,7 @@ Trang chi tiết có quan hệ theo từng nghĩa từ Open English WordNet 2025
 
 - Trang chủ `#/`: tra từ Anh/Việt, lịch sử từ đã mở, hàng chờ ôn và các sổ từ gần đây. Lịch sử tra cứu được lưu riêng trên thiết bị; không dùng từ mẫu làm lịch sử mặc định.
 - Sổ từ `#/notebook`: các ngày được nhóm theo tháng, với số từ và tiến độ thật. Màn hình chi tiết ngày và các đường dẫn học cũ vẫn dùng được.
-- Menu nổi bo tròn trên desktop và mobile: Trang chủ, Ôn tập, thêm nhanh, Sổ từ, Tiến độ. Cài đặt chuyển lên góc trên; khoảng cách đáy có tính vùng an toàn của thiết bị.
+- Menu nổi bo tròn trên desktop và mobile: Trang chủ, Ôn tập, thêm nhanh, Sổ từ, Tiến độ. Cài đặt nằm trong dropdown avatar ở góc trên bên phải; khoảng cách đáy có tính vùng an toàn của thiết bị.
 - Mã giao diện mới: `assets/js/features/home.js`, `assets/css/v3.css`. Giữ font Be Vietnam Pro và các tuỳ chọn giao diện hiện có.
 
 ### Gợi ý tra từ ngay trên trang chủ
@@ -144,9 +134,9 @@ Trang chi tiết có quan hệ theo từng nghĩa từ Open English WordNet 2025
 
 ### Supabase đăng nhập và dữ liệu cá nhân
 
-Chạy `supabase/tu_tu_supabase.sql` trong Supabase SQL Editor để tạo 7 bảng tiếng Việt không dấu và bảng xem `thong_ke_hoc_theo_ngay`. File `supabase/schema.sql` là cơ chế đồng bộ bằng mã cũ, được giữ nguyên.
+Chạy `supabase/tu_tu_supabase.sql` trong Supabase SQL Editor để tạo 7 bảng tiếng Việt không dấu và bảng xem `thong_ke_hoc_theo_ngay`. File `supabase/schema.sql` là SQL của cơ chế đồng bộ bằng mã cũ, không còn được ứng dụng sử dụng.
 
-Bản SQL mới chỉ tạo cấu trúc, ràng buộc và quyền truy cập; chưa thay đổi app sang Supabase Auth và chưa tự tải dữ liệu localStorage lên. Khi nối app, tạo sổ trước, thêm từ sau, rồi cập nhật tiến trình. Lượt học mới ghi lịch sử với ID cố định để tránh đếm trùng khi thử đồng bộ lại.
+Bản SQL mới tạo cấu trúc, ràng buộc và quyền truy cập cho dữ liệu học. App hiện dùng Supabase Auth cho đăng nhập nhưng chưa tự tải dữ liệu học từ localStorage lên. Khi nối app, tạo sổ trước, thêm từ sau, rồi cập nhật tiến trình. Lượt học mới ghi lịch sử với ID cố định để tránh đếm trùng khi thử đồng bộ lại.
 
 `thong_ke_hoc_cu` chỉ nhập số liệu trước thời điểm chuyển đổi, dùng UPSERT theo tài khoản/ngày; không ghi cùng một lượt vào cả bảng này và lịch sử. Xem cột `phien_ban` khi thiết kế kiểm tra xung đột; chỉ có cột phiên bản chưa tự ngăn việc ghi đè từ thiết bị cũ. Việc ghi tiến trình và lịch sử của một lượt học cần được nối bằng giao dịch/RPC ở bước tích hợp.
 
@@ -155,3 +145,9 @@ Bản SQL mới chỉ tạo cấu trúc, ràng buộc và quyền truy cập; ch
 Giao diện theo file mẫu V3, giữ menu bo tròn dưới màn hình. Có các trang `#/login`, `#/register`, `#/forgot`, `#/reset-password`, `#/account`; đăng nhập bằng Supabase Auth, tên hiển thị lưu trong Auth. Sổ từ và lịch ôn vẫn lưu trên thiết bị.
 
 Xem [hướng dẫn cấu hình Supabase và Vercel](supabase/HUONG-DAN-DANG-NHAP.md). Vercel dùng `npm run build`, xuất thư mục `dist`, đọc `SUPABASE_URL` và `SUPABASE_PUBLISHABLE_KEY`. Đăng nhập Google cần bật provider riêng; đăng ký/xác nhận email công khai cần Custom SMTP. SDK và phông chữ mẫu được lưu cùng mã nguồn để giao diện có thể dùng ngoại tuyến.
+
+### Cài đặt áp dụng ngay
+
+- Tối / Sáng / Tự động đổi giao diện ngay khi bấm, đồng nhất giữa Cài đặt và dropdown avatar.
+- Mục tiêu lượt ôn, tốc độ đọc và các công tắc tự lưu trên thiết bị khi thay đổi; không có bước bấm Lưu cài đặt.
+- Không còn giao diện sao lưu bằng file hoặc đồng bộ thủ công. Đăng nhập Supabase Auth và dữ liệu hiện có được giữ nguyên.

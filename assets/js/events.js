@@ -7,11 +7,6 @@ document.addEventListener('click',e=>{
   switch(action){
     case'add-today':addToday();
     break;
-    case'backup':backupOpen();
-    break;
-    case'cloud':if(cloudBusy)toast('Đang đồng bộ. Vui lòng chờ hoàn tất.');
-    else cloudOpen();
-    break;
     case'bulk':bulkOpen();
     break;
     case'close-utility':utility.close();
@@ -49,10 +44,6 @@ document.addEventListener('click',e=>{
       toast('Đã thêm '+p.words.length+' từ mới.');
       break;
     }
-    case'export':exportFile();
-    break;
-    case'import':applyImport();
-    break;
     case'start-flip':startStudy('flip');
     break;
     case'start-match':startStudy('match');
@@ -102,53 +93,11 @@ document.addEventListener('click',e=>{
     break;
     case'sample':sample();
     break;
-    case'generate-key':{
-      if(!globalThis.crypto?.getRandomValues){
-        toast('Không tạo được mã ngẫu nhiên trên trình duyệt này.',null,'',true);
-        break;
-      }
-      const a=new Uint8Array(32);
-      crypto.getRandomValues(a);
-      $('#cloud-key').value=[...a].map(n=>n.toString(16).padStart(2,'0')).join('');
-      toast('Đã tạo mã mới. Lưu cấu hình và cất một bản riêng.');
-      break;
-    }
-    case'show-key':$('#cloud-key').type=$('#cloud-key').type==='password'?'text':'password';
-    break;
-    case'copy-key':{
-      const key=$('#cloud-key').value;
-      if(!key){
-        toast('Hãy tạo hoặc nhập mã trước.');
-        break;
-      }
-      if(navigator.clipboard?.writeText)navigator.clipboard.writeText(key).then(()=>toast('Đã sao chép mã đồng bộ.')).catch(()=>{
-        toast('Không sao chép được. Bấm HIỆN rồi tự sao chép mã.');
-      }
-      );
-      else toast('Bấm HIỆN rồi tự sao chép mã đồng bộ.');
-      break;
-    }
-    case'cloud-push':cloudAction('push');
-    break;
-    case'cloud-pull':cloudAction('pull');
-    break;
-    case'disconnect':cloud={
-      url:'',apiKey:'',key:'',revision:null
-    }
-    ;
-    saveConfig();
-    cloudOpen();
-    toast('Đã xóa cấu hình trên máy. Từ vựng vẫn được giữ.');
-    break;
   }
 }
 );
 utility.addEventListener('input',e=>{
   if(e.target.id==='bulk-text')bulkPreview();
-}
-);
-utility.addEventListener('change',e=>{
-  if(e.target.id==='import-file')readImport(e.target.files[0]);
 }
 );
 utility.addEventListener('submit',e=>{
@@ -174,16 +123,7 @@ utility.addEventListener('submit',e=>{
     renderBase();
     toast(changed?'Đã sửa từ. Từ được chuyển sang cần ôn lại.':'Đã lưu thay đổi.');
   }
-  else if(e.target.id==='cloud-form'){
-    try{
-      configureCloud();
-      $('#cloud-status').textContent='Đã lưu cấu hình. Chọn tải lên hoặc tải xuống.';
-      toast('Đã lưu cấu hình đồng bộ.');
-    }
-    catch(e){
-      toast(e.message,null,'',true);
-    }
-  }
+
 }
 );
 utility.addEventListener('close',()=>{
@@ -223,7 +163,7 @@ window.addEventListener('hashchange',()=>{
 );
 window.addEventListener('storage',e=>{
   if(e.key===STORE){
-    storageError('Dữ liệu vừa thay đổi ở một tab khác. Hãy xuất file của tab này trước khi tải lại trang để lấy bản mới.');
+    storageError('Dữ liệu vừa thay đổi ở một tab khác. Tab này tạm dừng ghi để tránh xung đột. Tải lại trang để lấy bản mới.');
     writeBlocked=true;
   }
 }

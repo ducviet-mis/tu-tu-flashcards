@@ -28,7 +28,7 @@ function openAccountMenu(focusFirst=false){
  if(focusFirst)menu.querySelector('a,button')?.focus();
 }
 function accountHelp(){
- closeAccountMenu(true);utilityOpen(`${utilityHeader('Dùng Từ Từ')}<div class="account-help-content"><h3>Gặp từ lạ? Tra ở trang chủ</h3><p>Nhập tiếng Anh hoặc tiếng Việt, chọn từ để xem nghĩa và nghe phát âm.</p><h3>Gom những từ bạn muốn nhớ</h3><p>Lưu từ vào sổ, thêm ví dụ nếu cần. Mục Ôn tập sẽ gom các từ đến lịch ôn cho bạn.</p><h3>Mang sổ từ sang thiết bị khác</h3><p>Mở Sao lưu / khôi phục trong cài đặt để lưu một bản sổ từ của bạn.</p><button type="button" class="btn yellow wfull" data-action="account-help-settings">Mở cài đặt ${icon('arrow')}</button></div>`);
+ closeAccountMenu(true);utilityOpen(`${utilityHeader('Dùng Từ Từ')}<div class="account-help-content"><h3>Gặp từ lạ? Tra ở trang chủ</h3><p>Nhập tiếng Anh hoặc tiếng Việt, chọn từ để xem nghĩa và nghe phát âm.</p><h3>Gom những từ bạn muốn nhớ</h3><p>Lưu từ vào sổ, thêm ví dụ nếu cần. Mục Ôn tập sẽ gom các từ đến lịch ôn cho bạn.</p><h3>Học theo cách của bạn</h3><p>Mở Cài đặt trong menu avatar để đổi giao diện, mục tiêu ôn và tốc độ phát âm.</p><button type="button" class="btn yellow wfull" data-action="account-help-settings">Mở cài đặt ${icon('arrow')}</button></div>`);
 }
 document.addEventListener('click',event=>{
  const action=event.target.closest('[data-action]')?.dataset.action;

@@ -17,8 +17,6 @@
 | `assets/js/features/days.js` | Trang Ngày, form thêm từ và danh sách từ |
 | `assets/js/features/words.js` | Dán nhiều từ, sửa ví dụ/nghĩa, xóa và hoàn tác |
 | `assets/js/features/study.js` | Phiên học, lật thẻ, ghép cặp, kết quả |
-| `assets/js/features/backup.js` | Xuất/nhập file và hoàn tác nhập |
-| `assets/js/features/cloud.js` | Cấu hình và yêu cầu Supabase tùy chọn |
 | `assets/js/features/dictionary.js` | Tải kho riêng, tra Anh/Việt trong toàn kho, phát âm và lưu từng từ từ trang nghĩa |
 | `assets/js/features/autocomplete.js` | Gợi ý ở ô thêm từ trong ngày |
 | `assets/js/features/review.js` | Hàng chờ nhiều ngày và ghi nhận lịch ôn |
@@ -36,7 +34,6 @@
 | `tools/update-cache.py` | Chạy sau khi đổi mã để cập nhật phiên bản cache |
 | `tools/serve.cjs` | Máy chủ local để kiểm tra, không dùng khi lên GitHub Pages |
 | `tests/` | Kiểm thử dữ liệu, thao tác DOM mô phỏng, lịch ôn và service worker |
-| `supabase/schema.sql` | SQL tùy chọn cho đồng bộ |
 
 ## Phụ thuộc giữa các file
 

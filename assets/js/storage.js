@@ -3,7 +3,7 @@
 function storageError(message){
   $('#storage-warning').hidden=false;
   $('#storage-warning').textContent=message;
-  $('#save-indicator').textContent='Chưa lưu được — hãy xuất file';
+  $('#save-indicator').textContent='Chưa lưu được trên thiết bị';
 }
 try{
   const raw=localStorage.getItem(STORE);
@@ -11,34 +11,12 @@ try{
 }
 catch(e){
   writeBlocked=true;
-  storageError('Không đọc được dữ liệu đã lưu. App đang giữ bản gốc, chưa ghi đè. Hãy xuất bản sao nếu đang có từ trong phiên này; nhập file hợp lệ bằng “Thay thế” để khôi phục.');
-}
-try{
-  const raw=localStorage.getItem(CONFIG);
-  if(raw){
-    const x=JSON.parse(raw);
-    if(x&&typeof x.url==='string'&&typeof x.apiKey==='string'&&typeof x.key==='string')cloud={
-      ...cloud,...x
-    }
-    ;
-  }
-}
-catch(e){
-}
-function saveConfig(){
-  try{
-    localStorage.setItem(CONFIG,JSON.stringify(cloud));
-    return true;
-  }
-  catch(e){
-    toast('Không lưu được cấu hình đồng bộ trên trình duyệt này.',null,'',true);
-    return false;
-  }
+  storageError('Không đọc được dữ liệu đã lưu. App đang giữ dữ liệu gốc và tạm dừng ghi để tránh mất từ.');
 }
 function persist(){
   C.sortDays(days);
   if(writeBlocked){
-    storageError('Chưa lưu được: vùng dữ liệu cũ đang được giữ để khôi phục. Hãy xuất file hoặc nhập bản hợp lệ bằng “Thay thế”.');
+    storageError('Chưa lưu được: vùng dữ liệu cũ chưa đọc được. App đang tạm dừng ghi để tránh ghi đè dữ liệu.');
     return false;
   }
   try{
@@ -51,7 +29,7 @@ function persist(){
     return true;
   }
   catch(e){
-    storageError('Trình duyệt chặn lưu trữ hoặc bộ nhớ đã đầy. Từ hiện chỉ được giữ trong phiên này. Hãy Sao lưu → XUẤT FILE trước khi đóng trang.');
+    storageError('Trình duyệt chặn lưu trữ hoặc bộ nhớ đã đầy. Từ mới chưa được lưu trên thiết bị. Hãy kiểm tra quyền lưu trữ và dung lượng.');
     return false;
   }
 }

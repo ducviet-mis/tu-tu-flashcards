@@ -25,7 +25,7 @@
 </head>
 <body>
 <div class="shell" id="shell">
-<header class="topbar"><div class="brand-group"><a class="brand" href="#/" aria-label="Từ Từ - Trang chủ"><picture><source srcset="./assets/images/logo-light.svg" media="(prefers-color-scheme: light)" id="brand-light-source"><img class="brand-logo" src="./assets/images/logo.svg" width="210" height="69" alt="Từ Từ - Từ từ mà chắc"></picture></a><span class="header-date" id="header-date"></span></div><div class="top-actions"><div class="account-menu-anchor"><button type="button" class="header-account" id="header-account" data-action="account-menu-toggle" aria-label="Mở menu tài khoản" aria-expanded="false" aria-controls="account-menu"><span data-icon="user"></span></button><div id="account-menu" class="account-dropdown" role="region" aria-label="Menu tài khoản" hidden></div></div><button class="btn outline small header-desktop-action" data-action="bank-open" aria-label="Mở từ điển tra cứu"><span data-icon="search"></span><span class="desktop-label">Từ điển</span></button><button class="btn outline small header-desktop-action" data-action="cloud" aria-label="Đồng bộ Supabase"><span data-icon="cloud"></span><span class="cloud-label">Đồng bộ</span></button><button class="btn outline small header-desktop-action" data-action="backup" aria-label="Sao lưu dữ liệu"><span data-icon="archive"></span><span class="desktop-label">Sao lưu</span></button><a href="#/progress" class="header-streak" aria-label="Chuỗi ngày ôn" id="header-streak"><span data-icon="streak"></span><span id="header-streak-count">0</span></a><a href="#/settings" class="round white header-settings" data-nav="settings" aria-label="Cài đặt"><span data-icon="settings"></span></a></div></header>
+<header class="topbar"><div class="brand-group"><a class="brand" href="#/" aria-label="Từ Từ - Trang chủ"><picture><source srcset="./assets/images/logo-light.svg" media="(prefers-color-scheme: light)" id="brand-light-source"><img class="brand-logo" src="./assets/images/logo.svg" width="210" height="69" alt="Từ Từ - Từ từ mà chắc"></picture></a><span class="header-date" id="header-date"></span></div><div class="top-actions"><button class="btn outline small header-desktop-action" data-action="bank-open" aria-label="Mở từ điển tra cứu"><span data-icon="search"></span><span class="desktop-label">Từ điển</span></button><a href="#/progress" class="header-streak" aria-label="Chuỗi ngày ôn" id="header-streak"><span data-icon="streak"></span><span id="header-streak-count">0</span></a><div class="account-menu-anchor"><button type="button" class="header-account" id="header-account" data-action="account-menu-toggle" aria-label="Mở menu tài khoản" aria-expanded="false" aria-controls="account-menu"><span data-icon="user"></span></button><div id="account-menu" class="account-dropdown" role="region" aria-label="Menu tài khoản" hidden></div></div></div></header>
 <div id="storage-warning" class="storage-warning" role="status" hidden></div>
 <main id="app"></main>
 <footer class="footer"><span>Mỗi từ mới, một bước tiến.</span><span class="footer-right" id="save-indicator">Lưu trên thiết bị của bạn</span></footer>
@@ -57,9 +57,7 @@
 <script defer src="./assets/js/speech.js"></script>
 <script defer src="./assets/js/features/days.js"></script>
 <script defer src="./assets/js/features/words.js"></script>
-<script defer src="./assets/js/features/backup.js"></script>
 <script defer src="./assets/js/features/study.js"></script>
-<script defer src="./assets/js/features/cloud.js"></script>
 <script defer src="./assets/js/events.js"></script>
 <script defer src="./assets/js/features/dictionary.js"></script>
 <script defer src="./assets/js/features/word-relations.js"></script>

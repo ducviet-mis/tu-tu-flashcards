@@ -49,7 +49,7 @@ globalThis.FlashCore=(()=>{
     ;
   }
   function validateBackup(data){
-    if(!data||typeof data!=='object'||!Array.isArray(data.days)||(data.version!==undefined&&data.version!==1))throw Error('File không đúng định dạng sao lưu (phiên bản 1).');
+    if(!data||typeof data!=='object'||!Array.isArray(data.days)||(data.version!==undefined&&data.version!==1))throw Error('Dữ liệu không đúng định dạng (phiên bản 1).');
     if(data.days.length>5000)throw Error('File có quá nhiều ngày.');
     const dates=new Set(),ids=new Set();
     let total=0;
@@ -107,8 +107,6 @@ globalThis.FlashCore=(()=>{
     return sortDays([...map.values()]);
   }
   const matchWords=words=>[...shuffle(words.filter(w=>!w.remembered)),...shuffle(words.filter(w=>w.remembered))].slice(0,6);
-  const canRestoreSnapshot=(current,snapshot)=>JSON.stringify(current)===snapshot;
-  const sameVault=(a,b)=>a.url===b.url&&a.apiKey===b.apiKey&&a.key===b.key;
   const cardLabel=(w,reversed,flipped)=>{
     const english=reversed===flipped;
     return(english?'Tiếng Anh: ':'Tiếng Việt: ')+(english?w.en:w.vi)+'. Bấm hoặc nhấn phím cách để lật thẻ.';
@@ -252,7 +250,7 @@ globalThis.FlashCore=(()=>{
     return extra;
   }
   return{
-    wordExtras,bankSuggestionIndex,bankSuggestions,bankFold,bankQuery,bankSearch,bankSummary,wordKey,uid,isoToday,validDate,sortDays,shuffle,parseBulk,validateBackup,mergeDays,matchWords,canRestoreSnapshot,sameVault,cardLabel
+    wordExtras,bankSuggestionIndex,bankSuggestions,bankFold,bankQuery,bankSearch,bankSummary,wordKey,uid,isoToday,validDate,sortDays,shuffle,parseBulk,validateBackup,mergeDays,matchWords,cardLabel
   }
   ;
 }
