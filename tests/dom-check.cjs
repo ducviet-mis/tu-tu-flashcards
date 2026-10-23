@@ -25,7 +25,7 @@ class El{
  showModal(){this.open=true;(this.querySelector('button')||this).focus();}close(){this.open=false;this.dispatchEvent({type:'close',bubbles:false});}
 }
 function parse(markup,parent){const stack=[parent];let skipping=false;for(const m of markup.matchAll(/<!--[\s\S]*?-->|<![^>]*>|<\/?[a-zA-Z][^>]*>|[^<]+/g)){const token=m[0];if(token.startsWith('<!--')||token.startsWith('<!'))continue;if(token.startsWith('</')){if(stack.length>1)stack.pop();continue;}if(token.startsWith('<')){const tag=token.match(/^<([\w-]+)/)[1],attrs={};for(const a of token.slice(tag.length+1,-1).matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g))attrs[a[1]]=decode(a[2]??a[3]??a[4]??'');const el=new El(tag,parent.doc,attrs);stack.at(-1).append(el);if(!/^(input|link|meta|br|hr|img|source|path)$/i.test(tag)&&!token.endsWith('/>'))stack.push(el);}else stack.at(-1)._text+=decode(token);}}
-function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech=false,lexicon=false,kaikkiEntries=null}={}){
+function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech=false,lexicon=false,kaikkiEntries=null,topicData=null}={}){
  const html=lexicon?legacyHtml:normalHtml;
  const doc={activeElement:null,downloads:[],blobs:new Map()};doc.body=new El('body',doc);doc.documentElement=new El('html',doc);doc.querySelector=s=>doc.body.querySelector(s);doc.querySelectorAll=s=>doc.body.querySelectorAll(s);doc.createElement=s=>new El(s,doc);doc.addEventListener=(...args)=>doc.body.addEventListener(...args);
  parse(html.replace(/<style>[\s\S]*?<\/style>/g,'').replace(/<script[^>]*>[\s\S]*?<\/script>/g,''),doc.body);
@@ -33,9 +33,9 @@ function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech
  const events={},timers=[];let currentHash=hash;
  const location={get hash(){return currentHash;},set hash(v){currentHash=v;for(const fn of events.hashchange||[])fn();}};
  const storage={getItem:k=>{if(blocked)throw Error('blocked');return map.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');map.set(k,v);}};
- const box={document:doc,location,history:{replaceState:(s,t,v)=>{currentHash=v;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(String(url).endsWith('data/kaikki/index.json.gz')&&bankRows)return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows,buckets:[...'abcdefghijklmnopqrstuvwxyz0']})));if(kaikkiEntries&&/^\.\/data\/kaikki\/[a-z0]\.json\.gz$/.test(String(url)))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',entries:kaikkiEntries})));if(lexicon&&/^\.\/data\/wordnet(?:\/|\-vi)/.test(String(url)))return new Response(fs.readFileSync(String(url)));if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
+ const box={document:doc,location,history:{replaceState:(s,t,v)=>{currentHash=v;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(String(url).endsWith('data/topics/catalog.json')&&topicData)return new Response(JSON.stringify(topicData));if(String(url).endsWith('data/kaikki/index.json.gz')&&bankRows)return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows,buckets:[...'abcdefghijklmnopqrstuvwxyz0']})));if(kaikkiEntries&&/^\.\/data\/kaikki\/[a-z0]\.json\.gz$/.test(String(url)))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',entries:kaikkiEntries})));if(lexicon&&/^\.\/data\/wordnet(?:\/|\-vi)/.test(String(url)))return new Response(fs.readFileSync(String(url)));if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
  const spoken=[];if(speech){box.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};box.speechSynthesis={cancel(){},getVoices:()=>[{lang:'en-US'}],speak:utterance=>spoken.push(utterance)};}box.performance=performance;box.Response=Response;box.DecompressionStream=DecompressionStream;box.window=box;vm.createContext(box);const scripts=[...html.matchAll(/<script id="(?:core|application)">([\s\S]*?)<\/script>/g)].map(m=>m[1]);vm.runInContext(scripts[0],box);
- const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;},initializeAccount,showPwaUpdate,get accountUser(){return accountUser;}};`);vm.runInContext(src,box);
+ const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;},initializeAccount,showPwaUpdate,get accountUser(){return accountUser;},get topicPending(){return topicPending;}};`);vm.runInContext(src,box);
  return{box,doc,spoken,q:s=>doc.querySelector(s),qa:box.QA,map,click:s=>{const e=doc.querySelector(s);assert.ok(e,'Missing element '+s);e.click();},flush:ms=>{for(const t of timers.splice(0))if(!t.cancelled&&t.ms<=ms)t.fn();},key:code=>doc.body.dispatchEvent({type:'keydown',code,target:doc.activeElement||doc.body})};
 }
 function demo(){const e=environment();e.click('[data-action="sample"]');e.box.location.hash='#/day/'+e.qa.days[0].date;return e;}
@@ -487,8 +487,8 @@ test('Notebook switches between day and topic views without creating saved days'
  const e=environment({hash:'#/notebook'});
  assert.ok(e.q('a[href="#/notebook?view=days"]'));
  assert.ok(e.q('a[href="#/notebook?view=topics"]'));
- e.box.location.hash='#/notebook?view=topics';
- assert.equal(e.q('a[href="#/notebook?view=topics"]').getAttribute('aria-current'),'page');
+ e.box.location.hash='#/notebook?view=personal';
+ assert.equal(e.q('a[href="#/notebook?view=personal"]').getAttribute('aria-current'),'page');
  assert.match(e.q('#notebook-content').textContent,/Chưa có từ/);
  assert.equal(e.qa.days.length,0);
  e.box.location.hash='#/notebook?view=days';
@@ -514,17 +514,17 @@ test('Topic labels survive quick add, reload and editing without resetting revie
 test('Notebook groups words across dates and keeps unlabeled words in a separate topic',()=>{
  const e=demo(),first=e.qa.days[0],second=e.qa.days[1];
  first.words[0].topic='Du lịch';second.words[0].topic='du lịch';
- e.box.location.hash='#/notebook?view=topics';
+ e.box.location.hash='#/notebook?view=personal';
  assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-topic').length,2);
- e.box.location.hash='#/notebook?view=topics&topic='+encodeURIComponent('du lịch');
+ e.box.location.hash='#/notebook?view=personal&topic='+encodeURIComponent('du lịch');
  assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,2);
- e.box.location.hash='#/notebook?view=topics&topic=';
+ e.box.location.hash='#/notebook?view=personal&topic=';
  assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,12);
 });
 
 test('Notebook search finds Vietnamese without accents and safely displays topic labels',()=>{
  const e=demo(),word=e.qa.days[0].words[0];word.en='departure';word.vi='khởi hành';word.topic='<img src=x onerror=alert(1)>';
- e.box.location.hash='#/notebook?view=topics';
+ e.box.location.hash='#/notebook?view=personal';
  assert.ok(!e.q('#notebook-content').querySelector('img'));
  const input=e.q('#notebook-search');input.value='khoi hanh';input.dispatchEvent({type:'input'});
  assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,1);
@@ -536,7 +536,7 @@ test('Notebook search finds Vietnamese without accents and safely displays topic
 test('Topic word actions target the correct day and retain the notebook route',()=>{
  const e=environment({speech:true});e.click('[data-action="sample"]');
  const d=e.qa.days[1],w=d.words[0];w.topic='Công việc';
- e.box.location.hash='#/notebook?view=topics&topic='+encodeURIComponent('Công việc');
+ e.box.location.hash='#/notebook?view=personal&topic='+encodeURIComponent('Công việc');
  e.click('[data-action="notebook-speak"][data-id="'+w.id+'"]');assert.equal(e.spoken.at(-1).text,w.en);
  const wasKnown=w.remembered;e.click('[data-action="notebook-toggle"][data-id="'+w.id+'"]');assert.equal(w.remembered,!wasKnown);
  e.click('[data-action="notebook-edit"][data-id="'+w.id+'"]');assert.equal(e.q('#edit-en').value,w.en);
@@ -547,7 +547,7 @@ test('Topic word actions target the correct day and retain the notebook route',(
 test('Notebook reveals long topic lists in batches and resets the batch when searching',()=>{
  const e=demo(),d=e.qa.days[0];
  d.words=Array.from({length:85},(_,i)=>({id:'topic-word-'+i,en:'word'+i,vi:'từ '+i,remembered:false,topic:'Công việc'}));
- e.box.location.hash='#/notebook?view=topics&topic='+encodeURIComponent('Công việc');
+ e.box.location.hash='#/notebook?view=personal&topic='+encodeURIComponent('Công việc');
  assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,40);
  e.click('[data-action="notebook-more"]');assert.equal(e.q('#notebook-content').querySelectorAll('.notebook-word').length,80);
  const input=e.q('#notebook-search');input.value='word';input.dispatchEvent({type:'input'});
@@ -613,4 +613,66 @@ test('Changing a saved Kaikki headword clears pronunciation and relations of the
  e.click('[data-action="bank-save"]');e.click('[data-action="close-utility"]');const w=e.qa.days[0].words[0];assert.equal(w.dictionary.source,'kaikki');
  e.box.location.hash='#/day/'+e.qa.days[0].date;e.click('[data-action="edit"][data-id="'+w.id+'"]');e.q('#edit-en').value='different';e.q('#edit-form').dispatchEvent({type:'submit'});
  assert.equal(w.dictionary,undefined);assert.equal(w.synonyms,undefined);assert.equal(w.antonyms,undefined);
+});
+
+
+function topicFixture(){return {version:1,source:'linguabase',revision:'topics-fixture',dictionaryRevision:'fixture',topics:[{id:'food',title:'Đồ ăn',sourceLabel:'foods',group:'Ăn uống',words:Array.from({length:8},(_,i)=>({id:'tw-'+i,en:['apple','pear','banana','bread','rice','bean','onion','carrot'][i],vi:['quả táo','quả lê','chuối','bánh mì','gạo','đậu','hành','cà rốt'][i],dictionary:{source:'kaikki',senseId:'kk-'+i,meaningLanguage:'vi',ipa:'/word/'},example:''}))},{id:'home',title:'Nhà cửa',sourceLabel:'home',group:'Đời sống',words:[{id:'tw-house',en:'house',vi:'ngôi nhà',dictionary:{source:'kaikki',senseId:'kk-house',meaningLanguage:'vi'}}]}]};}
+test('Fixed topics open from the notebook tab and show every word without membership editing',async()=>{
+ const e=environment({topicData:topicFixture(),hash:'#/notebook?view=topics'});await e.qa.topicPending;
+ assert.equal(e.q('#fixed-topic-grid').querySelectorAll('.fixed-topic-tile').length,2);assert.ok(!e.q('#app').querySelector('[data-action="quick-add"]'));
+ e.box.location.hash='#/notebook?view=topics&topic=food';await e.qa.topicPending;
+ assert.equal(e.q('#fixed-topic-words').querySelectorAll('.fixed-topic-word').length,8);assert.ok(e.q('[data-action="topic-flip"]'));assert.ok(e.q('[data-action="topic-match"]'));
+ assert.ok(!e.q('#app').querySelector('[data-action="edit"]'));assert.ok(!e.q('#app').querySelector('[data-action="bank-save"]'));assert.equal(e.qa.days.length,0);
+ e.q('#fixed-topic-search').value='ca rot';e.q('#fixed-topic-search').dispatchEvent({type:'input'});assert.equal(e.q('#fixed-topic-words').querySelectorAll('.fixed-topic-word').length,1);
+});
+test('Topic flashcards retain progress and never create or modify personal notebook words',async()=>{
+ const e=environment({topicData:topicFixture(),hash:'#/notebook?view=topics&topic=food'});await e.qa.topicPending;
+ e.click('[data-action="topic-flip"]');await e.qa.topicPending;assert.equal(e.qa.session.fromTopic,'food');assert.equal(e.qa.session.words.length,8);
+ e.click('[data-action="flip-card"]');e.click('[data-action="answer-yes"]');assert.equal(e.qa.days.length,0);
+ e.click('[data-action="close-study"]');await e.qa.topicPending;assert.match(e.box.location.hash,/topic=food/);assert.match(e.q('#fixed-topic-known').textContent,/1\/8/);
+ const again=environment({map:e.map,topicData:topicFixture(),hash:'#/notebook?view=topics&topic=food'});await again.qa.topicPending;assert.match(again.q('#fixed-topic-known').textContent,/1\/8/);
+});
+test('Matching visits all fixed words in small rounds and returns to the same deck',async()=>{
+ const e=environment({topicData:topicFixture(),hash:'#/notebook?view=topics&topic=food'});await e.qa.topicPending;e.click('[data-action="topic-match"]');await e.qa.topicPending;
+ const seen=new Set();let guard=0;
+ while(e.qa.session.type==='match'&&guard++<4){const words=[...e.qa.session.words];assert.ok(words.length<=6);for(const w of words){seen.add(w.id);const a=e.qa.session.cells.findIndex(c=>c.pair===w.id&&c.lang==='en'),b=e.qa.session.cells.findIndex(c=>c.pair===w.id&&c.lang==='vi');e.qa.selectCell(a);e.qa.selectCell(b);}e.flush(500);}
+ assert.equal(seen.size,8);assert.equal(e.qa.session.type,'result');assert.equal(e.qa.session.result.total,8);assert.equal(e.qa.session.result.correct,8);assert.equal(e.qa.days.length,0);
+ await e.qa.topicPending;e.click('[data-action="topic-return"]');await e.qa.topicPending;assert.match(e.box.location.hash,/topic=food/);assert.match(e.q('#fixed-topic-known').textContent,/8\/8/);
+});
+test('Late topic downloads cannot reopen study or overwrite a page visited meanwhile',async()=>{
+ const e=environment(),original=e.box.fetch;let release;e.box.fetch=async url=>String(url).endsWith('data/topics/catalog.json')?new Promise(resolve=>release=()=>resolve(new Response(JSON.stringify(topicFixture())))):original(url);
+ e.box.location.hash='#/topic/food?mode=flip';const pending=e.qa.topicPending;e.box.location.hash='#/';release();await pending;
+ assert.ok(e.q('#home-lookup'));assert.equal(e.q('#study-dialog').open,false);assert.equal(e.qa.session,null);
+});
+test('Topic download failure can retry and an invalid deck has an accessible return path',async()=>{
+ const e=environment({hash:'#/notebook?view=topics'});await e.qa.topicPending;assert.ok(e.q('[data-action="topics-retry"]'));
+ const original=e.box.fetch;e.box.fetch=async url=>String(url).endsWith('data/topics/catalog.json')?new Response(JSON.stringify(topicFixture())):original(url);e.click('[data-action="topics-retry"]');await e.qa.topicPending;assert.ok(e.q('#fixed-topic-grid'));
+ e.box.location.hash='#/notebook?view=topics&topic=missing';await e.qa.topicPending;assert.ok(e.q('.fixed-topic-missing'));assert.ok(e.q('a[href="#/notebook?view=topics"]'));
+});
+
+test('Fixed study leaves an existing personal vocabulary entry and its schedule untouched',async()=>{
+ const e=environment({topicData:topicFixture()});e.click('[data-action="sample"]');const w=e.qa.days[0].words[0];w.en='apple';const before=JSON.stringify(e.qa.days),stored=e.map.get('tungngay.v1');
+ e.box.location.hash='#/topic/food?mode=flip';await e.qa.topicPending;e.click('[data-action="flip-card"]');e.click('[data-action="answer-yes"]');
+ assert.equal(JSON.stringify(e.qa.days),before);assert.equal(e.map.get('tungngay.v1'),stored);assert.ok(e.q('.review-schedule').hidden);
+});
+
+test('Fixed flashcard results retry only missed words from that session',async()=>{
+ const e=environment({topicData:topicFixture(),hash:'#/topic/food?mode=flip'});await e.qa.topicPending;
+ for(let i=0;i<8;i++){e.click('[data-action="flip-card"]');e.click('[data-action="answer-'+(i===0?'no':'yes')+'"]');}
+ await e.qa.topicPending;assert.equal(e.qa.session.type,'result');e.click('[data-action="result-review"]');await e.qa.topicPending;
+ assert.deepEqual(Array.from(e.qa.session.words,w=>w.en),['apple']);assert.equal(e.qa.days.length,0);
+});
+test('Opening a slow fixed study link closes an older study immediately and shows loading feedback',async()=>{
+ const e=environment();e.click('[data-action="sample"]');e.box.location.hash='#/day/'+e.qa.days[0].date;e.click('[data-action="start-flip"]');assert.ok(e.q('#study-dialog').open);
+ let release;e.box.fetch=async()=>new Promise(resolve=>release=()=>resolve(new Response(JSON.stringify(topicFixture()))));
+ e.box.location.hash='#/topic/food?mode=flip';const pending=e.qa.topicPending;
+ assert.equal(e.q('#study-dialog').open,false);assert.ok(e.q('#fixed-topic-session-loading'));
+ e.box.location.hash='#/';release();await pending;assert.ok(e.q('#home-lookup'));assert.equal(e.q('#study-dialog').open,false);
+});
+test('Personal flashcard, matching and result routes never reuse topic-origin sessions',async()=>{
+ const e=environment({topicData:topicFixture(),hash:'#/topic/food?mode=flip'});await e.qa.topicPending;const date=e.qa.session.date;
+ e.box.location.hash='#/flip/'+date;assert.equal(e.qa.session,null);assert.equal(e.q('#study-dialog').open,false);assert.match(e.box.location.hash,/day\//);
+ e.box.location.hash='#/topic/food?mode=match';await e.qa.topicPending;e.box.location.hash='#/match/'+date;assert.equal(e.qa.session,null);assert.equal(e.q('#study-dialog').open,false);assert.match(e.box.location.hash,/day\//);
+ e.box.location.hash='#/topic/food?mode=flip';await e.qa.topicPending;for(let i=0;i<8;i++){e.click('[data-action="flip-card"]');e.click('[data-action="answer-yes"]');}await e.qa.topicPending;
+ e.box.location.hash='#/result/'+date;assert.equal(e.qa.session,null);assert.equal(e.q('#study-dialog').open,false);assert.match(e.box.location.hash,/day\//);
 });

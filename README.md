@@ -53,6 +53,10 @@ Toàn bộ giao diện dùng Be Vietnam Pro, được lưu trong `assets/fonts/`
 
 Từ điển hiện dùng duy nhất Kaikki: 119.032 từ/cụm từ có nghĩa Việt, kèm chi tiết từ bản tiếng Anh. FVDP và WordNet vẫn giữ trong mã nguồn nhưng không được nạp hoặc cache; bản build Vercel bỏ qua các kho cũ. Thẻ đã lưu và tiến trình học không bị thay đổi. Xem [phạm vi và cách kiểm tra](docs/KAIKKI-THU-NGHIEM.md).
 
+## Chủ đề có sẵn
+
+Trong **Sổ từ → Chủ đề**, chọn một bộ tiếng Anh hằng ngày để xem toàn bộ từ, nghe phát âm và học lật thẻ/ghép từ. Bộ từ cố định; không có nút thêm/sửa/xóa từ trong bộ. Tiến trình nhớ từ được lưu riêng trên thiết bị, không tạo từ trong sổ theo ngày. [Chi tiết sử dụng và dữ liệu](docs/CHU-DE.md).
+
 ## Những phần mới
 
 | Mục | Cách hoạt động |

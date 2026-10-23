@@ -20,13 +20,14 @@ function topicField(id,value=''){
 }
 function notebookState(){
   const params=new URLSearchParams(location.hash.split('?')[1]||'');
-  return {topics:params.get('view')==='topics',topic:params.has('topic')?C.wordKey(params.get('topic')):null};
+  return {topics:params.get('view')==='personal',fixed:params.get('view')==='topics',topic:params.has('topic')?C.wordKey(params.get('topic')):null};
 }
 function renderNotebook(){
+  if(notebookState().fixed)return renderFixedTopics();
   closeSuggestions();suggestionAutoMeaning=null;$('#shell').classList.remove('mobile-day');
   notebookVisibleLimit=40;
   const total=days.reduce((n,d)=>n+d.words.length,0),known=days.reduce((n,d)=>n+remembered(d),0),{topics}=notebookState();
-  app.innerHTML=`<div class="notebook-page"><section class="notebook-heading"><div><div class="eyebrow muted">${total} từ · ${days.length} ngày đã lưu</div><h1>Sổ từ</h1><p id="notebook-known-count">Đã nhớ ${known}/${total} từ</p></div><button class="btn white small" data-action="quick-add">${icon('plus')}Thêm từ</button></section><div class="notebook-toolbar"><label class="search notebook-search">${icon('search')}<span class="sr-only">Tìm trong sổ từ</span><input id="notebook-search" type="search" value="${esc(notebookSearch)}" placeholder="Tìm trong sổ của tôi" autocomplete="off" maxlength="200"></label><nav class="notebook-tabs" aria-label="Cách xem sổ từ"><a href="#/notebook?view=days" ${topics?'':'aria-current="page"'}>Theo ngày</a><a href="#/notebook?view=topics" ${topics?'aria-current="page"':''}>Chủ đề</a></nav></div><div id="notebook-content"></div></div>`;
+  app.innerHTML=`<div class="notebook-page"><section class="notebook-heading"><div><div class="eyebrow muted">${total} từ · ${days.length} ngày đã lưu</div><h1>Sổ từ</h1><p id="notebook-known-count">Đã nhớ ${known}/${total} từ</p></div><button class="btn white small" data-action="quick-add">${icon('plus')}Thêm từ</button></section><div class="notebook-toolbar"><label class="search notebook-search">${icon('search')}<span class="sr-only">Tìm trong sổ từ</span><input id="notebook-search" type="search" value="${esc(notebookSearch)}" placeholder="Tìm trong sổ của tôi" autocomplete="off" maxlength="200"></label><nav class="notebook-tabs" aria-label="Cách xem sổ từ"><a href="#/notebook?view=days" ${topics?'':'aria-current="page"'}>Theo ngày</a><a href="#/notebook?view=topics" ${topics?'aria-current="page"':''}>Chủ đề</a></nav></div><div id="notebook-content"></div><a class="notebook-personal-topics" href="#/notebook?view=personal" ${topics?'aria-current="page"':''}>Nhãn từ cá nhân</a></div>`;
   renderNotebookContent();
 }
 function notebookWordRows(entries){
@@ -42,14 +43,14 @@ function renderNotebookContent(){
   }
   if(query)entries=entries.filter(({word:w,date})=>C.bankFold([w.en,w.vi,w.topic||'',date,dateLabel(date)].join(' ')).includes(query));
   const detail=state.topics&&state.topic!==null;
-  const heading=detail?`<div class="notebook-topic-heading"><a href="#/notebook?view=topics">${icon('back')}Tất cả chủ đề</a><h2>${esc(group?.label||(state.topic?'Chủ đề này chưa có từ':'Chưa phân chủ đề'))}</h2></div>`:'';
+  const heading=detail?`<div class="notebook-topic-heading"><a href="#/notebook?view=personal">${icon('back')}Tất cả chủ đề</a><h2>${esc(group?.label||(state.topic?'Chủ đề này chưa có từ':'Chưa phân chủ đề'))}</h2></div>`:'';
   if(query||detail){
     content.innerHTML=heading+`<p class="notebook-result-count" role="status">${entries.length} từ${query?' tìm thấy':''}${entries.length>notebookVisibleLimit?` · Hiện ${notebookVisibleLimit} từ`:''}</p>`+(entries.length?notebookWordRows(entries.slice(0,notebookVisibleLimit))+(entries.length>notebookVisibleLimit?'<button class="btn outline small notebook-more" data-action="notebook-more">Xem thêm từ</button>':''):`<div class="notebook-empty"><h2>${query?'Không tìm thấy từ phù hợp':'Chưa có từ trong chủ đề này'}</h2><p>${query?'Thử từ tiếng Anh, nghĩa tiếng Việt hoặc tên chủ đề khác.':'Gán chủ đề khi thêm hoặc sửa từ để gom vào cùng một nhóm.'}</p></div>`);
     return;
   }
   if(state.topics){
     const groups=notebookTopics(all);
-    content.innerHTML=groups.length?`<div class="notebook-grid notebook-topic-grid">${groups.map((g,i)=>{const n=g.entries.filter(e=>e.word.remembered).length;return `<a class="notebook-topic ${['orange','blue','yellow','mint'][i%4]}" href="#/notebook?view=topics&amp;topic=${encodeURIComponent(g.key)}"><div class="notebook-topic-copy"><h2>${esc(g.label)}</h2><span>${g.entries.length} từ</span></div><div class="notebook-topic-end"><span class="notebook-known">${n}/${g.entries.length}<span class="sr-only"> từ đã nhớ</span></span>${icon('arrow')}</div></a>`;}).join('')}</div><p class="notebook-hint">Thêm chủ đề khi thêm hoặc sửa từ. Các từ cùng chủ đề được gom từ mọi ngày.</p>`:`<div class="notebook-empty"><h2>Chưa có từ trong sổ</h2><p>Thêm từ đầu tiên và chọn một chủ đề bạn muốn học.</p><button class="btn purple small" data-action="quick-add">${icon('plus')}Thêm từ</button></div>`;
+    content.innerHTML=groups.length?`<div class="notebook-grid notebook-topic-grid">${groups.map((g,i)=>{const n=g.entries.filter(e=>e.word.remembered).length;return `<a class="notebook-topic ${['orange','blue','yellow','mint'][i%4]}" href="#/notebook?view=personal&amp;topic=${encodeURIComponent(g.key)}"><div class="notebook-topic-copy"><h2>${esc(g.label)}</h2><span>${g.entries.length} từ</span></div><div class="notebook-topic-end"><span class="notebook-known">${n}/${g.entries.length}<span class="sr-only"> từ đã nhớ</span></span>${icon('arrow')}</div></a>`;}).join('')}</div><p class="notebook-hint">Thêm chủ đề khi thêm hoặc sửa từ. Các từ cùng chủ đề được gom từ mọi ngày.</p>`:`<div class="notebook-empty"><h2>Chưa có từ trong sổ</h2><p>Thêm từ đầu tiên và chọn một chủ đề bạn muốn học.</p><button class="btn purple small" data-action="quick-add">${icon('plus')}Thêm từ</button></div>`;
     return;
   }
   const today=C.isoToday(),list=C.sortDays(days.some(d=>d.date===today)?[...days]:[...days,day(today)]);

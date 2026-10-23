@@ -1,0 +1,28 @@
+Fixed everyday vocabulary decks for Tu Tu, prepared 2026-10-24.
+
+Topic memberships: Linguabase / IDEA.org, CC0 1.0 Universal.
+https://www.linguabase.org/
+https://huggingface.co/datasets/linguabase/linguabase
+https://creativecommons.org/publicdomain/zero/1.0/
+Source table: categories/categories.full.tsv.gz
+SHA-256: 389a71b33855c2eef46dda490d9644dc153496fccd0f119684625cecb450128d
+
+Adaptations: selected named everyday source categories, added Vietnamese labels,
+selected reviewed members from each source category, and intersected membership
+with the local Kaikki snapshot. Explicit whole-word Vietnamese context rules
+select a matching source sense for every card; unmatched entries are omitted.
+See tools/topic-selections.json for the reproducible selection criteria.
+Vocabulary membership is fixed in the app.
+This is a subset prepared for flashcard use, not the full Linguabase database,
+not a CEFR syllabus and not an assertion of complete linguistic correctness.
+Linguabase uses computational/LLM-assisted construction and can contain errors.
+
+Definitions, examples, IPA and pronunciation links: Kaikki/Wiktionary snapshot
+3adca4856d26ed1a. Dictionary text retains CC BY-SA / applicable GFDL terms and
+source attribution. Illustrative quotations can have separate terms; references
+are retained. Audio is linked, not bundled; individual Commons licenses apply.
+See ../kaikki/NOTICE.txt and the Wiktionary/Commons links on each card record.
+Application code and archived dictionaries retain their existing licenses.
+
+The catalog is a static derived snapshot. No external API, account or runtime
+language model is needed to browse or study these decks.

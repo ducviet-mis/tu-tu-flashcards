@@ -16,9 +16,9 @@ function startStudy(mode,review=false){
   }
   go('#/'+mode+'/'+selected+(review?'?review=1':''));
 }
-function createSession(type,date,review){
-  const words=day(date).words;
-  const chosen=type==='match'?C.matchWords(words):(review?words.filter(w=>!w.remembered):words);
+function createSession(type,date,review,options={}){
+  const words=options.words||day(date).words;
+  const chosen=options.words?words:(type==='match'?C.matchWords(words):(review?words.filter(w=>!w.remembered):words));
   session={
     type,date,review,words:chosen.map(w=>({
       ...w
@@ -46,7 +46,7 @@ function timeLabel(ms){
   return String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0');
 }
 function studyHeader(label){
-  return `<div class="dialog-head"><button class="round white" data-action="close-study" aria-label="Đóng chế độ học, quay lại ngày">${icon('back')}</button><span class="eyebrow">${label} · ${dateLabel(session.date)}</span>${(speakerSupported||session.words[session.index]?.dictionary?.audio)&&session.type==='flip'?`<button class="round" data-action="session-speak" aria-label="Nghe phát âm từ đang học">${icon('sound')}</button>`:''}</div>`;
+  return `<div class="dialog-head"><button class="round white" data-action="close-study" aria-label="${session.fromTopic?'Đóng chế độ học, quay lại chủ đề':'Đóng chế độ học, quay lại ngày'}">${icon('back')}</button><span class="eyebrow">${label} · ${session.fromTopic?esc(session.topicTitle):dateLabel(session.date)}</span>${(speakerSupported||session.words[session.index]?.dictionary?.audio)&&session.type==='flip'?`<button class="round" data-action="session-speak" aria-label="Nghe phát âm từ đang học">${icon('sound')}</button>`:''}</div>`;
 }
 function renderFlip(){
   const s=session,w=s.words[s.index];
@@ -55,7 +55,7 @@ function renderFlip(){
     return;
   }
   const nextReview=ReviewEngine.setRemembered({...w},true,C.isoToday()).nextReview;
-  study.innerHTML=studyHeader('Lật thẻ')+`<h2 class="study-heading" id="study-title">Mỗi lần lật,<br>Một lần nhớ.</h2><div class="segments" aria-hidden="true">${s.words.map((_,i)=>`<span class="${i<s.index?s.answers[i]?'done':'miss':i===s.index?'current':''}"></span>`).join('')}</div><div class="session-progress"><span>${s.review?'Ôn từ chưa nhớ':'Bộ thẻ của bạn'}</span><span>${s.index+1} / ${s.words.length}</span></div><div class="deck"><button class="flip-card ${s.flipped?'flipped':''}" data-action="flip-card" aria-label="${esc(C.cardLabel(w,s.reversed,s.flipped))}" aria-pressed="${s.flipped}"><span class="flip-inner"><span class="face front" aria-hidden="${s.flipped}"><span class="eyebrow">${s.reversed?(w.dictionary?.meaningLanguage==='en'?'Nghĩa tiếng Anh':w.dictionary?.meaningLanguage==='custom'?'Nghĩa của bạn':'Tiếng Việt'):'Tiếng Anh'}</span><span class="word">${esc(s.reversed?w.vi:w.en)}</span>${w.dictionary?.ipa?`<span class="card-pronunciation">${esc(w.dictionary.ipa)}</span>`:''}${w.example?`<span class="card-example">${esc(w.example)}</span>`:''}<span class="flip-hint">Bấm vào thẻ để lật</span></span><span class="face back" aria-hidden="${!s.flipped}"><span class="eyebrow">${s.reversed?'Tiếng Anh':(w.dictionary?.meaningLanguage==='en'?'Nghĩa tiếng Anh':w.dictionary?.meaningLanguage==='custom'?'Nghĩa của bạn':'Nghĩa tiếng Việt')}</span><span class="word">${esc(s.reversed?w.en:w.vi)}</span><span class="translation-small">${esc(s.reversed?w.vi:w.en)}</span>${w.synonyms?.length?`<span class="card-relations">Đồng nghĩa: ${esc(w.synonyms.slice(0,3).join(', '))}</span>`:''}${w.antonyms?.length?`<span class="card-relations">Trái nghĩa: ${esc(w.antonyms.slice(0,3).join(', '))}</span>`:''}${w.exampleVi?`<span class="card-example">${esc(w.exampleVi)}</span>`:''}${w.exampleRef?`<span class="card-reference">${esc(w.exampleRef)}</span>`:''}</span></span></button></div><div class="answer-buttons" id="answer-buttons">${s.flipped?answerButtons():'<div class="answer-prompt">Lật thẻ rồi tự đánh giá trí nhớ của bạn.</div>'}</div><div class="review-schedule">Đã nhớ → ôn ngày ${dateLabel(nextReview)} · Chưa nhớ → ôn lại hôm nay</div><div class="session-tools"><button class="btn outline small" data-action="shuffle">${icon('shuffle')}Xáo trộn</button><button class="btn outline small ${s.reversed?'selected':''}" data-action="reverse" aria-pressed="${s.reversed}">${icon('reverse')}Đảo chiều</button></div><div class="shortcut" style="margin:18px 0 0">Phím cách: lật · ← chưa nhớ · đã nhớ →</div>`;
+  study.innerHTML=studyHeader('Lật thẻ')+`<h2 class="study-heading" id="study-title">Mỗi lần lật,<br>Một lần nhớ.</h2><div class="segments" aria-hidden="true">${s.words.map((_,i)=>`<span class="${i<s.index?s.answers[i]?'done':'miss':i===s.index?'current':''}"></span>`).join('')}</div><div class="session-progress"><span>${s.fromTopic?'Từ vựng theo chủ đề':s.review?'Ôn từ chưa nhớ':'Bộ thẻ của bạn'}</span><span>${s.index+1} / ${s.words.length}</span></div><div class="deck"><button class="flip-card ${s.flipped?'flipped':''}" data-action="flip-card" aria-label="${esc(C.cardLabel(w,s.reversed,s.flipped))}" aria-pressed="${s.flipped}"><span class="flip-inner"><span class="face front" aria-hidden="${s.flipped}"><span class="eyebrow">${s.reversed?(w.dictionary?.meaningLanguage==='en'?'Nghĩa tiếng Anh':w.dictionary?.meaningLanguage==='custom'?'Nghĩa của bạn':'Tiếng Việt'):'Tiếng Anh'}</span><span class="word">${esc(s.reversed?w.vi:w.en)}</span>${w.dictionary?.ipa?`<span class="card-pronunciation">${esc(w.dictionary.ipa)}</span>`:''}${w.example?`<span class="card-example">${esc(w.example)}</span>`:''}<span class="flip-hint">Bấm vào thẻ để lật</span></span><span class="face back" aria-hidden="${!s.flipped}"><span class="eyebrow">${s.reversed?'Tiếng Anh':(w.dictionary?.meaningLanguage==='en'?'Nghĩa tiếng Anh':w.dictionary?.meaningLanguage==='custom'?'Nghĩa của bạn':'Nghĩa tiếng Việt')}</span><span class="word">${esc(s.reversed?w.en:w.vi)}</span><span class="translation-small">${esc(s.reversed?w.vi:w.en)}</span>${w.synonyms?.length?`<span class="card-relations">Đồng nghĩa: ${esc(w.synonyms.slice(0,3).join(', '))}</span>`:''}${w.antonyms?.length?`<span class="card-relations">Trái nghĩa: ${esc(w.antonyms.slice(0,3).join(', '))}</span>`:''}${w.exampleVi?`<span class="card-example">${esc(w.exampleVi)}</span>`:''}${w.exampleRef?`<span class="card-reference">${esc(w.exampleRef)}</span>`:''}</span></span></button></div><div class="answer-buttons" id="answer-buttons">${s.flipped?answerButtons():'<div class="answer-prompt">Lật thẻ rồi tự đánh giá trí nhớ của bạn.</div>'}</div><div class="review-schedule" ${s.fromTopic?'hidden':''}>Đã nhớ → ôn ngày ${dateLabel(nextReview)} · Chưa nhớ → ôn lại hôm nay</div><div class="session-tools"><button class="btn outline small" data-action="shuffle">${icon('shuffle')}Xáo trộn</button><button class="btn outline small ${s.reversed?'selected':''}" data-action="reverse" aria-pressed="${s.reversed}">${icon('reverse')}Đảo chiều</button></div><div class="shortcut" style="margin:18px 0 0">Phím cách: lật · ← chưa nhớ · đã nhớ →</div>`;
   if(preferences.autoSpeak&&s.spokenId!==w.id){
     s.spokenId=w.id;
     speakWord(w);
@@ -77,11 +77,11 @@ function answer(known){
   const s=session;
   if(s?.type!=='flip'||!s.flipped||s.busy)return;
   s.busy=true;
-  const w=day(s.words[s.index]._date||s.date).words.find(w=>w.id===s.words[s.index].id);
-  if(w)recordReview(w,known);
+  const w=studyWord(s.words[s.index].id,s.words[s.index]._date||s.date);
+  if(w)gradeStudyWord(w,known);
   s.words[s.index].remembered=known;
   s.answers.push(known);
-  persist();
+  persistStudy();
   s.index++;
   s.flipped=false;
   s.busy=false;
@@ -98,7 +98,7 @@ function renderMatch(){
   const previous=document.activeElement;
   const focusCell=previous?.matches?.('.match-cell')?Number(previous.dataset.cell):null;
   const s=session;
-  study.innerHTML=studyHeader('Ghép cặp')+`<h2 class="study-heading" id="study-title">Tìm đúng bạn.<br>Nhớ đúng từ.</h2><p class="study-caption">Ghép một từ tiếng Anh với nghĩa tiếng Việt.</p><div class="match-top"><div class="match-meter"><strong id="match-score">Đã ghép ${s.matched.length}/${s.words.length}</strong><div class="match-dots" id="match-dots" aria-hidden="true">${s.words.map((_,i)=>`<i class="${i<s.matched.length?'filled':''}"></i>`).join('')}</div></div><div><span class="eyebrow muted" style="font-size:13px">Thời gian</span><div id="match-timer" class="timer" role="timer">${timeLabel(Date.now()-s.start)}</div></div></div><div class="match-grid">${s.cells.map((cell,i)=>`<button class="match-cell ${s.matched.includes(cell.pair)?'matched':s.selected===i?'selected':s.wrong.includes(i)?'wrong':''}" data-action="match-cell" data-cell="${i}" ${s.matched.includes(cell.pair)?'disabled':''} aria-label="${cell.lang==='en'?'Tiếng Anh':'Tiếng Việt'}: ${esc(cell.text)}${s.matched.includes(cell.pair)?' — đã ghép':''}" aria-pressed="${s.selected===i}">${esc(cell.text)}${s.matched.includes(cell.pair)?icon('check'):''}</button>`).join('')}</div><div class="dialog-actions"><button class="btn outline" data-action="restart-match">${icon('repeat')}Làm lại</button><button class="btn white" data-action="finish-match">Kết thúc</button></div>`;
+  study.innerHTML=studyHeader('Ghép cặp')+`<h2 class="study-heading" id="study-title">Tìm đúng bạn.<br>Nhớ đúng từ.</h2><p class="study-caption">Ghép một từ tiếng Anh với nghĩa tiếng Việt.</p>${s.fromTopic?`<p class="topic-study-caption">Vòng ${Math.floor(s.topicOffset/6)+1}/${Math.ceil(s.topicAll.length/6)} · ${s.topicMatched}/${s.topicAll.length} từ đã ghép</p>`:''}<div class="match-top"><div class="match-meter"><strong id="match-score">Đã ghép ${s.matched.length}/${s.words.length}</strong><div class="match-dots" id="match-dots" aria-hidden="true">${s.words.map((_,i)=>`<i class="${i<s.matched.length?'filled':''}"></i>`).join('')}</div></div><div><span class="eyebrow muted" style="font-size:13px">Thời gian</span><div id="match-timer" class="timer" role="timer">${timeLabel(Date.now()-s.start)}</div></div></div><div class="match-grid">${s.cells.map((cell,i)=>`<button class="match-cell ${s.matched.includes(cell.pair)?'matched':s.selected===i?'selected':s.wrong.includes(i)?'wrong':''}" data-action="match-cell" data-cell="${i}" ${s.matched.includes(cell.pair)?'disabled':''} aria-label="${cell.lang==='en'?'Tiếng Anh':'Tiếng Việt'}: ${esc(cell.text)}${s.matched.includes(cell.pair)?' — đã ghép':''}" aria-pressed="${s.selected===i}">${esc(cell.text)}${s.matched.includes(cell.pair)?icon('check'):''}</button>`).join('')}</div><div class="dialog-actions"><button class="btn outline" data-action="restart-match">${icon('repeat')}Làm lại</button><button class="btn white" data-action="finish-match">Kết thúc</button></div>`;
   if(focusCell!==null){
     const cells=[...study.querySelectorAll('.match-cell')];
     const next=cells[focusCell]&&!cells[focusCell].disabled?cells[focusCell]:cells.find(b=>!b.disabled);
@@ -133,9 +133,9 @@ function selectCell(i){
       meaning.pair=pair;
     }
     s.matched.push(pair);
-    const w=day(s.date).words.find(w=>w.id===pair);
-    if(w)recordReview(w,!s.hadMistake.has(pair));
-    persist();
+    const w=studyWord(pair,s.date);
+    if(w)gradeStudyWord(w,!s.hadMistake.has(pair));
+    persistStudy();
     renderMatch();
     if(s.matched.length===s.words.length){
       s.busy=true;
@@ -151,12 +151,13 @@ function selectCell(i){
     s.hadMistake.add(a.pair);
     s.hadMistake.add(b.pair);
     for(const id of[a.pair,b.pair]){
-      const w=day(s.date).words.find(w=>w.id===id);
+      const w=studyWord(id,s.date);
       if(w){
         ReviewEngine.setRemembered(w,false,C.isoToday());
+        if(s.fromTopic){s.topicAttempted.add(w.id);saveTopicRemembered(s.fromTopic,w.id,false);}
       }
     }
-    persist();
+    persistStudy();
     renderMatch();
     s.timeout=setTimeout(()=>{
       if(session!==s)return;
@@ -168,6 +169,7 @@ function selectCell(i){
   }
 }
 function finishStudy(){
+  if(session?.fromTopic)return finishTopicStudy();
   const s=session;
   if(!s||s.type==='result')return;
   clearInterval(s.timer);
@@ -180,12 +182,14 @@ function finishStudy(){
   go('#/result/'+s.date);
 }
 function sessionReviewWords(s){
+  if(s.fromTopic)return topicMissedWords(s);
   return s.words.flatMap(item=>{
     const date=item._date||s.date,word=day(date).words.find(w=>w.id===item.id);
     return word&&!word.remembered?[{...word,_date:date}]:[];
   });
 }
 function retryMissedWords(){
+  if(session?.fromTopic)return retryTopicMissed();
   const previous=session;if(previous?.type!=='result')return;
   const words=sessionReviewWords(previous);if(!words.length)return;
   stopSession();createSession('flip',previous.date,true);
@@ -194,6 +198,7 @@ function retryMissedWords(){
   go('#/flip/'+previous.date+(previous.fromReview?'?queue=unknown':'?review=1'));
 }
 function renderResult(){
+  if(session?.fromTopic)return renderTopicResult();
   const s=session,r=s.result,review=sessionReviewWords(s);
   study.innerHTML=studyHeader('Kết quả')+`<h2 class="sr-only" id="study-title">Kết quả học từ vựng</h2><div class="result-card"><div class="eyebrow">${r.completed?'Thêm một bước tiến!':'Một lượt ôn đã kết thúc'}</div><div class="score">${r.kind==='flip'?r.correct+'/'+r.total:timeLabel(r.elapsed)}</div><div class="eyebrow">${r.kind==='flip'?'Từ đã nhớ trong lượt này':(r.completed?'Thời gian hoàn thành':'Thời gian đã học')+' · ghép '+r.correct+'/'+r.total}</div>${mascot(true)}</div>${review.length?`<div class="review-title">Cần ôn lại · ${review.length} từ cần ôn</div><div class="result-tags">${review.map(w=>`<span class="pill">${esc(w.en)}</span>`).join('')}</div><button class="btn purple wfull" data-action="result-review">Ôn ${review.length} từ chưa nhớ ${icon('arrow')}</button>`:`<p class="success-note">${r.completed?'Bạn đã nhớ hết các từ trong lượt này. Hẹn gặp ở lượt ôn tiếp theo!':'Lượt học đã dừng. Bạn có thể quay lại mục Ôn tập để học tiếp.'}</p>`}<button class="btn white wfull" style="margin-top:12px" data-action="home">Về trang chủ ${icon('arrow')}</button>`;
 }
@@ -206,6 +211,7 @@ function stopSession(){
   stopPronunciation();
 }
 function closeStudy(){
+  if(session?.fromTopic){const id=session.fromTopic;stopSession();if(study.open)study.close();history.replaceState(null,'',topicHref(id));route();return;}
   const fromReview=session?.fromReview,date=session?.date||selected;
   stopSession();
   if(study.open)study.close();
@@ -246,7 +252,7 @@ function routeDay(){
     return;
   }
   if(type==='result'){
-    if(!session?.result||session.date!==date){
+    if(!session?.result||session.fromTopic||session.date!==date){
       history.replaceState(null,'','#/day/'+date);
       route();
       return;
@@ -254,7 +260,7 @@ function routeDay(){
     renderResult();
   }
   else{
-    if(!session||session.date!==date||session.type!==type){
+    if(!session||session.fromTopic||session.date!==date||session.type!==type){
       stopSession();
       const words=day(date).words,review=new URLSearchParams(location.hash.split('?')[1]||'').get('review')==='1';
       if(!words.length||(type==='match'&&words.length<3)||(review&&!words.some(w=>!w.remembered))){

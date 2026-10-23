@@ -14,6 +14,7 @@ function route(){
   closeHomeSuggestions();
   if(globalThis.TuTuAuth?.callbackKind(location.href||'https://local.invalid/'))return;
   const page=(location.hash||'#/').split('/')[1]?.split('?')[0];
+  if(page==='topic'){renderTopicRoute();updateNav('notebook');return;}
   if(accountPages.includes(page)){
     closeSuggestions();if(study.open)study.close();stopSession();$('#shell').classList.remove('mobile-day');
     if(page==='account')renderAccount();else renderAuth(page);updateNav(page);return;

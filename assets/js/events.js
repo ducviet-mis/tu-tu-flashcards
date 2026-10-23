@@ -77,6 +77,7 @@ document.addEventListener('click',e=>{
     case'match-cell':selectCell(Number(b.dataset.cell));
     break;
     case'restart-match':{
+      if(session?.fromTopic){restartTopicMatching();break;}
       const date=session.date;
       stopSession();
       createSession('match',date,false);

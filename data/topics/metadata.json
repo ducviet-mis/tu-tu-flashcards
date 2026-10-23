@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "revision": "090e342bd6856807",
+  "source": "linguabase",
+  "dictionaryRevision": "3adca4856d26ed1a",
+  "sourceURL": "https://huggingface.co/datasets/linguabase/linguabase",
+  "sourceSHA256": "389a71b33855c2eef46dda490d9644dc153496fccd0f119684625cecb450128d",
+  "license": "CC0-1.0 (membership); Kaikki/Wiktionary licenses for card content",
+  "builtDate": "2026-10-24",
+  "topics": 55,
+  "cards": 1018,
+  "uniqueCards": 941,
+  "selection": "Named everyday source categories; reviewed source members and explicit context anchors; intersected with Kaikki; no invented words or definitions."
+}

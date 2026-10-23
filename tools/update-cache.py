@@ -4,7 +4,7 @@ import hashlib,json
 root=Path(__file__).resolve().parents[1]
 files=[root/'index.html',root/'manifest.webmanifest']
 files+=sorted(p for p in(root/'assets').rglob('*')if p.is_file() and p.name not in {'lexicon.js','word-relations.js'})
-files += [root/'data/kaikki/metadata.json', root/'data/kaikki/NOTICE.txt']
+files += [root/'data/kaikki/metadata.json', root/'data/kaikki/NOTICE.txt', root/'data/topics/catalog.json', root/'data/topics/metadata.json', root/'data/topics/NOTICE.txt']
 digest=hashlib.sha256()
 def canonical(file):
     data=file.read_bytes()

@@ -32,6 +32,7 @@ function renderHome(){
 }
 function renderBase(){
   const page=(location.hash||'#/').split('/')[1]?.split('?')[0];
+  if(page==='topic'){renderTopicRoute();return;}
   if(['day','flip','match','result'].includes(page))renderDayBase();
   else if(page==='notebook')renderNotebook();
   else if(page==='review')renderReview();
