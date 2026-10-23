@@ -9,11 +9,12 @@ function profileIdentityContent(){
  const name=accountDisplayName(),joined=accountJoinedLabel();
  return `<div class="account-identity">${accountAvatar()}<div><h2>${esc(name)}</h2><p>${esc(accountUser.email||'')}</p>${joined?`<span class="profile-joined">${esc(joined)}</span>`:''}</div></div>`;
 }
+function profileIdentityCardContent(){return `${profileIdentityContent()}<p id="account-data-status" class="profile-field-note" data-account-data-status role="status">${esc(accountDataStatusText())}</p>`;}
 function profileInfoContent(){
  if(!accountUser)return `<h2 class="profile-section-label" id="profile-info-title">Góc học của bạn</h2><div class="profile-guest-card">${icon('user')}<h3>Cho góc học một cái tên</h3><p>Đăng nhập để quản lý thông tin tài khoản của bạn.</p><a href="#/login" class="btn orange wfull">Đăng nhập ${icon('arrow')}</a><a href="#/register" class="text-btn">Tạo tài khoản</a></div>`;
  const verified=!!(accountUser.email_confirmed_at||accountUser.confirmed_at);
- return `<h2 class="profile-section-label" id="profile-info-title">Thông tin cá nhân</h2><div class="profile-identity-card">${profileIdentityContent()}</div>
- <form id="profile-form" class="profile-form"><label class="profile-field" for="profile-name"><span>Tên hiển thị</span><input id="profile-name" name="display_name" value="${esc(accountDisplayName())}" maxlength="100" autocomplete="nickname" placeholder="Tên của bạn" required></label>
+ return `<h2 class="profile-section-label" id="profile-info-title">Thông tin cá nhân</h2><div class="profile-identity-card">${profileIdentityCardContent()}</div>
+ <form id="profile-form" class="profile-form"><label class="profile-field" for="profile-name"><span>Tên hiển thị</span><input id="profile-name" name="display_name" data-original-name="${esc(accountDisplayName())}" value="${esc(accountDisplayName())}" maxlength="100" autocomplete="nickname" placeholder="Tên của bạn" required></label>
  <label class="profile-field" for="profile-email"><span>Email</span><span class="profile-email-wrap"><input id="profile-email" type="email" value="${esc(accountUser.email||'')}" readonly autocomplete="email">${verified?`<span class="profile-verified">${icon('check')}Đã xác minh</span>`:''}</span></label>
  <p id="auth-message" class="auth-message" role="status" aria-live="polite" hidden></p><button class="btn orange wfull" type="submit">Lưu thông tin ${icon('check')}</button></form>
  <button type="button" class="profile-link-row" data-action="profile-password"><span>${icon('key')}Đổi mật khẩu</span>${icon('arrow')}</button>
@@ -25,7 +26,7 @@ function refreshProfileInfo(){
  if(!panel||panel.getAttribute('data-profile-user')===userId)return;
  panel.innerHTML=profileInfoContent();panel.setAttribute('data-profile-user',userId);
 }
-function profileHasUnsavedChanges(){const input=$('#profile-name');return !!(input&&accountUser&&input.value.trim().normalize('NFC')!==accountDisplayName());}
+function profileHasUnsavedChanges(){const input=$('#profile-name');return !!(input&&accountUser&&input.value.trim().normalize('NFC')!==(input.getAttribute('data-original-name')??accountDisplayName()));}
 function renderProfile(section='info'){
  pendingSettingsChanges=preferenceWriteFailed;
  app.innerHTML=`<div class="profile-page" data-section="${section}"><header class="profile-heading"><a href="#/" class="round white" aria-label="Quay lại trang chủ">${icon('back')}</a><h1><span class="profile-title-desktop">Hồ sơ & cài đặt</span><span class="profile-title-mobile">${section==='settings'?'Cài đặt':'Hồ sơ'}</span></h1></header>
@@ -44,7 +45,7 @@ async function saveProfile(form){
   if(accountUser?.id!==userId)return;
   if(!data?.user||data.user.id!==userId)throw Error('Invalid profile response');
   accountUser=data.user;updateAccountHeader();
-  if(form.isConnected){input.value=accountDisplayName();const card=$('.profile-identity-card');if(card)card.innerHTML=profileIdentityContent();accountMessage('Đã lưu thông tin cá nhân.');}
+  if(form.isConnected){input.value=accountDisplayName();input.setAttribute('data-original-name',accountDisplayName());const card=$('.profile-identity-card');if(card)card.innerHTML=profileIdentityCardContent();accountMessage('Đã lưu thông tin cá nhân.');}
   toast('Đã lưu thông tin cá nhân.');
  }catch(error){if(form.isConnected&&accountUser?.id===userId)accountMessage(TuTuAuth.errorMessage(error),true);}
  finally{accountBusy=false;if(button.isConnected){button.disabled=false;button.innerHTML=label;}if(input.isConnected)input.disabled=false;form.setAttribute('aria-busy','false');}

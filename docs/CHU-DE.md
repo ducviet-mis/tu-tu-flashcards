@@ -6,7 +6,7 @@ Vào **Sổ từ → Chủ đề**. Chọn một bộ để xem toàn bộ từ 
 - Lật thẻ dùng cùng thao tác hiện tại: bấm/Space để lật, tự đánh giá đã nhớ/chưa nhớ, đảo chiều, xáo trộn và nghe phát âm.
 - Ghép từ dùng tối đa 6 cặp mỗi màn hình. Ghép xong chuyển tiếp cho đến hết bộ, kể cả phần cuối chỉ còn 1–2 cặp.
 - Đóng lượt học trở về đúng chủ đề. Kết quả có thể mở lượt lật lại những từ đã gặp nhưng chưa nhớ.
-- Tiến trình được lưu trên cùng thiết bị/trình duyệt. Học chủ đề không tự thêm từ vào sổ theo ngày, không thay đổi lịch ôn của từ cá nhân. Lượt học thực tế vẫn được tính vào thống kê hoạt động.
+- Tiến trình được lưu riêng theo tài khoản và cập nhật giữa các thiết bị khi đã bật SQL đồng bộ; chế độ khách lưu riêng trên thiết bị. Học chủ đề không tự thêm từ vào sổ theo ngày, không thay đổi lịch ôn của từ cá nhân. Lượt học thực tế vẫn được tính vào thống kê hoạt động.
 - Các nhãn từng gắn vào từ cá nhân vẫn xem được qua **Nhãn từ cá nhân** ở phần Theo ngày. Chúng không thay đổi bộ chủ đề cố định.
 
 ## Giao diện
@@ -46,4 +46,4 @@ node --max-semi-space-size=4 --test --test-concurrency=1 tests/*.test.cjs tests/
 npm run build
 ```
 
-Không cần Supabase mới, API key hay máy chủ chạy liên tục. Không lưu raw archive nguồn vào bản triển khai.
+Không cần API dịch/từ điển hay máy chủ riêng chạy liên tục. Lưu tiến trình theo tài khoản dùng kết nối Supabase hiện có và [SQL đồng bộ bổ sung](../supabase/HUONG-DAN-DONG-BO.md). Không lưu raw archive nguồn vào bản triển khai.

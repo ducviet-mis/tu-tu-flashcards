@@ -32,18 +32,18 @@ function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech
  if(bankRows){const node=new El('script',doc,{id:'dictionary-data'});node.textContent=require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})).toString('base64');doc.body.append(node);}
  const events={},timers=[];let currentHash=hash;
  const location={get hash(){return currentHash;},set hash(v){currentHash=v;for(const fn of events.hashchange||[])fn();}};
- const storage={getItem:k=>{if(blocked)throw Error('blocked');return map.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');map.set(k,v);}};
+ const storage={getItem:k=>{if(blocked)throw Error('blocked');return map.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');map.set(k,v);},removeItem:k=>map.delete(k),key:i=>[...map.keys()][i]??null,get length(){return map.size;}};
  const box={document:doc,location,history:{replaceState:(s,t,v)=>{currentHash=v;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(String(url).endsWith('data/topics/catalog.json')&&topicData)return new Response(JSON.stringify(topicData));if(String(url).endsWith('data/kaikki/index.json.gz')&&bankRows)return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows,buckets:[...'abcdefghijklmnopqrstuvwxyz0']})));if(kaikkiEntries&&/^\.\/data\/kaikki\/[a-z0]\.json\.gz$/.test(String(url)))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',entries:kaikkiEntries})));if(lexicon&&/^\.\/data\/wordnet(?:\/|\-vi)/.test(String(url)))return new Response(fs.readFileSync(String(url)));if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
  const spoken=[];if(speech){box.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};box.speechSynthesis={cancel(){},getVoices:()=>[{lang:'en-US'}],speak:utterance=>spoken.push(utterance)};}box.performance=performance;box.Response=Response;box.DecompressionStream=DecompressionStream;box.window=box;vm.createContext(box);const scripts=[...html.matchAll(/<script id="(?:core|application)">([\s\S]*?)<\/script>/g)].map(m=>m[1]);vm.runInContext(scripts[0],box);
- const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;},initializeAccount,showPwaUpdate,get accountUser(){return accountUser;},get topicPending(){return topicPending;}};`);vm.runInContext(src,box);
+ const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,rememberLookup,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;},initializeAccount,showPwaUpdate,get accountUser(){return accountUser;},get topicPending(){return topicPending;},refreshAccountIdentity:async()=>{if(typeof refreshAccountIdentity==='function')return refreshAccountIdentity(true);},flushAccountData:async()=>{if(typeof flushAccountData==='function')return flushAccountData();},get accountDataPending(){return typeof accountDataPending==='undefined'?null:accountDataPending;},get dataOwner(){return typeof dataOwner==='undefined'?'':dataOwner;}};`);vm.runInContext(src,box);
  return{box,doc,spoken,q:s=>doc.querySelector(s),qa:box.QA,map,click:s=>{const e=doc.querySelector(s);assert.ok(e,'Missing element '+s);e.click();},flush:ms=>{for(const t of timers.splice(0))if(!t.cancelled&&t.ms<=ms)t.fn();},key:code=>doc.body.dispatchEvent({type:'keydown',code,target:doc.activeElement||doc.body})};
 }
 function demo(){const e=environment();e.click('[data-action="sample"]');e.box.location.hash='#/day/'+e.qa.days[0].date;return e;}
 
-async function accountEnvironment(handlers={},hash='#/login'){
- const e=environment({hash});let callback;
+async function accountEnvironment(handlers={},hash='#/login',options={}){
+ const e=environment({...options,hash});let callback;
  const auth={onAuthStateChange(fn){callback=fn;return {data:{subscription:{unsubscribe(){}}}};},getSession:async()=>({data:{session:null},error:null}),signInWithPassword:async()=>({data:{user:{id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}}},error:null}),signUp:async()=>({data:{session:null,user:null},error:null}),signOut:async()=>{callback('SIGNED_OUT',null);return {error:null};},...handlers};
- e.box.TUTU_SUPABASE={url:'https://demo.supabase.co',key:'sb_publishable_test'};e.box.supabase={createClient:()=>({auth})};await e.qa.initializeAccount();e.authEvent=(event,session)=>callback(event,session);return e;
+ e.box.TUTU_SUPABASE={url:'https://demo.supabase.co',key:'sb_publishable_test'};e.box.supabase={createClient:()=>({auth,rpc:options.rpc})};await e.qa.initializeAccount();e.authEvent=(event,session)=>callback(event,session);return e;
 }
 test('Login and registration routes preserve guest vocabulary and the existing rounded navigation',()=>{
  const e=demo(),count=e.qa.days.length;e.box.location.hash='#/login';assert.ok(e.q('#auth-form'));assert.equal(e.q('#auth-form').dataset.mode,'login');
@@ -54,12 +54,12 @@ test('Login without project configuration explains unavailability and keeps gues
  const e=environment({hash:'#/login'});e.q('#auth-email').value='ban@example.com';e.q('#auth-password').value='testpassword';e.q('#auth-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);
  assert.match(e.q('#auth-message').textContent,/chưa sẵn sàng/);assert.equal(e.qa.accountUser,null);e.box.location.hash='#/';assert.ok(e.q('#home-lookup'));
 });
-test('Successful login displays real user details, escapes their name, and sign-out retains local vocabulary',async()=>{
+test('Login escapes identity and keeps account vocabulary separate from the signed-out guest',async()=>{
  const e=await accountEnvironment({signInWithPassword:async()=>({data:{user:{id:'u1',email:'ban@example.com',user_metadata:{display_name:'<img src=x onerror=alert(1)>'}}},error:null})});
  e.box.location.hash='#/';e.click('[data-action="sample"]');const count=e.qa.days.length;e.box.location.hash='#/login';
  e.q('#auth-email').value='ban@example.com';e.q('#auth-password').value='testpassword';e.q('#auth-form').dispatchEvent({type:'submit'});await new Promise(setImmediate);
  assert.equal(e.box.location.hash,'#/account');assert.match(e.q('.account-identity').textContent,/ban@example.com/);assert.equal(e.q('.account-identity').querySelector('img'),null);assert.equal(e.q('#header-account').getAttribute('aria-expanded'),'false');
- e.click('[data-action="auth-signout"]');await new Promise(setImmediate);assert.equal(e.box.location.hash,'#/login');assert.equal(e.qa.accountUser,null);assert.equal(e.qa.days.length,count);
+ e.click('[data-action="auth-signout"]');await new Promise(setImmediate);assert.equal(e.box.location.hash,'#/login');assert.equal(e.qa.accountUser,null);assert.equal(e.qa.days.length,0);e.authEvent('SIGNED_IN',{user:signedUser('u1')});assert.equal(e.qa.days.length,count);
 });
 test('Login failure preserves the email, displays a localized error and re-enables submission',async()=>{
  const e=await accountEnvironment({signInWithPassword:async()=>({error:{code:'invalid_credentials'}})});e.q('#auth-email').value='ban@example.com';e.q('#auth-password').value='wrong';const button=e.q('#auth-form').querySelector('button[type="submit"]');
@@ -171,12 +171,12 @@ test('Storage failure still applies the chosen theme and reports that it was not
  const e=environment({hash:'#/settings',blocked:true});e.click('[data-action="preference-theme"][data-value="light"]');assert.equal(e.doc.documentElement.getAttribute('data-theme'),'light');assert.equal(e.qa.preferences.theme,'light');assert.equal(e.q('#preferences-message').hidden,false);assert.match(e.q('#preferences-message').textContent,/chưa.*lưu/i);
 });
 
-test('Restoring a session on settings replaces the guest identity without losing preference drafts',async()=>{
+test('Account settings survive logout without exposing preferences to the guest',async()=>{
  const user={id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}};let resolve;
  const pending=accountEnvironment({getSession:()=>new Promise(done=>resolve=done)},'#/settings');
  resolve({data:{session:{user}},error:null});const e=await pending;
  assert.equal(e.q('#profile-name').value,'Việt');e.q('#pref-goal').value='29';e.q('#pref-goal').dispatchEvent({type:'input'});
- e.authEvent('SIGNED_OUT',null);assert.equal(e.q('#profile-form'),null);assert.equal(e.q('#pref-goal').value,'29');assert.ok(e.q('.profile-guest-card'));
+ e.authEvent('SIGNED_OUT',null);assert.equal(e.q('#profile-form'),null);assert.equal(e.q('#pref-goal').value,'10');assert.ok(e.q('.profile-guest-card'));e.authEvent('SIGNED_IN',{user});assert.equal(e.q('#pref-goal').value,'29');
 });
 
 test('A save from a previous account cannot overwrite the next signed-in identity',async()=>{
@@ -675,4 +675,54 @@ test('Personal flashcard, matching and result routes never reuse topic-origin se
  e.box.location.hash='#/topic/food?mode=match';await e.qa.topicPending;e.box.location.hash='#/match/'+date;assert.equal(e.qa.session,null);assert.equal(e.q('#study-dialog').open,false);assert.match(e.box.location.hash,/day\//);
  e.box.location.hash='#/topic/food?mode=flip';await e.qa.topicPending;for(let i=0;i<8;i++){e.click('[data-action="flip-card"]');e.click('[data-action="answer-yes"]');}await e.qa.topicPending;
  e.box.location.hash='#/result/'+date;assert.equal(e.qa.session,null);assert.equal(e.q('#study-dialog').open,false);assert.match(e.box.location.hash,/day\//);
+});
+
+
+function accountCloud(){
+ const rows=new Map();return user=>async(name,p={})=>{
+  let row=rows.get(user);if(!row){row={revision:0,data:{days:[],preferences:{goal:10,rate:.85,autoSpeak:false,reverse:false,theme:'dark'},topics:{},history:[]},baseline:{},events:{}};rows.set(user,row);}
+  if(name==='tu_tu_luu_du_lieu'){
+   if(p.p_revision!==row.revision)return {data:{conflict:true},error:null};row.data=JSON.parse(JSON.stringify(p.p_data));row.revision++;
+   for(const [date,v]of Object.entries(p.p_baseline)){const a=row.baseline[date]||{reviewed:0,correct:0};row.baseline[date]={reviewed:Math.max(a.reviewed,v.reviewed),correct:Math.max(a.correct,v.correct)};}
+   for(const e of p.p_events)row.events[e.id]??=e;
+  }else assert.equal(name,'tu_tu_tai_du_lieu');
+  const activity=JSON.parse(JSON.stringify(row.baseline));for(const e of Object.values(row.events)){const a=activity[e.date]||={reviewed:0,correct:0};a.reviewed++;a.correct+=Number(e.known);}
+  return {data:JSON.parse(JSON.stringify({revision:row.revision,data:row.data,baseline:row.baseline,activity})),error:null};
+ };
+}
+const signedUser=id=>({id,email:id+'@example.com',user_metadata:{display_name:id}});
+const signedSession=id=>({getSession:async()=>({data:{session:{user:signedUser(id)}},error:null})});
+test('Account data actually transfers the desktop 11-review statistic to a fresh mobile browser',async()=>{
+ const cloud=accountCloud(),today=new Date().toLocaleDateString('en-CA'),map=new Map([['tutu.activity.v1',JSON.stringify({[today]:{reviewed:11,correct:8}})]]);
+ const desktop=await accountEnvironment(signedSession('u1'),'#/progress',{map,rpc:cloud('u1')});await desktop.qa.flushAccountData();
+ const mobile=await accountEnvironment(signedSession('u1'),'#/progress',{rpc:cloud('u1')});await mobile.qa.flushAccountData();
+ assert.equal(mobile.qa.activity[today].reviewed,11);assert.match(mobile.q('.goal-value').textContent,/11/);assert.equal(mobile.qa.dataOwner,'u1');
+});
+test('Switching accounts isolates notebook, activity, settings and topics and closes old study',async()=>{
+ const cloud=accountCloud(),e=await accountEnvironment(signedSession('u1'),'#/',{rpc:cloud('u1'),topicData:topicFixture()});await e.qa.flushAccountData();e.click('[data-action="sample"]');e.box.location.hash='#/day/'+e.qa.days[0].date;e.click('[data-action="start-flip"]');e.click('[data-action="flip-card"]');e.click('[data-action="answer-yes"]');assert.ok(e.q('#study-dialog').open);await e.qa.flushAccountData();
+ e.authEvent('SIGNED_IN',{user:signedUser('u2')});assert.equal(e.qa.days.length,0);assert.equal(Object.keys(e.qa.activity).length,0);assert.equal(e.q('#study-dialog').open,false);
+ e.authEvent('SIGNED_IN',{user:signedUser('u1')});assert.equal(e.qa.days.length,3);assert.ok(Object.values(e.qa.activity).some(a=>a.reviewed===1));
+});
+test('Automatic account saving includes topic reviews, settings and recent lookup history',async()=>{
+ const cloud=accountCloud(),desktop=await accountEnvironment(signedSession('u1'),'#/settings',{rpc:cloud('u1'),topicData:topicFixture()});await desktop.qa.flushAccountData();
+ desktop.click('[data-action="preference-theme"][data-value="light"]');desktop.q('#pref-goal').value='17';desktop.q('#pref-goal').dispatchEvent({type:'input'});
+ desktop.qa.rememberLookup('hello');desktop.box.location.hash='#/topic/food?mode=flip';await desktop.qa.topicPending;desktop.click('[data-action="flip-card"]');desktop.click('[data-action="answer-yes"]');await desktop.qa.flushAccountData();
+ const mobile=await accountEnvironment(signedSession('u1'),'#/notebook?view=topics&topic=food',{rpc:cloud('u1'),topicData:topicFixture()});await mobile.qa.flushAccountData();await mobile.qa.topicPending;
+ assert.equal(mobile.qa.preferences.goal,17);assert.equal(mobile.doc.documentElement.getAttribute('data-theme'),'light');assert.match(mobile.q('#fixed-topic-known').textContent,/1\/8/);assert.ok(Object.values(mobile.qa.activity).some(a=>a.reviewed===1));assert.equal(mobile.qa.days.length,0);mobile.box.location.hash='#/';assert.ok(mobile.q('[data-lookup="hello"]'));
+});
+test('Missing cloud SQL never presents account data as saved online',async()=>{
+ const e=await accountEnvironment(signedSession('u1'),'#/account',{rpc:async()=>({data:null,error:{code:'PGRST202',message:'function missing'}})});await e.qa.flushAccountData();
+ assert.match(e.q('#save-indicator').textContent,/thiết bị/);assert.match(e.q('#account-data-status').textContent,/Chưa bật/);
+});
+
+test('Changing identity replaces a focused old-account notebook and its private draft immediately',async()=>{
+ const e=await accountEnvironment(signedSession('u1'),'#/');e.click('[data-action="sample"]');e.box.location.hash='#/day/'+e.qa.days[0].date;
+ e.q('#english').value='private old account word';e.q('#english').focus();e.authEvent('SIGNED_IN',{user:signedUser('u2')});
+ assert.equal(e.qa.days.length,0);assert.ok(!e.q('#word-list')?.textContent.includes('hello'));assert.notEqual(e.q('#english')?.value,'private old account word');
+});
+
+test('Fresh profile metadata updates another device without discarding an edited profile name',async()=>{
+ let remote=signedUser('u1');const e=await accountEnvironment({...signedSession('u1'),getUser:async()=>({data:{user:remote},error:null})},'#/account',{rpc:accountCloud()('u1')});await e.qa.flushAccountData();
+ remote={...remote,user_metadata:{display_name:'Tên mới'}};await e.qa.refreshAccountIdentity();assert.equal(e.q('#profile-name').value,'Tên mới');
+ e.q('#profile-name').value='Bản nháp đang nhập';e.q('#profile-name').focus();remote={...remote,user_metadata:{display_name:'Tên tiếp theo'}};await e.qa.refreshAccountIdentity();assert.equal(e.q('#profile-name').value,'Bản nháp đang nhập');assert.equal(e.qa.accountUser.user_metadata.display_name,'Tên tiếp theo');
 });

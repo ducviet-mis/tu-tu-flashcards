@@ -3,8 +3,8 @@
 const PREF_STORE='tutu.preferences.v1',ACTIVITY_STORE='tutu.activity.v1';
 let preferences={goal:10,rate:.85,autoSpeak:false,reverse:false,theme:'dark'},activity={};
 let pendingSettingsChanges=false,preferenceWriteFailed=false;
-try{const p=JSON.parse(localStorage.getItem(PREF_STORE)||'null');if(p){preferences.goal=Number.isInteger(p.goal)&&p.goal>=1&&p.goal<=200?p.goal:10;preferences.rate=Number.isFinite(p.rate)&&p.rate>=.5&&p.rate<=1.5?p.rate:.85;preferences.autoSpeak=p.autoSpeak===true;preferences.reverse=p.reverse===true;preferences.theme=['dark','light','system'].includes(p.theme)?p.theme:'dark';}}catch{}
-try{const a=JSON.parse(localStorage.getItem(ACTIVITY_STORE)||'{}');if(a&&typeof a==='object'&&!Array.isArray(a))for(const [date,v]of Object.entries(a))if(C.validDate(date)&&Number.isSafeInteger(v?.reviewed)&&v.reviewed>=0&&Number.isSafeInteger(v.correct)&&v.correct>=0&&v.correct<=v.reviewed)activity[date]={reviewed:v.reviewed,correct:v.correct};}catch{}
+try{const p=JSON.parse(getLearningItem(PREF_STORE)||'null');if(p){preferences.goal=Number.isInteger(p.goal)&&p.goal>=1&&p.goal<=200?p.goal:10;preferences.rate=Number.isFinite(p.rate)&&p.rate>=.5&&p.rate<=1.5?p.rate:.85;preferences.autoSpeak=p.autoSpeak===true;preferences.reverse=p.reverse===true;preferences.theme=['dark','light','system'].includes(p.theme)?p.theme:'dark';}}catch{}
+try{const a=JSON.parse(getLearningItem(ACTIVITY_STORE)||'{}');if(a&&typeof a==='object'&&!Array.isArray(a))for(const [date,v]of Object.entries(a))if(C.validDate(date)&&Number.isSafeInteger(v?.reviewed)&&v.reviewed>=0&&Number.isSafeInteger(v.correct)&&v.correct>=0&&v.correct<=v.reviewed)activity[date]={reviewed:v.reviewed,correct:v.correct};}catch{}
 function applyTheme(){const light=preferences.theme==='light'||(preferences.theme==='system'&&window.matchMedia?.('(prefers-color-scheme: light)').matches);document.documentElement.setAttribute('data-theme',light?'light':'dark');const source=$('#brand-light-source');if(source)source.setAttribute('media',light?'all':'not all');const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',light?'#F4F1EA':'#1A1A1A');}
 function themeControls(value,action='preference-theme'){
  return `<div class="theme-switch" role="group" aria-label="Chọn giao diện">${[['dark','Tối'],['light','Sáng'],['system','Tự động']].map(([v,label])=>`<button type="button" data-action="${action}" data-value="${v}" aria-pressed="${value===v}">${label}</button>`).join('')}</div>`;
@@ -26,7 +26,7 @@ function changePreferences(patch){
  if(!Number.isInteger(next.goal)||next.goal<1||next.goal>200||!Number.isFinite(next.rate)||next.rate<.5||next.rate>1.5||!['dark','light','system'].includes(next.theme)||typeof next.autoSpeak!=='boolean'||typeof next.reverse!=='boolean')return false;
  preferences=next;applyTheme();if($('#pref-theme'))$('#pref-theme').value=next.theme;updateThemeControls(next.theme);
  try{
-  localStorage.setItem(PREF_STORE,JSON.stringify(next));preferenceWriteFailed=false;
+  setLearningItem(PREF_STORE,JSON.stringify(next));preferenceWriteFailed=false;
   const message=$('#preferences-message');if(message){message.hidden=true;message.textContent='';}
  }catch{preferenceWriteFailed=true;showPreferenceError('Đã áp dụng trong phiên này nhưng chưa lưu được. Kiểm tra quyền lưu trữ của trình duyệt.');}
  updatePreferencePending();return !preferenceWriteFailed;

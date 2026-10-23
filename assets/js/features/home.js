@@ -3,7 +3,7 @@
 const LOOKUP_HISTORY_STORE='tutu.recent-lookups.v1';
 let recentLookups=[];
 try{
-  const saved=JSON.parse(localStorage.getItem(LOOKUP_HISTORY_STORE)||'[]');
+  const saved=JSON.parse(getLearningItem(LOOKUP_HISTORY_STORE)||'[]');
   if(Array.isArray(saved))recentLookups=[...new Set(saved.filter(word=>typeof word==='string'&&word.trim()&&word.length<=200).map(word=>word.trim().normalize('NFC')))].slice(0,8);
 }catch{/* Lookup history is optional; personal vocabulary remains independent. */}
 function renderLookupHistory(){
@@ -14,7 +14,7 @@ function renderLookupHistory(){
 function rememberLookup(word){
   if(!word||word.length>200)return;
   recentLookups=[word,...recentLookups.filter(item=>C.wordKey(item)!==C.wordKey(word))].slice(0,8);
-  try{localStorage.setItem(LOOKUP_HISTORY_STORE,JSON.stringify(recentLookups));}catch{}
+  try{setLearningItem(LOOKUP_HISTORY_STORE,JSON.stringify(recentLookups));}catch{}
   renderLookupHistory();
 }
 function notebookDayTile(d,index=0,compact=false){

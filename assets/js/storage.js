@@ -1,12 +1,19 @@
 // storage.js — phần chức năng của Từ Từ. Trạng thái chung được khai báo trong state.js.
 'use strict';
+function learningStorageKey(key){
+ if(dataOwner)return 'tutu.user.'+dataOwner+'.'+key;
+ return localStorage.getItem('tutu.legacy-owner.v1')?'tutu.guest.v2.'+key:key;
+}
+function getLearningItem(key){return localStorage.getItem(learningStorageKey(key));}
+function setLearningItem(key,value){localStorage.setItem(learningStorageKey(key),value);if(typeof accountDataChanged==='function')accountDataChanged();}
+
 function storageError(message){
   $('#storage-warning').hidden=false;
   $('#storage-warning').textContent=message;
   $('#save-indicator').textContent='Chưa lưu được trên thiết bị';
 }
 try{
-  const raw=localStorage.getItem(STORE);
+  const raw=getLearningItem(STORE);
   if(raw)days=C.validateBackup(JSON.parse(raw));
 }
 catch(e){
@@ -20,12 +27,12 @@ function persist(){
     return false;
   }
   try{
-    localStorage.setItem(STORE,JSON.stringify({
+    setLearningItem(STORE,JSON.stringify({
       version:1,days
     }
     ));
     $('#storage-warning').hidden=true;
-    $('#save-indicator').textContent='Đã lưu trên thiết bị';
+    if(typeof updateAccountDataStatus==='function')updateAccountDataStatus();else $('#save-indicator').textContent='Đã lưu trên thiết bị';
     return true;
   }
   catch(e){

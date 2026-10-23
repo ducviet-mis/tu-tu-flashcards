@@ -7,7 +7,8 @@ function recordReview(word, known) {
   const item = activity[date] || { reviewed: 0, correct: 0 };
   item.reviewed++; if (known) item.correct++;
   activity[date] = item;
-  try { localStorage.setItem(ACTIVITY_STORE, JSON.stringify(activity)); }
+  accountDataReview(word,known);
+  try { setLearningItem(ACTIVITY_STORE, JSON.stringify(activity)); }
   catch { toast('Chưa lưu được thống kê lượt ôn. Hãy kiểm tra bộ nhớ trình duyệt.', null, '', true); }
 }
 function renderReview() {

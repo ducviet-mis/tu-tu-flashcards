@@ -1,7 +1,7 @@
 -- TỪ TỪ — Cấu trúc dữ liệu cá nhân, phiên bản 1.
 -- Supabase SQL Editor > New query > dán TOÀN BỘ file > Run.
 -- Dùng PostgreSQL 15 trở lên. Tên bảng/cột tiếng Việt không dấu.
--- Chỉ tạo cấu trúc; chưa tự chuyển dữ liệu trên máy hoặc tích hợp đăng nhập vào web.
+-- Chỉ tạo cấu trúc nền; chạy tiếp dong_bo_tai_khoan.sql và triển khai web mới để bật lưu theo tài khoản.
 -- Không đưa kho từ điển/WordNet chung vào database.
 -- Không xóa bảng hoặc dữ liệu của cơ chế đồng bộ bằng mã cũ (schema.sql).
 -- Có thể chạy lại: các bản ghi hiện có không bị ghi đè.

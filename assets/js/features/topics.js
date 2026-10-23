@@ -2,12 +2,12 @@
 'use strict';
 const topicStore=TopicDecks.create((...args)=>fetch(...args)),TOPIC_PROGRESS_STORE='tutu.topics.progress.v1';
 let topicData=null,topicPending=null,topicPageToken=0,topicSearch='',topicProgress={};
-try{const saved=JSON.parse(localStorage.getItem(TOPIC_PROGRESS_STORE)||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))for(const [id,value] of Object.entries(saved))if(/^[a-z0-9-]+:tw-[a-z0-9-]+$/.test(id)&&typeof value==='boolean')topicProgress[id]=value;}catch{/* Keep the catalog usable if local storage is unavailable. */}
+try{const saved=JSON.parse(getLearningItem(TOPIC_PROGRESS_STORE)||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))for(const [id,value] of Object.entries(saved))if(/^[a-z0-9-]+:tw-[a-z0-9-]+$/.test(id)&&typeof value==='boolean')topicProgress[id]=value;}catch{/* Keep the catalog usable if local storage is unavailable. */}
 const topicHref=id=>'#/notebook?view=topics'+(id?'&topic='+encodeURIComponent(id):'');
 const topicRemembered=(deck,id)=>topicProgress[deck+':'+id]===true;
 function saveTopicRemembered(deck,id,known){
  topicProgress[deck+':'+id]=!!known;
- try{localStorage.setItem(TOPIC_PROGRESS_STORE,JSON.stringify(topicProgress));}catch{toast('Chưa lưu được tiến trình chủ đề trên thiết bị này.',null,'',true);}
+ try{setLearningItem(TOPIC_PROGRESS_STORE,JSON.stringify(topicProgress));}catch{toast('Chưa lưu được tiến trình chủ đề trên thiết bị này.',null,'',true);}
 }
 function topicTabs(){return '<nav class="notebook-tabs" aria-label="Cách xem sổ từ"><a href="#/notebook?view=days">Theo ngày</a><a href="#/notebook?view=topics" aria-current="page">Chủ đề</a></nav>';}
 function renderFixedTopics(){

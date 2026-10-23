@@ -128,12 +128,10 @@ Callback URL ở bước 5 thuộc Supabase; nó khác Site URL Vercel ở bư�
 - Tài khoản, phiên đăng nhập và tên hiển thị: Supabase Auth.
 - Nếu bạn đã chạy `tu_tu_supabase.sql`, trigger có sẵn sẽ tạo hồ sơ/cài đặt mặc định
   khi có tài khoản mới. Không cần chạy lại SQL chỉ để bật đăng nhập.
-- Sổ từ, lịch ôn và thống kê: vẫn là dữ liệu trên thiết bị, không tự tải lên các bảng
-  học tập khi đăng nhập. Màn hình tài khoản ghi rõ điều này.
-- Đăng xuất giữ nguyên sổ từ trên thiết bị. Chế độ khách vẫn hoạt động.
-- Đồng bộ bằng mã riêng trong bản cũ vẫn có thể mở tại phần Cài đặt; nó dùng cơ chế
-  riêng, không phải đồng bộ theo tài khoản Auth.
-- Không có số liệu người dùng hay trạng thái “đã đồng bộ” giả từ bản giao diện mẫu.
+- Sổ từ, lịch ôn, thống kê, cài đặt và tiến trình chủ đề: tự lưu/tải theo tài khoản sau khi chạy thêm [dong_bo_tai_khoan.sql](dong_bo_tai_khoan.sql). Xem [hướng dẫn đồng bộ nhiều thiết bị](HUONG-DAN-DONG-BO.md).
+- Đăng xuất giữ bản lưu riêng của tài khoản trên thiết bị nhưng chuyển giao diện sang dữ liệu khách, không để tài khoản khác nhìn thấy sổ/bản nháp cũ.
+- Không có nút sao lưu hoặc đồng bộ thủ công. Khi chưa chạy SQL bổ sung, app báo chưa bật lưu theo tài khoản và giữ dữ liệu trên máy.
+- Trạng thái đã lưu vào tài khoản chỉ hiện sau khi RPC xác nhận thành công.
 
 ## Khi gặp lỗi
 

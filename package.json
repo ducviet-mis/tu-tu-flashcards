@@ -6,7 +6,10 @@
   "license": "GPL-3.0-only",
   "scripts": {
     "start": "node tools/serve.cjs",
-    "test": "node --test tests/*.test.cjs tests/dom-check.cjs",
+    "test": "node --max-semi-space-size=4 --test --test-concurrency=1 tests/*.test.cjs tests/dom-check.cjs",
     "build": "node tools/build-web.cjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.11"
   }
 }

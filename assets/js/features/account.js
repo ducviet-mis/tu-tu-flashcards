@@ -1,4 +1,4 @@
-/* Account routes use Supabase Auth. Vocabulary remains in the existing local store. */
+/* Account routes use Supabase Auth. Learning data uses account-scoped automatic cloud saving. */
 'use strict';
 let accountConnection={enabled:false,client:null},accountUser=null,accountBusy=false,accountRecovery=false;
 const accountPages=['login','register','forgot','reset-password','account'];
@@ -8,7 +8,7 @@ function updateAccountHeader(){
  const button=$('#header-account');if(!button)return;
  button.setAttribute('aria-label',accountUser?'Menu tài khoản của '+accountDisplayName():'Mở menu tài khoản');
  button.innerHTML=accountUser?accountAvatar('account-initial'):icon('user');
- button.classList.toggle('is-signed-in',!!accountUser);renderAccountMenu();refreshProfileInfo();
+ button.classList.toggle('is-signed-in',!!accountUser);renderAccountMenu();refreshProfileInfo();updateAccountDataStatus();
 }
 function authField(id,label,type,autocomplete,placeholder='',required=true){
  return `<label class="auth-field" for="${id}"><span>${label}</span><span class="auth-input-wrap"><input id="${id}" name="${id}" type="${type}" autocomplete="${autocomplete}" placeholder="${placeholder}" ${required?'required':''} ${type==='password'&&autocomplete==='new-password'?'minlength="8"':''} ${type==='email'?'maxlength="254"':'maxlength="128"'}>${type==='password'?`<button type="button" class="auth-eye" data-action="auth-password" data-target="${id}" aria-label="Hiện mật khẩu" aria-pressed="false">${icon('eye')}</button>`:''}</span></label>`;
@@ -37,7 +37,7 @@ async function submitAuth(form){
   if(result.error)throw result.error;
   if(mode==='forgot'){accountMessage('Nếu email này có tài khoản, bạn sẽ nhận được liên kết đặt lại mật khẩu.');return;}
   if(mode==='register'&&!result.data.session){accountMessage('Kiểm tra hộp thư để xác nhận email, rồi quay lại đăng nhập.');form.querySelectorAll('input[type="password"]').forEach(input=>input.value='');return;}
-  accountUser=result.data.user||result.data.session?.user||accountUser;accountRecovery=false;updateAccountHeader();go('#/account');
+  accountUser=result.data.user||result.data.session?.user||accountUser;accountRecovery=false;switchAccountData(accountUser);updateAccountHeader();go('#/account');
   if(mode==='reset-password')toast('Đã cập nhật mật khẩu.');
  }catch(error){accountMessage(TuTuAuth.errorMessage(error),true);}
  finally{accountBusy=false;if(button?.isConnected)button.disabled=false;form.setAttribute('aria-busy','false');}
@@ -50,12 +50,13 @@ async function initializeAccount(){
   accountConnection.client.auth.onAuthStateChange((event,session)=>{
    accountUser=session?.user||null;
    if(event==='PASSWORD_RECOVERY')accountRecovery=true;
+   switchAccountData(accountUser);
    updateAccountHeader();
    /* Never call another async Supabase method inside this callback. */
    if(event==='SIGNED_OUT'&&accountPage()==='account')go('#/login');
   });
   const {data,error}=await accountConnection.client.auth.getSession();if(error)throw error;
-  accountUser=data.session?.user||null;updateAccountHeader();
+  accountUser=data.session?.user||null;switchAccountData(accountUser);updateAccountHeader();
   if(callback){
    accountRecovery=callback==='recovery'&&!!accountUser;
    history.replaceState(null,'',location.pathname+(accountRecovery?'#/reset-password':accountUser?'#/account':'#/login'));route();
@@ -72,7 +73,7 @@ document.addEventListener('click',async event=>{
  if(button.dataset.action==='auth-password'){const input=$('#'+button.dataset.target),show=input.type==='password';input.type=show?'text':'password';button.setAttribute('aria-label',show?'Ẩn mật khẩu':'Hiện mật khẩu');button.setAttribute('aria-pressed',String(show));}
  if(button.dataset.action==='auth-signout'){
   if(accountBusy)return;accountBusy=true;button.disabled=true;
-  try{const {error}=await accountConnection.client.auth.signOut({scope:'local'});if(error)throw error;accountUser=null;accountRecovery=false;updateAccountHeader();go('#/login');}catch(error){toast(TuTuAuth.errorMessage(error),null,'',true);}finally{accountBusy=false;if(button.isConnected)button.disabled=false;}
+  try{await flushAccountData();const {error}=await accountConnection.client.auth.signOut({scope:'local'});if(error)throw error;accountUser=null;accountRecovery=false;switchAccountData(null);updateAccountHeader();go('#/login');}catch(error){toast(TuTuAuth.errorMessage(error),null,'',true);}finally{accountBusy=false;if(button.isConnected)button.disabled=false;}
  }
  if(button.dataset.action==='auth-google'){
   if(!accountConnection.enabled){accountMessage('Đăng nhập hiện chưa sẵn sàng. Hãy thử lại sau.',true);return;}

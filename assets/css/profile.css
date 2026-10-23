@@ -70,3 +70,6 @@ body[data-page=account] .footer,body[data-page=settings] .footer{display:none}
  .profile-field>input,.profile-email-wrap{min-height:54px}.profile-form,.profile-preferences-form{gap:14px}.profile-settings-group{padding:0 18px;border-radius:26px}.profile-setting-row{min-height:72px;gap:10px}.profile-setting-row strong{font-size:15px}.profile-setting-row small{font-size:11px}.profile-theme-row{padding:8px}.profile-field-note{font-size:12px}.profile-signout{margin-top:4px}
 }
 @media(max-width:360px){.profile-settings-group{padding:0 13px}.profile-theme-row{padding:8px}.profile-setting-row strong{font-size:14px}.profile-setting-row small{font-size:10px}.profile-identity-card{padding:20px 16px}.profile-identity-card .account-identity{gap:12px}.profile-identity-card .account-identity h2{font-size:22px}.profile-identity-card .account-avatar{width:64px;height:64px;flex-basis:64px;font-size:30px}}
+
+.account-menu-data-status{font-size:11px;line-height:1.6;color:var(--muted);padding:0 18px 12px;overflow-wrap:anywhere}
+[data-account-data-status][data-state="setup"],[data-account-data-status][data-state="local-error"]{color:var(--warning,var(--muted))}

@@ -144,13 +144,13 @@ Trang chi tiết có quan hệ theo từng nghĩa từ Open English WordNet 2025
 
 Chạy `supabase/tu_tu_supabase.sql` trong Supabase SQL Editor để tạo 7 bảng tiếng Việt không dấu và bảng xem `thong_ke_hoc_theo_ngay`. File `supabase/schema.sql` là SQL của cơ chế đồng bộ bằng mã cũ, không còn được ứng dụng sử dụng.
 
-Bản SQL mới tạo cấu trúc, ràng buộc và quyền truy cập cho dữ liệu học. App hiện dùng Supabase Auth cho đăng nhập nhưng chưa tự tải dữ liệu học từ localStorage lên. Khi nối app, tạo sổ trước, thêm từ sau, rồi cập nhật tiến trình. Lượt học mới ghi lịch sử với ID cố định để tránh đếm trùng khi thử đồng bộ lại.
+Bản SQL mới tạo cấu trúc, ràng buộc và quyền truy cập cho dữ liệu học. App dùng Supabase Auth cho đăng nhập và RPC để tự lưu/tải dữ liệu học theo tài khoản. Sau SQL nền, chạy thêm `supabase/dong_bo_tai_khoan.sql` để bật phiên bản dữ liệu, tiến trình chủ đề và giao dịch đồng bộ. Xem [hướng dẫn bật lưu theo tài khoản](supabase/HUONG-DAN-DONG-BO.md).
 
-`thong_ke_hoc_cu` chỉ nhập số liệu trước thời điểm chuyển đổi, dùng UPSERT theo tài khoản/ngày; không ghi cùng một lượt vào cả bảng này và lịch sử. Xem cột `phien_ban` khi thiết kế kiểm tra xung đột; chỉ có cột phiên bản chưa tự ngăn việc ghi đè từ thiết bị cũ. Việc ghi tiến trình và lịch sử của một lượt học cần được nối bằng giao dịch/RPC ở bước tích hợp.
+`thong_ke_hoc_cu` chỉ nhập số liệu trước thời điểm chuyển đổi, dùng UPSERT theo tài khoản/ngày; không ghi cùng một lượt vào cả bảng này và lịch sử. RPC kiểm tra phiên bản chung của tài khoản và ghi sổ, tiến trình, cài đặt cùng lịch sử trong một giao dịch. Các lượt đã nhận được xác nhận để thử lại không kéo lùi tiến trình; số lượt từng từ được tăng từ sự kiện mới trên máy chủ.
 
 ## Giao diện V3 sáng/tối và đăng nhập
 
-Giao diện theo file mẫu V3, giữ menu bo tròn dưới màn hình. Có các trang `#/login`, `#/register`, `#/forgot`, `#/reset-password`, `#/account`; đăng nhập bằng Supabase Auth, tên hiển thị lưu trong Auth. Sổ từ và lịch ôn vẫn lưu trên thiết bị.
+Giao diện theo file mẫu V3, giữ menu bo tròn dưới màn hình. Có các trang `#/login`, `#/register`, `#/forgot`, `#/reset-password`, `#/account`; đăng nhập bằng Supabase Auth, tên hiển thị lưu trong Auth. Sổ từ, lịch ôn, thống kê, tiến trình chủ đề và cài đặt tự lưu theo tài khoản sau khi chạy SQL bổ sung; chế độ khách giữ dữ liệu riêng trên thiết bị.
 
 Xem [hướng dẫn cấu hình Supabase và Vercel](supabase/HUONG-DAN-DANG-NHAP.md). Vercel dùng `npm run build`, xuất thư mục `dist`, đọc `SUPABASE_URL` và `SUPABASE_PUBLISHABLE_KEY`. Đăng nhập Google cần bật provider riêng; đăng ký/xác nhận email công khai cần Custom SMTP. SDK và phông chữ mẫu được lưu cùng mã nguồn để giao diện có thể dùng ngoại tuyến.
 
@@ -159,3 +159,10 @@ Xem [hướng dẫn cấu hình Supabase và Vercel](supabase/HUONG-DAN-DANG-NHA
 - Tối / Sáng / Tự động đổi giao diện ngay khi bấm, đồng nhất giữa Cài đặt và dropdown avatar.
 - Mục tiêu lượt ôn, tốc độ đọc và các công tắc tự lưu trên thiết bị khi thay đổi; không có bước bấm Lưu cài đặt.
 - Không còn giao diện sao lưu bằng file hoặc đồng bộ thủ công. Đăng nhập Supabase Auth và dữ liệu hiện có được giữ nguyên.
+
+
+### Tài khoản và nhiều thiết bị
+
+Để desktop/mobile dùng cùng dữ liệu, chạy [SQL bổ sung](supabase/dong_bo_tai_khoan.sql), triển khai web mới rồi mở lại desktop còn dữ liệu cũ trước. Hướng dẫn đầy đủ và cách kiểm tra 11 lượt ôn: [HUONG-DAN-DONG-BO.md](supabase/HUONG-DAN-DONG-BO.md). Không có nút sao lưu/đồng bộ thủ công; trạng thái lưu nằm trong menu avatar/Hồ sơ.
+
+Kiểm thử: `npm ci` rồi `npm test`. PGlite chỉ dùng trong kiểm thử để chạy migration PostgreSQL/RLS thật, không nằm trong bản web.
