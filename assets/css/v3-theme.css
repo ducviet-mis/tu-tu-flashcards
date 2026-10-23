@@ -1,9 +1,9 @@
 /* V3 reference: charcoal / warm paper, strong titles and rounded color cards.
    Navigation geometry lives exclusively in navigation.css. */
-:root{--sans:'Space Grotesk','Be Vietnam Pro',system-ui,sans-serif;--mono:'Space Mono','Be Vietnam Pro',monospace;--bg:#1a1a1a;--panel:#262626;--ink:#f4f1ea;--muted:#a9a9a1;--line:#3a3a3a;--field-line:#5a5a5a;--accent-text:#f7c948}
-[data-theme=light]{--bg:#f4f1ea;--panel:#fff;--ink:#151515;--muted:#6b6b63;--line:#e2ddd0;--field-line:#bdb7a6;--accent-text:#9a6b00}
-body{font:500 16px/1.5 var(--sans)}
-h1,h2,h3{font-family:var(--sans);font-weight:700;letter-spacing:-.03em;line-height:1.15}
+:root{--sans:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;--mono:var(--sans);--bg:#1a1a1a;--panel:#262626;--ink:#f4f1ea;--muted:#a9a9a1;--line:#3a3a3a;--field-line:#5a5a5a;--accent-text:#f7c948}
+[data-theme=light]{--bg:#f4f1ea;--panel:#fff;--ink:#151515;--muted:#6b6b63;--line:#e2ddd0;--field-line:#bdb7a6;--accent-text:#9a6b00;--control-bg:#fff;--control-line:#bdb7a6;--surface-hover:#eee9df;--placeholder:#716d64;--track:#e2ddd0;--toast-bg:#fff;--toast-ink:#151515;--overlay:rgba(21,21,21,.28);--positive:#266943;--link:#574ed7;--focus:#6c63f5}
+body{font:400 16px/1.65 var(--sans)}
+h1,h2,h3{font-family:var(--sans);font-weight:600;letter-spacing:-.015em;line-height:1.35}
 .eyebrow,.field-label,.home-history h2,.home-section-heading,.notebook-month,.notebook-day-count,.notebook-known{font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
 .btn{font-weight:700;font-size:16px}.btn.small{font-size:13px}
 .shell{max-width:1240px;margin:auto;padding:0 32px}
@@ -43,7 +43,7 @@ h1,h2,h3{font-family:var(--sans);font-weight:700;letter-spacing:-.03em;line-heig
 .panel{border:1.5px solid var(--line);border-radius:30px}.feature-card{border-radius:32px}.stats-grid strong{font-weight:700}
 input,textarea,select{border-color:var(--field-line)}
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline-color:var(--purple)}
-[data-theme=light] .face{color:var(--dark)}
+[data-theme=light] .face.front{color:#fff}
 [data-theme=light] .face.back{color:var(--dark)}
 [data-theme=light] .bank-dialog,[data-theme=light] .study-dialog{background:var(--bg);color:var(--ink)}
 [data-theme=light] .bank-search input,[data-theme=light] .bank-search-row input{color:var(--dark)}
@@ -64,3 +64,16 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
  .settings-account{padding:20px;flex-wrap:wrap}.settings-account h2{font-size:22px}.settings-account p{font-size:13px}.settings-account .btn{min-height:42px;font-size:13px}
 }
 @media(max-width:360px){.shell{padding:0 16px}.brand .brand-logo{width:123px}.top-actions{gap:5px}.home-today .notebook-day-progress{width:80px}.home-day-row{padding:13px}.home-day-row .notebook-day-top{gap:6px}}
+
+/* Vietnamese labels and headings share the reading font and comfortable spacing. */
+h1,h2,h3,.page-head h1,.notebook-heading h1,.home-intro h1{line-height:1.3;letter-spacing:-.015em}
+.eyebrow,.field-label,.home-history h2,.home-section-heading,.notebook-month,.notebook-day-count,.notebook-known{letter-spacing:0;line-height:1.65}
+.btn{font-weight:600}.home-due strong,.home-today strong,.notebook-day-date,.stats-grid strong{font-weight:600;font-variant-numeric:tabular-nums}
+.session-tools .btn.selected{color:var(--accent-text);border-color:var(--accent-text)}
+[data-theme=light]{color-scheme:light}
+[data-theme=dark]{color-scheme:dark}
+[data-theme=light] dialog::backdrop{backdrop-filter:blur(5px)}
+[data-theme=light] .dictionary-chip:hover{color:var(--link);border-color:var(--link)}
+[data-theme=light] .dictionary-root{border-left-color:var(--link)}
+[data-theme=light] .bank-dialog .bank-search:focus-within{border-color:var(--purple);box-shadow:0 0 0 3px rgb(108 99 245 / .12)}
+@media(max-width:767px){.page-head h1,.notebook-heading h1{font-size:30px}.home-today-progress,.home-due-caption{line-height:1.65}}
