@@ -76,7 +76,7 @@ Tiến độ lượt học được tính từ thao tác thực tế trong bản
 
 Chức năng xuất/nhập file sao lưu đã được gỡ khỏi ứng dụng. Dữ liệu đang lưu vẫn được giữ trên cùng trình duyệt và địa chỉ website; không xóa khóa localStorage khi cập nhật.
 
-Đăng nhập hiện quản lý hồ sơ Supabase Auth. Sổ từ, lịch ôn, thống kê và cài đặt vẫn lưu trên thiết bị; chúng chưa tự tách hoặc đồng bộ theo tài khoản. Cơ chế đồng bộ thủ công bằng mã kho đã được gỡ khỏi ứng dụng.
+Đăng nhập email hoặc Google dùng chung Supabase Auth. Sổ từ, lịch ôn, thống kê, chủ đề và cài đặt được tách theo tài khoản, có bản lưu trên thiết bị và tự lưu lên Supabase khi đã chạy SQL bổ sung. Xem [hướng dẫn lưu dữ liệu theo tài khoản](supabase/HUONG-DAN-DONG-BO.md). Cơ chế đồng bộ thủ công bằng mã kho đã được gỡ khỏi ứng dụng.
 
 ## Sửa mã nguồn
 
@@ -152,7 +152,7 @@ Bản SQL mới tạo cấu trúc, ràng buộc và quyền truy cập cho dữ 
 
 Giao diện theo file mẫu V3, giữ menu bo tròn dưới màn hình. Có các trang `#/login`, `#/register`, `#/forgot`, `#/reset-password`, `#/account`; đăng nhập bằng Supabase Auth, tên hiển thị lưu trong Auth. Sổ từ, lịch ôn, thống kê, tiến trình chủ đề và cài đặt tự lưu theo tài khoản sau khi chạy SQL bổ sung; chế độ khách giữ dữ liệu riêng trên thiết bị.
 
-Xem [hướng dẫn cấu hình Supabase và Vercel](supabase/HUONG-DAN-DANG-NHAP.md). Vercel dùng `npm run build`, xuất thư mục `dist`, đọc `SUPABASE_URL` và `SUPABASE_PUBLISHABLE_KEY`. Đăng nhập Google cần bật provider riêng; đăng ký/xác nhận email công khai cần Custom SMTP. SDK và phông chữ mẫu được lưu cùng mã nguồn để giao diện có thể dùng ngoại tuyến.
+Xem [hướng dẫn cấu hình Supabase và Vercel](supabase/HUONG-DAN-DANG-NHAP.md). Vercel dùng `npm run build`, xuất thư mục `dist`, đọc `SUPABASE_URL` và `SUPABASE_PUBLISHABLE_KEY`. Đăng nhập Google cần bật provider riêng theo [hướng dẫn Google](supabase/HUONG-DAN-GOOGLE.md); đăng ký/xác nhận email công khai cần Custom SMTP. SDK và phông chữ mẫu được lưu cùng mã nguồn để giao diện có thể dùng ngoại tuyến.
 
 ### Cài đặt áp dụng ngay
 

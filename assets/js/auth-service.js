@@ -19,12 +19,18 @@
   if(hash.has('access_token'))return hash.get('type')==='recovery'?'recovery':'signin';
   return u.searchParams.has('code')?'signin':null;
  }
+ function callbackError(url){
+  const u=new URL(url),hash=new URLSearchParams(u.hash.slice(1));
+  const params=hash.has('error')?hash:u.searchParams;
+  if(!params.has('error'))return null;
+  return {code:params.get('error_code')||params.get('error'),message:params.get('error_description')||''};
+ }
  function errorMessage(error){
-  const messages={invalid_credentials:'Email hoặc mật khẩu chưa đúng.',email_not_confirmed:'Bạn cần xác nhận email trước khi đăng nhập.',user_already_exists:'Email này đã có tài khoản. Bạn có thể đăng nhập hoặc đặt lại mật khẩu.',weak_password:'Mật khẩu chưa đủ mạnh. Hãy dùng ít nhất 8 ký tự và thêm chữ, số.',same_password:'Hãy chọn mật khẩu khác mật khẩu hiện tại.',over_email_send_rate_limit:'Bạn đã gửi quá nhiều yêu cầu. Hãy đợi một lúc rồi thử lại.',over_request_rate_limit:'Bạn thao tác quá nhanh. Hãy đợi một lúc rồi thử lại.',otp_expired:'Liên kết đã hết hạn hoặc đã được dùng. Hãy yêu cầu liên kết mới.',signup_disabled:'Hiện chưa thể tạo tài khoản mới. Hãy thử lại sau.',provider_disabled:'Đăng nhập bằng Google chưa được bật.',validation_failed:'Kiểm tra lại email và mật khẩu.'};
+  const messages={access_denied:'Bạn chưa cho phép đăng nhập. Hãy thử lại khi sẵn sàng.',oauth_access_denied:'Bạn chưa cho phép đăng nhập. Hãy thử lại khi sẵn sàng.',invalid_credentials:'Email hoặc mật khẩu chưa đúng.',email_not_confirmed:'Bạn cần xác nhận email trước khi đăng nhập.',user_already_exists:'Email này đã có tài khoản. Bạn có thể đăng nhập hoặc đặt lại mật khẩu.',weak_password:'Mật khẩu chưa đủ mạnh. Hãy dùng ít nhất 8 ký tự và thêm chữ, số.',same_password:'Hãy chọn mật khẩu khác mật khẩu hiện tại.',over_email_send_rate_limit:'Bạn đã gửi quá nhiều yêu cầu. Hãy đợi một lúc rồi thử lại.',over_request_rate_limit:'Bạn thao tác quá nhanh. Hãy đợi một lúc rồi thử lại.',otp_expired:'Liên kết đã hết hạn hoặc đã được dùng. Hãy yêu cầu liên kết mới.',signup_disabled:'Hiện chưa thể tạo tài khoản mới. Hãy thử lại sau.',provider_disabled:'Đăng nhập bằng Google chưa được bật.',validation_failed:'Kiểm tra lại email và mật khẩu.'};
   if(messages[error?.code])return messages[error.code];
   if(/fetch|network|offline|timeout/i.test(error?.message||''))return 'Chưa kết nối được. Kiểm tra mạng rồi thử lại.';
   if(/provider.*not enabled|unsupported provider/i.test(error?.message||''))return messages.provider_disabled;
   return 'Chưa hoàn tất được yêu cầu. Hãy thử lại sau.';
  }
- root.TuTuAuth={create,callbackKind,errorMessage};
+ root.TuTuAuth={create,callbackKind,callbackError,errorMessage};
 })(globalThis);

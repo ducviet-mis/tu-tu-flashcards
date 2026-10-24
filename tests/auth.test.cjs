@@ -32,3 +32,28 @@ test('bundled official SDK signs in, restores the session and signs out through 
   const logout=await connection.client.auth.signOut({scope:'local'});assert.equal(logout.error,null);assert.equal((await connection.client.auth.getSession()).data.session,null);
  }finally{await connection.client.auth.stopAutoRefresh();}
 });
+
+
+test('OAuth callback errors retain provider failures and consent denial from hash or query',()=>{
+ const api=auth();
+ for(const separator of ['#','?']){
+  const denied=api.callbackError('https://app.test/'+separator+'error=access_denied&error_description=User+denied+access');
+  assert.equal(denied.code,'access_denied');assert.match(api.errorMessage(denied),/chưa cho phép/);
+  const disabled=api.callbackError('https://app.test/'+separator+'error=server_error&error_code=provider_disabled');
+  assert.match(api.errorMessage(disabled),/Google chưa được bật/);
+ }
+ assert.equal(api.callbackError('https://app.test/#/login'),null);
+ assert.match(api.errorMessage({code:'otp_expired'}),/hết hạn/);
+});
+
+test('bundled SDK builds the Google authorization URL without a frontend client secret',async()=>{
+ const box={URL,URLSearchParams,atob,btoa,setTimeout,clearTimeout,setInterval,clearInterval,console,Headers,Request,Response,AbortController,AbortSignal,WebSocket,crypto:require('node:crypto').webcrypto};
+ vm.runInNewContext(fs.readFileSync('assets/vendor/supabase-2.118.0.js','utf8'),box);
+ const connection=auth().create({url:'https://demo.supabase.co',key:'sb_publishable_test'},box.supabase,'https://app.test/tu-tu/#/login');
+ try{
+  const result=await connection.client.auth.signInWithOAuth({provider:'google',options:{redirectTo:connection.redirectUrl,queryParams:{prompt:'select_account'},skipBrowserRedirect:true}});
+  assert.equal(result.error,null);const target=new URL(result.data.url);
+  assert.equal(target.origin,'https://demo.supabase.co');assert.equal(target.pathname,'/auth/v1/authorize');
+  assert.equal(target.searchParams.get('provider'),'google');assert.equal(target.searchParams.get('redirect_to'),'https://app.test/tu-tu/');assert.equal(target.searchParams.get('prompt'),'select_account');assert.equal(target.searchParams.has('client_secret'),false);
+ }finally{await connection.client.auth.stopAutoRefresh();}
+});

@@ -18,7 +18,7 @@ function renderAuth(mode='login'){
  const signup=mode==='register',forgot=mode==='forgot',reset=mode==='reset-password';
  const title=signup?'Đăng ký':forgot?'Quên mật khẩu?':reset?'Mật khẩu mới':'Đăng nhập';
  const subtitle=signup?'Tạo tài khoản để có góc học của riêng bạn.':forgot?'Nhập email để nhận liên kết đặt lại mật khẩu.':reset?'Đặt mật khẩu mới cho tài khoản của bạn.':'Quay lại góc học của bạn.';
- app.innerHTML=`<div class="auth-layout"><section class="auth-story" aria-label="Từ Từ"><a href="#/" class="auth-brand"><img src="./assets/images/icon.svg" width="64" height="64" alt=""><span>TỪ <em>TỪ</em></span></a><h2>Học<br>từ từ,<br><span>nhớ lâu.</span></h2><div class="auth-tags"><span>Lật thẻ</span><span>Ghép cặp</span><span>Mỗi ngày một chút</span></div></section><section class="auth-form-section"><div class="auth-form-content"><a href="#/" class="auth-back">${icon('back')}Trang chủ</a><h1>${mode==='login'?'<span class="auth-title-desktop">Đăng nhập</span><span class="auth-title-mobile">Chào mừng<br><em>trở lại</em></span>':title}</h1><p class="auth-subtitle">${subtitle}</p><form id="auth-form" data-mode="${mode}">${signup?authField('auth-name','Tên hiển thị','text','nickname','Bạn muốn được gọi là gì?'):''}${!reset?authField('auth-email','Email','email','email','ten@email.com'):''}${!forgot?authField('auth-password','Mật khẩu','password',signup||reset?'new-password':'current-password',signup||reset?'Tối thiểu 8 ký tự':'Mật khẩu của bạn'):''}${signup||reset?authField('auth-confirm','Nhập lại mật khẩu','password','new-password','Nhập lại mật khẩu'):''}${mode==='login'?'<a href="#/forgot" class="auth-forgot">Quên mật khẩu?</a>':''}<p id="auth-message" class="auth-message" role="status" aria-live="polite" hidden></p><button class="btn orange auth-submit" type="submit">${forgot?'Gửi liên kết':reset?'Lưu mật khẩu':title}${icon('arrow')}</button></form>${mode==='login'||signup?`<div class="auth-divider"><span></span>Hoặc<span></span></div><button class="btn white auth-google" data-action="auth-google"><img src="./assets/images/google.svg" width="22" height="22" alt="">Tiếp tục với Google</button><p class="auth-switch">${signup?'Đã có tài khoản? <a href="#/login">Đăng nhập</a>':'Chưa có tài khoản? <a href="#/register">Đăng ký</a>'}</p>`:'<a href="#/login" class="auth-switch">Quay lại đăng nhập</a>'}<a href="#/" class="auth-guest">Dùng thử không cần tài khoản ${icon('arrow')}</a></div></section></div>`;
+ app.innerHTML=`<div class="auth-layout"><section class="auth-story" aria-label="Từ Từ"><a href="#/" class="auth-brand"><img src="./assets/images/icon.svg" width="64" height="64" alt=""><span>TỪ <em>TỪ</em></span></a><h2>Học<br>từ từ,<br><span>nhớ lâu.</span></h2><div class="auth-tags"><span>Lật thẻ</span><span>Ghép cặp</span><span>Mỗi ngày một chút</span></div></section><section class="auth-form-section"><div class="auth-form-content"><a href="#/" class="auth-back">${icon('back')}Trang chủ</a><h1>${mode==='login'?'<span class="auth-title-desktop">Đăng nhập</span><span class="auth-title-mobile">Chào mừng<br><em>trở lại</em></span>':title}</h1><p class="auth-subtitle">${subtitle}</p><form id="auth-form" data-mode="${mode}">${signup?authField('auth-name','Tên hiển thị','text','nickname','Bạn muốn được gọi là gì?'):''}${!reset?authField('auth-email','Email','email','email','ten@email.com'):''}${!forgot?authField('auth-password','Mật khẩu','password',signup||reset?'new-password':'current-password',signup||reset?'Tối thiểu 8 ký tự':'Mật khẩu của bạn'):''}${signup||reset?authField('auth-confirm','Nhập lại mật khẩu','password','new-password','Nhập lại mật khẩu'):''}${mode==='login'?'<a href="#/forgot" class="auth-forgot">Quên mật khẩu?</a>':''}<p id="auth-message" class="auth-message" role="status" aria-live="polite" hidden></p><button class="btn orange auth-submit" type="submit">${forgot?'Gửi liên kết':reset?'Lưu mật khẩu':title}${icon('arrow')}</button></form>${mode==='login'||signup?`<div class="auth-divider"><span></span>Hoặc<span></span></div><button class="btn white auth-google" data-action="auth-google"><img src="./assets/images/google.svg" width="22" height="22" alt=""><span class="auth-google-label">Tiếp tục với Google</span></button><p class="auth-switch">${signup?'Đã có tài khoản? <a href="#/login">Đăng nhập</a>':'Chưa có tài khoản? <a href="#/register">Đăng ký</a>'}</p>`:'<a href="#/login" class="auth-switch">Quay lại đăng nhập</a>'}<a href="#/" class="auth-guest">Dùng thử không cần tài khoản ${icon('arrow')}</a></div></section></div>`;
  if(reset&&!accountRecovery)accountMessage('Hãy mở liên kết đặt lại mật khẩu trong email trước.',true);
 }
 async function submitAuth(form){
@@ -43,7 +43,7 @@ async function submitAuth(form){
  finally{accountBusy=false;if(button?.isConnected)button.disabled=false;form.setAttribute('aria-busy','false');}
 }
 async function initializeAccount(){
- const callback=TuTuAuth.callbackKind(location.href||'https://local.invalid/');
+ const callbackUrl=location.href||'https://local.invalid/',callback=TuTuAuth.callbackKind(callbackUrl),callbackError=TuTuAuth.callbackError(callbackUrl);
  try{
   accountConnection=TuTuAuth.create(globalThis.TUTU_SUPABASE,globalThis.supabase,location.href||'https://local.invalid/');
   if(!accountConnection.enabled){if(callback){history.replaceState(null,'',location.pathname+'#/login');route();accountMessage('Đăng nhập hiện chưa sẵn sàng.',true);}return;}
@@ -55,12 +55,12 @@ async function initializeAccount(){
    /* Never call another async Supabase method inside this callback. */
    if(event==='SIGNED_OUT'&&accountPage()==='account')go('#/login');
   });
-  const {data,error}=await accountConnection.client.auth.getSession();if(error)throw error;
+  const {data,error}=await accountConnection.client.auth.getSession();if(error)throw callbackError||error;
   accountUser=data.session?.user||null;switchAccountData(accountUser);updateAccountHeader();
   if(callback){
    accountRecovery=callback==='recovery'&&!!accountUser;
    history.replaceState(null,'',location.pathname+(accountRecovery?'#/reset-password':accountUser?'#/account':'#/login'));route();
-   if(callback==='error'||!accountUser)accountMessage('Liên kết không còn hợp lệ. Hãy đăng nhập hoặc yêu cầu liên kết mới.',true);
+   if(callback==='error'||!accountUser)accountMessage(callbackError?TuTuAuth.errorMessage(callbackError):'Liên kết không còn hợp lệ. Hãy đăng nhập hoặc yêu cầu liên kết mới.',true);
   }else if(accountPage()==='account')renderAccount();
   else if(accountPage()==='reset-password'&&accountUser){accountRecovery=true;renderAuth('reset-password');}
  }catch(error){if(callback){history.replaceState(null,'',location.pathname+'#/login');route();}accountMessage(TuTuAuth.errorMessage(error),true);}
@@ -77,7 +77,12 @@ document.addEventListener('click',async event=>{
  }
  if(button.dataset.action==='auth-google'){
   if(!accountConnection.enabled){accountMessage('Đăng nhập hiện chưa sẵn sàng. Hãy thử lại sau.',true);return;}
-  if(accountBusy)return;accountBusy=true;button.disabled=true;
-  try{const {error}=await accountConnection.client.auth.signInWithOAuth({provider:'google',options:{redirectTo:accountConnection.redirectUrl}});if(error)throw error;}catch(error){accountMessage(TuTuAuth.errorMessage(error),true);}finally{accountBusy=false;button.disabled=false;}
+  if(accountBusy)return;accountBusy=true;button.disabled=true;button.setAttribute('aria-busy','true');
+  const label=button.querySelector('.auth-google-label');if(label)label.textContent='Đang mở Google…';
+  accountMessage('Đang chuyển đến Google để đăng nhập…');
+  try{
+   const {error}=await accountConnection.client.auth.signInWithOAuth({provider:'google',options:{redirectTo:accountConnection.redirectUrl,queryParams:{prompt:'select_account'}}});if(error)throw error;
+  }catch(error){if(button.isConnected)accountMessage(TuTuAuth.errorMessage(error),true);}
+  finally{accountBusy=false;button.disabled=false;button.setAttribute('aria-busy','false');if(label)label.textContent='Tiếp tục với Google';}
  }
 });

@@ -109,6 +109,8 @@ Thông tin SMTP chỉ điền trong Supabase, không đưa vào Vercel frontend 
 
 Phần này tùy chọn, không cần để đăng nhập bằng email/mật khẩu.
 
+Xem [hướng dẫn Google từng bước cho Từ Từ](HUONG-DAN-GOOGLE.md), gồm địa chỉ cần điền, cách thử và xử lý lỗi.
+
 1. Mở [Google Cloud Console](https://console.cloud.google.com/), tạo/chọn project.
 2. Vào Google Auth Platform, cấu hình Branding và Audience. Nếu đang ở chế độ
    Testing, thêm email tài khoản thử vào Test users.
@@ -151,5 +153,5 @@ Tài liệu chính thức được đối chiếu ngày 23/10/2026:
 - [Đăng nhập bằng mật khẩu](https://supabase.com/docs/guides/auth/passwords)
 - [Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls)
 - [Custom SMTP và giới hạn email mặc định](https://supabase.com/docs/guides/auth/auth-smtp)
-- [Đăng nhập Google](https://supabase.com/docs/guides/auth/social-sign-in/auth-google)
+- [Đăng nhập Google](https://supabase.com/docs/guides/auth/social-login/auth-google)
 - [Biến môi trường Vercel](https://vercel.com/docs/environment-variables/managing-environment-variables)

@@ -33,7 +33,7 @@ function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech
  const events={},timers=[];let currentHash=hash;
  const location={get hash(){return currentHash;},set hash(v){currentHash=v;for(const fn of events.hashchange||[])fn();}};
  const storage={getItem:k=>{if(blocked)throw Error('blocked');return map.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');map.set(k,v);},removeItem:k=>map.delete(k),key:i=>[...map.keys()][i]??null,get length(){return map.size;}};
- const box={document:doc,location,history:{replaceState:(s,t,v)=>{currentHash=v;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(String(url).endsWith('data/topics/catalog.json')&&topicData)return new Response(JSON.stringify(topicData));if(String(url).endsWith('data/kaikki/index.json.gz')&&bankRows)return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows,buckets:[...'abcdefghijklmnopqrstuvwxyz0']})));if(kaikkiEntries&&/^\.\/data\/kaikki\/[a-z0]\.json\.gz$/.test(String(url)))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',entries:kaikkiEntries})));if(lexicon&&/^\.\/data\/wordnet(?:\/|\-vi)/.test(String(url)))return new Response(fs.readFileSync(String(url)));if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
+ const box={document:doc,location,history:{replaceState:(s,t,v)=>{const next=new URL(v,location.href||'https://local.invalid/');currentHash=next.hash;if(location.href)location.href=next.href;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(String(url).endsWith('data/topics/catalog.json')&&topicData)return new Response(JSON.stringify(topicData));if(String(url).endsWith('data/kaikki/index.json.gz')&&bankRows)return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows,buckets:[...'abcdefghijklmnopqrstuvwxyz0']})));if(kaikkiEntries&&/^\.\/data\/kaikki\/[a-z0]\.json\.gz$/.test(String(url)))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',entries:kaikkiEntries})));if(lexicon&&/^\.\/data\/wordnet(?:\/|\-vi)/.test(String(url)))return new Response(fs.readFileSync(String(url)));if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
  const spoken=[];if(speech){box.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};box.speechSynthesis={cancel(){},getVoices:()=>[{lang:'en-US'}],speak:utterance=>spoken.push(utterance)};}box.performance=performance;box.Response=Response;box.DecompressionStream=DecompressionStream;box.window=box;vm.createContext(box);const scripts=[...html.matchAll(/<script id="(?:core|application)">([\s\S]*?)<\/script>/g)].map(m=>m[1]);vm.runInContext(scripts[0],box);
  const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,rememberLookup,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;},initializeAccount,showPwaUpdate,get accountUser(){return accountUser;},get topicPending(){return topicPending;},refreshAccountIdentity:async()=>{if(typeof refreshAccountIdentity==='function')return refreshAccountIdentity(true);},flushAccountData:async()=>{if(typeof flushAccountData==='function')return flushAccountData();},get accountDataPending(){return typeof accountDataPending==='undefined'?null:accountDataPending;},get dataOwner(){return typeof dataOwner==='undefined'?'':dataOwner;}};`);vm.runInContext(src,box);
  return{box,doc,spoken,q:s=>doc.querySelector(s),qa:box.QA,map,click:s=>{const e=doc.querySelector(s);assert.ok(e,'Missing element '+s);e.click();},flush:ms=>{for(const t of timers.splice(0))if(!t.cancelled&&t.ms<=ms)t.fn();},key:code=>doc.body.dispatchEvent({type:'keydown',code,target:doc.activeElement||doc.body})};
@@ -43,6 +43,7 @@ function demo(){const e=environment();e.click('[data-action="sample"]');e.box.lo
 async function accountEnvironment(handlers={},hash='#/login',options={}){
  const e=environment({...options,hash});let callback;
  const auth={onAuthStateChange(fn){callback=fn;return {data:{subscription:{unsubscribe(){}}}};},getSession:async()=>({data:{session:null},error:null}),signInWithPassword:async()=>({data:{user:{id:'u1',email:'ban@example.com',user_metadata:{display_name:'Việt'}}},error:null}),signUp:async()=>({data:{session:null,user:null},error:null}),signOut:async()=>{callback('SIGNED_OUT',null);return {error:null};},...handlers};
+ if(options.pageUrl){e.box.location.href=options.pageUrl;e.box.location.pathname=new URL(options.pageUrl).pathname;}
  e.box.TUTU_SUPABASE={url:'https://demo.supabase.co',key:'sb_publishable_test'};e.box.supabase={createClient:()=>({auth,rpc:options.rpc})};await e.qa.initializeAccount();e.authEvent=(event,session)=>callback(event,session);return e;
 }
 test('Login and registration routes preserve guest vocabulary and the existing rounded navigation',()=>{
@@ -725,4 +726,87 @@ test('Fresh profile metadata updates another device without discarding an edited
  let remote=signedUser('u1');const e=await accountEnvironment({...signedSession('u1'),getUser:async()=>({data:{user:remote},error:null})},'#/account',{rpc:accountCloud()('u1')});await e.qa.flushAccountData();
  remote={...remote,user_metadata:{display_name:'Tên mới'}};await e.qa.refreshAccountIdentity();assert.equal(e.q('#profile-name').value,'Tên mới');
  e.q('#profile-name').value='Bản nháp đang nhập';e.q('#profile-name').focus();remote={...remote,user_metadata:{display_name:'Tên tiếp theo'}};await e.qa.refreshAccountIdentity();assert.equal(e.q('#profile-name').value,'Bản nháp đang nhập');assert.equal(e.qa.accountUser.user_metadata.display_name,'Tên tiếp theo');
+});
+
+
+test('Google sign-in offers account selection on both routes and prevents duplicate pending requests',async()=>{
+ for(const hash of ['#/login','#/register']){
+  let finish,calls=[];
+  const e=await accountEnvironment({signInWithOAuth:input=>{calls.push(input);return new Promise(resolve=>finish=resolve);}},hash,{pageUrl:'https://tutuvn.vercel.app/'+hash});
+  const button=e.q('[data-action="auth-google"]');e.click('[data-action="auth-google"]');
+  assert.equal(button.disabled,true);assert.equal(button.getAttribute('aria-busy'),'true');assert.match(button.textContent,/Đang mở Google/);
+  e.click('[data-action="auth-google"]');assert.equal(calls.length,1);assert.equal(calls[0].provider,'google');assert.equal(calls[0].options.redirectTo,'https://tutuvn.vercel.app/');assert.equal(calls[0].options.queryParams.prompt,'select_account');
+  finish({error:{code:'provider_disabled'}});await new Promise(setImmediate);
+  assert.equal(button.disabled,false);assert.equal(button.getAttribute('aria-busy'),'false');assert.match(button.textContent,/Tiếp tục với Google/);assert.ok(button.querySelector('img'));assert.match(e.q('#auth-message').textContent,/Google chưa được bật/);
+ }
+});
+
+test('Google network failure permits another attempt without losing the entered email',async()=>{
+ const e=await accountEnvironment({signInWithOAuth:async()=>{throw Error('network offline');}});e.q('#auth-email').value='ban@example.com';
+ e.click('[data-action="auth-google"]');await new Promise(setImmediate);assert.match(e.q('#auth-message').textContent,/kết nối/);assert.equal(e.q('[data-action="auth-google"]').disabled,false);assert.equal(e.q('#auth-email').value,'ban@example.com');
+});
+
+test('Google callback uses the authenticated user identity and the same account learning store',async()=>{
+ const user={id:'google-user',email:'ban@gmail.com',user_metadata:{full_name:'Nguyễn An',avatar_url:'https://example.com/an.jpg'},app_metadata:{provider:'google'}};
+ const e=await accountEnvironment({getSession:async()=>({data:{session:{user}},error:null})},'#access_token=test&type=signup',{pageUrl:'https://tutuvn.vercel.app/#access_token=test&type=signup'});
+ assert.equal(e.box.location.hash,'#/account');assert.equal(e.qa.accountUser.id,user.id);assert.equal(e.qa.dataOwner,user.id);assert.match(e.q('.account-identity').textContent,/Nguyễn An/);assert.match(e.q('.account-identity').textContent,/ban@gmail.com/);assert.equal(e.q('#auth-message').hidden,true);
+});
+
+test('Denied Google consent returns to login with a clear message instead of an expired-link error',async()=>{
+ for(const separator of ['#','?']){
+  const e=await accountEnvironment({},'#/login',{pageUrl:'https://tutuvn.vercel.app/'+separator+'error=access_denied&error_description=User+denied+access'});
+  assert.equal(e.box.location.hash,'#/login');assert.equal(e.qa.accountUser,null);assert.match(e.q('#auth-message').textContent,/chưa cho phép/);assert.doesNotMatch(e.q('#auth-message').textContent,/hợp lệ|hết hạn/);assert.ok(e.q('[data-action="auth-google"]'));
+ }
+});
+
+
+test('Topic detail displays A-Z without mutating its fixed deck and reports filtered result totals',async()=>{
+ const data=topicFixture(),original=data.topics[0].words.map(w=>w.en);
+ const e=environment({topicData:data,hash:'#/notebook?view=topics&topic=food'});await e.qa.topicPending;
+ const names=()=>e.q('#fixed-topic-words').querySelectorAll('.fixed-topic-word-copy').map(row=>row.querySelector('strong').textContent);
+ assert.deepEqual(names(),[...original].sort((a,b)=>a.localeCompare(b,'en')));
+ assert.match(e.q('#fixed-topic-results').textContent,/8 từ/);
+ e.q('#fixed-topic-search').value='ca rot';e.q('#fixed-topic-search').dispatchEvent({type:'input'});
+ assert.deepEqual(names(),['carrot']);assert.match(e.q('#fixed-topic-results').textContent,/1.*8/);
+ e.q('#fixed-topic-search').value='zzzz';e.q('#fixed-topic-search').dispatchEvent({type:'input'});assert.match(e.q('#fixed-topic-results').textContent,/0.*8/);assert.match(e.q('#fixed-topic-words').textContent,/Không tìm thấy/);
+ e.click('[data-action="topic-flip"]');await e.qa.topicPending;assert.deepEqual(Array.from(e.qa.session.words,w=>w.en),original);
+});
+
+test('Topic detail progress and memory indicators reflect study results while keeping pronunciation available',async()=>{
+ const e=environment({topicData:topicFixture(),speech:true,hash:'#/notebook?view=topics&topic=food'});await e.qa.topicPending;
+ assert.equal(e.q('.fixed-topic-progress').getAttribute('aria-valuenow'),'0');assert.equal(e.q('#fixed-topic-unknown-count').textContent,'8');
+ e.click('[data-action="topic-flip"]');await e.qa.topicPending;e.click('[data-action="flip-card"]');e.click('[data-action="answer-yes"]');e.click('[data-action="close-study"]');await e.qa.topicPending;
+ assert.equal(e.q('.fixed-topic-progress').getAttribute('aria-valuenow'),'1');assert.equal(e.q('.fixed-topic-progress').getAttribute('aria-valuemax'),'8');assert.equal(e.q('#fixed-topic-known-count').textContent,'1');assert.equal(e.q('#fixed-topic-unknown-count').textContent,'7');
+ assert.equal(e.q('#fixed-topic-words').querySelectorAll('[aria-label="Đã nhớ"]').length,1);e.click('[data-action="topic-speak"][data-id="tw-0"]');assert.equal(e.spoken.at(-1).text,'apple');assert.equal(e.qa.days.length,0);
+});
+
+
+test('Day detail filters memory states and Vietnamese meanings without changing progress or study membership',()=>{
+ const e=demo(),before=JSON.stringify(e.qa.days),activity=JSON.stringify(e.qa.activity);
+ e.q('#english').value='unfinished';e.q('#vietnamese').value='bản nháp';
+ e.click('[data-action="day-filter"][data-filter="unknown"]');assert.equal(e.q('#word-list').querySelectorAll('.word-row').length,6);assert.equal(e.q('#english').value,'unfinished');
+ e.q('#word-search').value='loi nhuan';e.q('#word-search').dispatchEvent({type:'input'});assert.equal(e.q('#word-list').querySelectorAll('.word-row').length,1);assert.match(e.q('#word-list').textContent,/profit/);
+ e.q('#word-search').value='';e.q('#word-search').dispatchEvent({type:'input'});e.click('[data-action="day-filter"][data-filter="known"]');assert.equal(e.q('#word-list').querySelectorAll('.word-row').length,2);
+ assert.equal(JSON.stringify(e.qa.days),before);assert.equal(JSON.stringify(e.qa.activity),activity);e.click('[data-action="start-flip"]');assert.equal(e.qa.session.words.length,8);
+});
+
+test('Day detail view filters reset on another date and adding saves to the selected historical day',()=>{
+ const e=demo(),today=e.qa.days[0].date,todayCount=e.qa.days[0].words.length,historical='2026-10-01';
+ e.click('[data-action="day-filter"][data-filter="known"]');e.q('#word-search').value='private search';e.q('#word-search').dispatchEvent({type:'input'});
+ e.box.location.hash='#/day/'+historical;assert.equal(e.q('#word-search').value,'');assert.equal(e.q('[data-filter="all"]').getAttribute('aria-pressed'),'true');assert.match(e.q('#day-known').textContent,/0\/0/);
+ e.q('#english').value='history';e.q('#vietnamese').value='lịch sử';e.q('#word-topic').value='Học tập';e.q('#word-example').value='I study history.';e.q('#add-form').dispatchEvent({type:'submit'});
+ assert.equal(e.qa.days.find(d=>d.date===today).words.length,todayCount);const old=e.qa.days.find(d=>d.date===historical);assert.equal(old.words.length,1);assert.equal(old.words[0].example,'I study history.');assert.equal(old.words[0].topic,'Học tập');assert.match(e.q('#day-known').textContent,/0\/1/);
+});
+
+test('Day detail Tra button opens current-form dictionary suggestions and adds into its historical date',async()=>{
+ const date='2026-10-01',e=environment({hash:'#/day/'+date,bankRows:[['hello','xin chào','',1],['help','giúp đỡ','',1]]});
+ e.q('#english').value='he';e.q('#vietnamese').value='nghĩa đang nhập';e.click('[data-action="day-lookup"]');await e.qa.loadBank();await new Promise(setImmediate);
+ assert.equal(e.q('#word-suggestions').hidden,false);assert.equal(e.q('#vietnamese').value,'nghĩa đang nhập');e.click('[data-suggest="0"]');assert.equal(e.q('#vietnamese').value,'xin chào');
+ e.q('#add-form').dispatchEvent({type:'submit'});assert.equal(e.qa.days.length,1);assert.equal(e.qa.days[0].date,date);assert.equal(e.qa.days[0].words[0].en,'hello');
+});
+
+test('Day detail search state is cleared on an account switch',async()=>{
+ const e=await accountEnvironment(signedSession('u1'),'#/');e.click('[data-action="sample"]');e.box.location.hash='#/day/'+e.qa.days[0].date;
+ e.click('[data-action="day-filter"][data-filter="known"]');e.q('#word-search').value='private account search';e.q('#word-search').dispatchEvent({type:'input'});e.q('#word-search').focus();e.authEvent('SIGNED_IN',{user:signedUser('u2')});
+ assert.equal(e.q('#word-search').value,'');assert.equal(e.q('[data-filter="all"]').getAttribute('aria-pressed'),'true');assert.equal(e.q('#word-list').querySelectorAll('.word-row').length,0);
 });
