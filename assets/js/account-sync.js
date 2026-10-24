@@ -13,6 +13,18 @@
   if(!object(input))throw Error('Invalid activity');const out={};
   for(const [date,a] of Object.entries(input)){if(!validDate(date)||!Number.isSafeInteger(a?.reviewed)||a.reviewed<0||!Number.isSafeInteger(a.correct)||a.correct<0||a.correct>a.reviewed)throw Error('Invalid activity');out[date]={reviewed:a.reviewed,correct:a.correct};}return out;
  }
+ function cleanTopics(input={}){
+  if(!object(input))throw Error('Invalid topic progress');const out={};
+  for(const [k,v] of Object.entries(input)){
+   if(!/^[a-z0-9-]+:tw-[a-z0-9-]+$/.test(k))throw Error('Invalid topic progress');
+   if(typeof v==='boolean'){out[k]=v;continue;}
+   if(!object(v)||typeof v.remembered!=='boolean')throw Error('Invalid topic progress');
+   const state={remembered:v.remembered,reviewLevel:v.reviewLevel??0,reviewCount:v.reviewCount??0};
+   if(!Number.isInteger(state.reviewLevel)||state.reviewLevel<0||state.reviewLevel>5||!Number.isInteger(state.reviewCount)||state.reviewCount<0||state.reviewCount>2147483647||!state.remembered&&state.reviewLevel!==0)throw Error('Invalid topic schedule');
+   for(const field of ['lastReviewed','nextReview'])if(v[field]!=null){if(!validDate(v[field]))throw Error('Invalid topic date');state[field]=v[field];}
+   out[k]=state;
+  }return out;
+ }
  function normalize(input=emptyData()){
   if(!object(input)||!Array.isArray(input.days))throw Error('Invalid notebook');
   let days=clone(input.days);
@@ -20,7 +32,7 @@
   else{const ids=new Set(),dates=new Set();for(const d of days){if(!validDate(d.date)||dates.has(d.date)||!Array.isArray(d.words))throw Error('Invalid notebook');dates.add(d.date);for(const w of d.words){if(typeof w.id!=='string'||!w.id||ids.has(w.id)||typeof w.en!=='string'||!w.en.trim()||typeof w.vi!=='string'||!w.vi.trim()||typeof w.remembered!=='boolean')throw Error('Invalid word');ids.add(w.id);}}}
   const preferences={...defaults,...input.preferences};
   if(!Number.isInteger(preferences.goal)||preferences.goal<1||preferences.goal>200||!Number.isFinite(preferences.rate)||preferences.rate<.5||preferences.rate>1.5||typeof preferences.autoSpeak!=='boolean'||typeof preferences.reverse!=='boolean'||!['dark','light','system'].includes(preferences.theme))throw Error('Invalid preferences');
-  const topics={};for(const [k,v] of Object.entries(input.topics||{})){if(!/^[a-z0-9-]+:tw-[a-z0-9-]+$/.test(k)||typeof v!=='boolean')throw Error('Invalid topic progress');topics[k]=v;}
+  const topics=cleanTopics(input.topics||{});
   const history=[...new Set((input.history||[]).filter(w=>typeof w==='string'&&w.trim()&&w.length<=200))].slice(0,8);
   return {days:days.sort((a,b)=>b.date.localeCompare(a.date)),preferences,topics,history};
  }
@@ -39,7 +51,7 @@
   const dayMap=new Map();for(const d of [...remote.days,...local.days])if(initial||!base.days.some(x=>x.date===d.date)||local.days.some(x=>x.date===d.date)&&remote.days.some(x=>x.date===d.date))dayMap.set(d.date,{date:d.date,words:[]});
   for(const w of Object.values(words)){const date=w._date;delete w._date;if(!dayMap.has(date))dayMap.set(date,{date,words:[]});const list=dayMap.get(date).words,key=w.en.normalize('NFC').trim().replace(/\s+/g,' ').toLowerCase(),old=list.find(x=>x.en.normalize('NFC').trim().replace(/\s+/g,' ').toLowerCase()===key);if(!old)list.push(w);else if(Number(w.reviewCount||0)>Number(old.reviewCount||0))Object.assign(old,{...w,id:old.id});}
   let preferences,topics;
-  if(initial){preferences={...remote.preferences};for(const k of Object.keys(defaults))if(equal(remote.preferences[k],defaults[k])&&!equal(local.preferences[k],defaults[k]))preferences[k]=local.preferences[k];topics={...remote.topics};for(const [k,v] of Object.entries(local.topics))if(v||topics[k]===undefined)topics[k]=v;}
+  if(initial){preferences={...remote.preferences};for(const k of Object.keys(defaults))if(equal(remote.preferences[k],defaults[k])&&!equal(local.preferences[k],defaults[k]))preferences[k]=local.preferences[k];topics={...remote.topics};for(const [k,v] of Object.entries(local.topics)){const remoteValue=topics[k];if(remoteValue===undefined||object(v)&&Number(v.reviewCount||0)>Number(remoteValue?.reviewCount||0)||typeof v==='boolean'&&!object(remoteValue)&&v)topics[k]=clone(v);}}
   else{preferences=mapMerge(base.preferences,local.preferences,remote.preferences);topics=mapMerge(base.topics,local.topics,remote.topics);}
   return normalize({days:[...dayMap.values()],preferences,topics,history:equal(local.history,base.history)?remote.history:[...new Set([...local.history,...remote.history])].slice(0,8)});
  }
@@ -82,7 +94,7 @@
   function recordReview(event){
    if(!state)return;const id=root.crypto?.randomUUID?.()||'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const n=Math.random()*16|0;return(c==='x'?n:(n&3|8)).toString(16);});
    if(!validDate(event.date)||typeof event.known!=='boolean'||!['lat_the','ghep_cap'].includes(event.mode))throw Error('Invalid review');
-   state.events[id]={id,date:event.date,known:event.known,mode:event.mode,word:String(event.word||'').slice(0,200),wordId:event.wordId||null,topic:event.topic||null,at:new Date().toISOString(),progress:event.progress||progress(state.data.days.flatMap(d=>d.words).find(w=>w.id===event.wordId))};persist();onStatus({kind:'pending'});return id;
+   state.events[id]={id,date:event.date,known:event.known,mode:event.mode,word:String(event.word||'').slice(0,200),wordId:event.wordId||null,topic:event.topic||null,at:new Date().toISOString(),progress:event.progress||progress(event.topic?(typeof state.data.topics[event.topic+':'+event.wordId]==='boolean'?{remembered:state.data.topics[event.topic+':'+event.wordId]}:state.data.topics[event.topic+':'+event.wordId]):state.data.days.flatMap(d=>d.words).find(w=>w.id===event.wordId))};persist();onStatus({kind:'pending'});return id;
   }
   function response(value){
    if(!object(value)||!Number.isSafeInteger(value.revision)||value.revision<0)throw Error('Invalid cloud revision');
@@ -106,14 +118,14 @@
      const acknowledged=new Set(remote.acknowledged||[]),allEvents=Object.values(state.events),remaining=allEvents.filter(e=>!acknowledged.has(e.id));
      for(const e of allEvents.filter(e=>acknowledged.has(e.id))){
       const newer=remaining.some(x=>x.topic===e.topic&&x.wordId===e.wordId);
-      if(!newer&&e.topic&&e.wordId){const key=e.topic+':'+e.wordId;if(state.data.topics[key]===e.known){if(remote.data.topics[key]===undefined)delete state.data.topics[key];else state.data.topics[key]=remote.data.topics[key];}}
+      if(!newer&&e.topic&&e.wordId){const key=e.topic+':'+e.wordId;if(typeof state.data.topics[key]==='boolean'?state.data.topics[key]===e.known:equal(progress(state.data.topics[key]),e.progress)){if(remote.data.topics[key]===undefined)delete state.data.topics[key];else state.data.topics[key]=clone(remote.data.topics[key]);}}
       else if(!newer&&e.wordId){const localWord=state.data.days.flatMap(d=>d.words).find(w=>w.id===e.wordId),cloudWord=remote.data.days.flatMap(d=>d.words).find(w=>w.id===e.wordId);if(localWord&&cloudWord&&equal(progress(localWord),e.progress)){for(const k of Object.keys(progress(cloudWord))){if(cloudWord[k]===undefined)delete localWord[k];else localWord[k]=cloudWord[k];}}}
       delete state.events[e.id];
      }
      const local=clone(state.data),merged=merge(state.base,local,remote.data),baseline=maxStats(remote.baseline,state.legacy),events=Object.values(state.events).map(clone);
      // A review is an explicit intent even when false equals the cached base.
      for(const e of events){
-      if(e.topic&&e.wordId)merged.topics[e.topic+':'+e.wordId]=e.known;
+      if(e.topic&&e.wordId){const key=e.topic+':'+e.wordId,source=local.topics[key];merged.topics[key]=object(source)?{...source,remembered:e.known}:e.known;}
       else if(e.wordId){const target=merged.days.flatMap(d=>d.words).find(w=>w.id===e.wordId),source=local.days.flatMap(d=>d.words).find(w=>w.id===e.wordId);if(target&&source){for(const k of ['remembered','reviewLevel','reviewCount','lastReviewed','nextReview']){if(source[k]!==undefined)target[k]=source[k];else delete target[k];}target.remembered=e.known;}}
      }
      const changed=!equal(merged,remote.data)||!equal(baseline,remote.baseline)||events.length;
@@ -126,10 +138,10 @@
      if(equal(state.data,state.base)&&!Object.keys(state.events).length){onStatus({kind:'saved'});return true;}
     }
     onStatus({kind:'pending'});return false;
-   }catch(error){if(active())onStatus({kind:error?.code==='LOCAL_STORAGE'?'local-error':['PGRST202','42P01','42883'].includes(error?.code)?'setup':error?.code?'error':'offline',message:error?.message||''});return false;}})();
+   }catch(error){if(active())onStatus({kind:error?.code==='LOCAL_STORAGE'?'local-error':(['PGRST202','42P01','42883'].includes(error?.code)||/INVALID_TOPIC/.test(error?.message||''))?'setup':error?.code?'error':'offline',message:error?.message||''});return false;}})();
    running=task;void task.finally(()=>{if(running===task)running=null;});return task;
   }
   return {start,stop,capture,recordReview,flush,snapshot:visible};
  }
- root.TuTuSync={create,merge,emptyData};
+ root.TuTuSync={create,merge,emptyData,cleanTopics};
 })(globalThis);

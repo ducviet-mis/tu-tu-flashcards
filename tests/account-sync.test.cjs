@@ -82,3 +82,21 @@ test('A pending journal removed by another tab during enumeration does not break
  const controller=api.create({storage:{getItem:k=>{if(k.startsWith('tutu.account.pending.')){store.delete(k);return null;}return store.get(k)||null;},setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k),key:i=>[...store.keys()][i]??null,get length(){return store.size;}},rpc:db.client('A')});
  assert.doesNotThrow(()=>controller.start('A'));assert.equal(controller.snapshot().data.days[0].words[0].en,'apple');
 });
+
+
+test('Topic schedules survive a fresh device and explicit failed reviews win conflicts as whole records',async()=>{
+ const api=lib(),db=backend(),a=device(api,db.client('A')),b=device(api,db.client('A'));const seed=data();
+ seed.topics['food:tw-1']={remembered:true,reviewLevel:2,reviewCount:2,lastReviewed:'2026-10-25',nextReview:'2026-10-28'};
+ a.controller.start('A',{data:seed});assert.equal(await a.controller.flush(),true);b.controller.start('A');await b.controller.flush();assert.equal(b.controller.snapshot().data.topics['food:tw-1'].nextReview,'2026-10-28');
+ const remote=a.controller.snapshot().data;remote.topics['food:tw-1']={remembered:true,reviewLevel:3,reviewCount:3,lastReviewed:'2026-10-28',nextReview:'2026-11-04'};a.controller.capture(remote);await a.controller.flush();
+ const local=b.controller.snapshot().data;local.topics['food:tw-1']={remembered:false,reviewLevel:0,reviewCount:3,lastReviewed:'2026-10-28',nextReview:'2026-10-28'};b.controller.capture(local);b.controller.recordReview({date:'2026-10-28',wordId:'tw-1',word:'apple',topic:'food',known:false,mode:'lat_the'});await b.controller.flush();
+ const saved=b.controller.snapshot().data.topics['food:tw-1'];assert.equal(saved.remembered,false);assert.equal(saved.reviewLevel,0);assert.equal(saved.nextReview,'2026-10-28');assert.equal(b.controller.snapshot().data.days.length,0);
+});
+
+test('Acknowledged topic review replay cannot restore an older schedule over a later device',async()=>{
+ const api=lib(),db=backend(),real=db.client('A');let lose=false;
+ const a=device(api,async(n,p)=>{const r=await real(n,p);if(n==='tu_tu_luu_du_lieu'&&lose){lose=false;throw Error('lost response');}return r;});a.controller.start('A');await a.controller.flush();
+ let d=a.controller.snapshot().data;d.topics['food:tw-1']={remembered:false,reviewLevel:0,reviewCount:1,lastReviewed:'2026-10-24',nextReview:'2026-10-24'};a.controller.capture(d);a.controller.recordReview({date:'2026-10-24',wordId:'tw-1',word:'apple',topic:'food',known:false,mode:'lat_the'});lose=true;assert.equal(await a.controller.flush(),false);
+ const b=device(api,real);b.controller.start('A');await b.controller.flush();d=b.controller.snapshot().data;d.topics['food:tw-1']={remembered:true,reviewLevel:1,reviewCount:2,lastReviewed:'2026-10-24',nextReview:'2026-10-25'};b.controller.capture(d);b.controller.recordReview({date:'2026-10-24',wordId:'tw-1',word:'apple',topic:'food',known:true,mode:'lat_the'});await b.controller.flush();await a.controller.flush();
+ assert.equal(a.controller.snapshot().data.topics['food:tw-1'].nextReview,'2026-10-25');assert.equal(a.controller.snapshot().data.topics['food:tw-1'].remembered,true);
+});

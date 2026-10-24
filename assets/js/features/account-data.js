@@ -46,7 +46,7 @@ function accountDataChanged(){
 }
 function accountDataReview(word,known){
  if(!dataOwner)return;
- try{accountDataController.capture(currentLearningData());accountDataController.recordReview({date:C.isoToday(),word:word.en,wordId:word.id,known,mode:session?.type==='match'?'ghep_cap':'lat_the',topic:session?.fromTopic||null});}catch{updateAccountDataStatus({kind:'local-error'});}
+ try{accountDataController.capture(currentLearningData());accountDataController.recordReview({date:C.isoToday(),word:word.en,wordId:word.id,known,mode:session?.type==='match'?'ghep_cap':'lat_the',topic:session?.fromTopic||word._topic||null,progress:Object.fromEntries(['remembered','reviewLevel','reviewCount','lastReviewed','nextReview'].map(k=>[k,word[k]??null]))});}catch{updateAccountDataStatus({kind:'local-error'});}
  scheduleAccountData();
 }
 async function refreshAccountIdentity(force=false){

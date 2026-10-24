@@ -1,3 +1,4 @@
+-- Cập nhật 24/10/2026: chạy lại TOÀN BỘ file để bổ sung lịch ôn Chủ đề.
 -- Từ Từ: bật lưu dữ liệu học theo tài khoản và đồng bộ nhiều thiết bị.
 -- Chạy tu_tu_supabase.sql trước nếu dự án chưa có 7 bảng dữ liệu cá nhân.
 -- Sau đó chạy TOÀN BỘ file này trong Supabase SQL Editor. Có thể chạy lại.
@@ -21,6 +22,12 @@ create table if not exists public.tien_trinh_chu_de (
  cap_nhat_luc timestamptz not null default now(),
  primary key (nguoi_dung_id,chu_de_id,tu_trong_bo_id)
 );
+
+-- Lịch ôn của từ chủ đề; không đưa kho từ cố định vào cơ sở dữ liệu.
+alter table public.tien_trinh_chu_de add column if not exists cap_do_on smallint not null default 0 check (cap_do_on between 0 and 5);
+alter table public.tien_trinh_chu_de add column if not exists so_lan_on integer not null default 0 check (so_lan_on >= 0);
+alter table public.tien_trinh_chu_de add column if not exists ngay_on_gan_nhat date;
+alter table public.tien_trinh_chu_de add column if not exists ngay_on_tiep date;
 
 do $rls$
 declare bang text;
@@ -68,7 +75,7 @@ begin
     where t.nguoi_dung_id=uid and t.ngay_so=s.ngay_so
    ),'[]'::jsonb)) order by s.ngay_so desc) from public.so_tu s where s.nguoi_dung_id=uid),'[]'::jsonb),
    'preferences',coalesce((select jsonb_build_object('goal',c.muc_tieu_moi_ngay,'rate',c.toc_do_doc,'autoSpeak',c.tu_dong_doc,'reverse',c.hien_tieng_viet_truoc,'theme',case c.giao_dien when 'sang' then 'light' when 'he_thong' then 'system' else 'dark' end) from public.cai_dat_nguoi_dung c where c.nguoi_dung_id=uid),'{"goal":10,"rate":0.85,"autoSpeak":false,"reverse":false,"theme":"dark"}'::jsonb),
-   'topics',coalesce((select jsonb_object_agg(p.chu_de_id||':'||p.tu_trong_bo_id,p.da_nho) from public.tien_trinh_chu_de p where p.nguoi_dung_id=uid),'{}'::jsonb),
+   'topics',coalesce((select jsonb_object_agg(p.chu_de_id||':'||p.tu_trong_bo_id,case when p.ngay_on_gan_nhat is null and p.so_lan_on=0 then to_jsonb(p.da_nho) else jsonb_build_object('remembered',p.da_nho,'reviewLevel',p.cap_do_on,'reviewCount',p.so_lan_on)||jsonb_strip_nulls(jsonb_build_object('lastReviewed',p.ngay_on_gan_nhat::text,'nextReview',p.ngay_on_tiep::text)) end) from public.tien_trinh_chu_de p where p.nguoi_dung_id=uid),'{}'::jsonb),
    'history',m.tra_cuu_gan_day
   ),
   'activity',coalesce((select jsonb_object_agg(a.ngay_hoc::text,jsonb_build_object('reviewed',a.so_luot_on,'correct',a.so_luot_da_nho)) from public.thong_ke_hoc_theo_ngay a where a.nguoi_dung_id=uid),'{}'::jsonb),
@@ -135,10 +142,27 @@ begin
  on conflict(nguoi_dung_id) do update set muc_tieu_moi_ngay=excluded.muc_tieu_moi_ngay,toc_do_doc=excluded.toc_do_doc,tu_dong_doc=excluded.tu_dong_doc,hien_tieng_viet_truoc=excluded.hien_tieng_viet_truoc,giao_dien=excluded.giao_dien;
  delete from public.tien_trinh_chu_de where nguoi_dung_id=uid and not(p_data->'topics' ? (chu_de_id||':'||tu_trong_bo_id));
  for item in select key,value from jsonb_each(p_data->'topics') loop
-  if item.key !~ '^[a-z0-9-]+:tw-[a-z0-9-]+$' or jsonb_typeof(item.value)<>'boolean' then raise exception 'INVALID_TOPIC'; end if;
-  insert into public.tien_trinh_chu_de(nguoi_dung_id,chu_de_id,tu_trong_bo_id,da_nho)
-  values(uid,split_part(item.key,':',1),split_part(item.key,':',2),item.value::text::boolean)
-  on conflict(nguoi_dung_id,chu_de_id,tu_trong_bo_id) do update set da_nho=excluded.da_nho,cap_nhat_luc=now();
+  if item.key !~ '^[a-z0-9-]+:tw-[a-z0-9-]+$' or jsonb_typeof(item.value) not in ('boolean','object') then raise exception 'INVALID_TOPIC'; end if;
+  if jsonb_typeof(item.value)='boolean' then
+   insert into public.tien_trinh_chu_de(nguoi_dung_id,chu_de_id,tu_trong_bo_id,da_nho)
+   values(uid,split_part(item.key,':',1),split_part(item.key,':',2),item.value::text::boolean)
+   on conflict(nguoi_dung_id,chu_de_id,tu_trong_bo_id) do update set da_nho=excluded.da_nho,
+    cap_do_on=case when excluded.da_nho then public.tien_trinh_chu_de.cap_do_on else 0 end,
+    ngay_on_tiep=case when excluded.da_nho then public.tien_trinh_chu_de.ngay_on_tiep else null end,
+    cap_nhat_luc=now();
+  else
+   if jsonb_typeof(item.value->'remembered') is distinct from 'boolean' or jsonb_typeof(item.value->'reviewLevel') is distinct from 'number' or jsonb_typeof(item.value->'reviewCount') is distinct from 'number'
+    or (item.value->>'reviewLevel')::integer not between 0 and 5 or (item.value->>'reviewCount')::integer<0
+    or not (item.value->>'remembered')::boolean and (item.value->>'reviewLevel')::integer<>0
+   then raise exception 'INVALID_TOPIC_SCHEDULE'; end if;
+   select so_lan_on into previous_count from public.tien_trinh_chu_de where nguoi_dung_id=uid and chu_de_id=split_part(item.key,':',1) and tu_trong_bo_id=split_part(item.key,':',2);
+   select count(distinct ev.value->>'id')::integer into new_events from jsonb_array_elements(p_events) as ev(value)
+    where ev.value->>'topic'=split_part(item.key,':',1) and ev.value->>'wordId'=split_part(item.key,':',2)
+    and not exists(select 1 from public.lich_su_on_tap h where h.nguoi_dung_id=uid and h.luot_on_id=(ev.value->>'id')::uuid);
+   insert into public.tien_trinh_chu_de(nguoi_dung_id,chu_de_id,tu_trong_bo_id,da_nho,cap_do_on,so_lan_on,ngay_on_gan_nhat,ngay_on_tiep)
+   values(uid,split_part(item.key,':',1),split_part(item.key,':',2),(item.value->>'remembered')::boolean,(item.value->>'reviewLevel')::smallint,greatest(coalesce(previous_count,0)+new_events,(item.value->>'reviewCount')::integer),(item.value->>'lastReviewed')::date,(item.value->>'nextReview')::date)
+   on conflict(nguoi_dung_id,chu_de_id,tu_trong_bo_id) do update set da_nho=excluded.da_nho,cap_do_on=excluded.cap_do_on,so_lan_on=excluded.so_lan_on,ngay_on_gan_nhat=excluded.ngay_on_gan_nhat,ngay_on_tiep=excluded.ngay_on_tiep,cap_nhat_luc=now();
+  end if;
  end loop;
  for item in select key,value from jsonb_each(p_baseline) loop
   insert into public.thong_ke_hoc_cu(nguoi_dung_id,ngay_hoc,so_luot_on,so_luot_da_nho)

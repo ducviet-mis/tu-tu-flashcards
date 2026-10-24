@@ -43,4 +43,20 @@ test('Account RPCs execute in PostgreSQL with transactional version checks, idem
  const removed={...now.data,days:[]};now=await rpc(A,'tu_tu_luu_du_lieu',{p_revision:now.revision,p_data:removed});assert.equal(now.activity['2026-10-24'].reviewed,13);assert.equal(now.data.days.length,0);
  assert.equal((await db.query('select tu_vung_id from public.lich_su_on_tap')).rows[0].tu_vung_id,null);
 
+ await t.test('Topic schedule records round-trip, count actual reviews once and reject malformed states',async()=>{
+  const state=await rpc(A,'tu_tu_tai_du_lieu'),schedule={remembered:true,reviewLevel:1,reviewCount:1,lastReviewed:'2026-10-24',nextReview:'2026-10-25'};
+  state.data.topics['food:tw-2']=schedule;const ev={...event,id:'55555555-5555-4555-8555-555555555555',wordId:'tw-2',topic:'food'};
+  let saved=await rpc(A,'tu_tu_luu_du_lieu',{p_revision:state.revision,p_data:state.data,p_events:[ev]});assert.equal(saved.data.topics['food:tw-2'].nextReview,'2026-10-25');assert.equal(saved.data.topics['food:tw-2'].reviewCount,1);assert.equal(saved.data.topics['food:tw-1'],false);
+  saved=await rpc(A,'tu_tu_luu_du_lieu',{p_revision:saved.revision,p_data:saved.data,p_events:[ev]});assert.equal(saved.data.topics['food:tw-2'].reviewCount,1);
+  const bad=JSON.parse(JSON.stringify(saved.data));bad.topics['food:tw-2'].reviewLevel=99;await assert.rejects(()=>rpc(A,'tu_tu_luu_du_lieu',{p_revision:saved.revision,p_data:bad}));assert.equal((await rpc(A,'tu_tu_tai_du_lieu')).revision,saved.revision);
+  assert.deepEqual((await rpc(B,'tu_tu_tai_du_lieu')).data.topics,{});
+  const x=device(C),y=device(C);x.start(C);y.start(C);await x.flush();await y.flush();
+  for(const client of [x,y]){const state=client.snapshot().data;state.topics['food:tw-3']={...schedule};client.capture(state);client.recordReview({date:'2026-10-24',wordId:'tw-3',word:'bread',topic:'food',known:true,mode:'lat_the'});}
+  await Promise.all([x.flush(),y.flush()]);const concurrent=await rpc(C,'tu_tu_tai_du_lieu');assert.equal(concurrent.data.topics['food:tw-3'].reviewCount,2,'Two real topic reviews count twice after CAS retry');
+  const legacy=JSON.parse(JSON.stringify(saved.data));legacy.topics['food:tw-2']=false;const downgraded=await rpc(A,'tu_tu_luu_du_lieu',{p_revision:saved.revision,p_data:legacy});
+  const record=downgraded.data.topics['food:tw-2'];assert.equal(record.remembered,false);assert.equal(record.reviewLevel,0);assert.equal(record.reviewCount,1);assert.doesNotThrow(()=>box.TuTuSync.cleanTopics(downgraded.data.topics));
+
+
+ });
+
 });

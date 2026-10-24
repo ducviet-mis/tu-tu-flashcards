@@ -3,7 +3,7 @@
 function updateNav(page='home'){
   document.querySelectorAll('[data-nav]').forEach(link=>{const active=link.dataset.nav===page;link.classList.toggle('is-active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute?.('aria-current');});
   document.body.setAttribute('data-page',page);
-  const today=C.isoToday(),due=ReviewEngine.queue(days,today).length,streak=ReviewEngine.streak(activity,today);
+  const today=C.isoToday(),due=reviewCount(today),streak=ReviewEngine.streak(activity,today);
   if($('#header-date'))$('#header-date').textContent=fullDate(today);
   if($('#header-streak-count'))$('#header-streak-count').textContent=String(streak);
   $('#header-streak')?.setAttribute('aria-label',`Chuỗi ${streak} ngày ôn liên tiếp`);

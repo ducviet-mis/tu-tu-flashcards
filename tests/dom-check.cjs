@@ -35,7 +35,7 @@ function environment({map=new Map(),blocked=false,hash='#/',bankRows=null,speech
  const storage={getItem:k=>{if(blocked)throw Error('blocked');return map.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');map.set(k,v);},removeItem:k=>map.delete(k),key:i=>[...map.keys()][i]??null,get length(){return map.size;}};
  const box={document:doc,location,history:{replaceState:(s,t,v)=>{const next=new URL(v,location.href||'https://local.invalid/');currentHash=next.hash;if(location.href)location.href=next.href;}},localStorage:storage,crypto:require('node:crypto').webcrypto,URL:class extends URL{static createObjectURL(b){const u='blob:'+doc.blobs.size;doc.blobs.set(u,b);return u;}static revokeObjectURL(){}},URLSearchParams,AbortSignal,Blob,Date,Set,Map,console,Uint8Array,atob,navigator:{},setTimeout:(fn,ms)=>{const id={fn,ms};timers.push(id);return id;},clearTimeout:id=>{if(id)id.cancelled=true;},setInterval:(fn,ms)=>({fn,ms}),clearInterval:()=>{},requestAnimationFrame:fn=>fn(),addEventListener:(n,fn)=>(events[n]??=[]).push(fn),fetch:async(url)=>{if(String(url).endsWith('data/topics/catalog.json')&&topicData)return new Response(JSON.stringify(topicData));if(String(url).endsWith('data/kaikki/index.json.gz')&&bankRows)return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows,buckets:[...'abcdefghijklmnopqrstuvwxyz0']})));if(kaikkiEntries&&/^\.\/data\/kaikki\/[a-z0]\.json\.gz$/.test(String(url)))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,source:'kaikki',revision:'fixture',entries:kaikkiEntries})));if(lexicon&&/^\.\/data\/wordnet(?:\/|\-vi)/.test(String(url)))return new Response(fs.readFileSync(String(url)));if(bankRows&&String(url).includes('data/dictionary.json.gz'))return new Response(require('node:zlib').gzipSync(JSON.stringify({version:1,count:bankRows.length,commonCount:bankRows.filter(r=>r[3]).length,entries:bankRows})));throw Error('No real network in harness');}};
  const spoken=[];if(speech){box.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};box.speechSynthesis={cancel(){},getVoices:()=>[{lang:'en-US'}],speak:utterance=>spoken.push(utterance)};}box.performance=performance;box.Response=Response;box.DecompressionStream=DecompressionStream;box.window=box;vm.createContext(box);const scripts=[...html.matchAll(/<script id="(?:core|application)">([\s\S]*?)<\/script>/g)].map(m=>m[1]);vm.runInContext(scripts[0],box);
- const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,rememberLookup,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;},initializeAccount,showPwaUpdate,get accountUser(){return accountUser;},get topicPending(){return topicPending;},refreshAccountIdentity:async()=>{if(typeof refreshAccountIdentity==='function')return refreshAccountIdentity(true);},flushAccountData:async()=>{if(typeof flushAccountData==='function')return flushAccountData();},get accountDataPending(){return typeof accountDataPending==='undefined'?null:accountDataPending;},get dataOwner(){return typeof dataOwner==='undefined'?'':dataOwner;}};`);vm.runInContext(src,box);
+ const src=scripts[1].replace('/* QA_EXPORT_POINT */',`globalThis.QA={get days(){return days;},get session(){return session;},route,renderBase,startStudy,selectCell,answer,flipCard,closeStudy,rememberLookup,bankOpen,loadBank,get bankData(){return bankData;},bankState,bankSave,get bankRelationsPending(){return bankRelationsPending;},renderReview,renderProgress,renderSettings,quickAddOpen,startGlobalReview,get activity(){return activity;},get preferences(){return preferences;},initializeAccount,showPwaUpdate,get accountUser(){return accountUser;},get topicPending(){return topicPending;},get reviewPending(){return typeof reviewPending==='undefined'?Promise.resolve():reviewPending;},refreshAccountIdentity:async()=>{if(typeof refreshAccountIdentity==='function')return refreshAccountIdentity(true);},flushAccountData:async()=>{if(typeof flushAccountData==='function')return flushAccountData();},get accountDataPending(){return typeof accountDataPending==='undefined'?null:accountDataPending;},get dataOwner(){return typeof dataOwner==='undefined'?'':dataOwner;}};`);vm.runInContext(src,box);
  return{box,doc,spoken,q:s=>doc.querySelector(s),qa:box.QA,map,click:s=>{const e=doc.querySelector(s);assert.ok(e,'Missing element '+s);e.click();},flush:ms=>{for(const t of timers.splice(0))if(!t.cancelled&&t.ms<=ms)t.fn();},key:code=>doc.body.dispatchEvent({type:'keydown',code,target:doc.activeElement||doc.body})};
 }
 function demo(){const e=environment();e.click('[data-action="sample"]');e.box.location.hash='#/day/'+e.qa.days[0].date;return e;}
@@ -654,7 +654,7 @@ test('Topic download failure can retry and an invalid deck has an accessible ret
 test('Fixed study leaves an existing personal vocabulary entry and its schedule untouched',async()=>{
  const e=environment({topicData:topicFixture()});e.click('[data-action="sample"]');const w=e.qa.days[0].words[0];w.en='apple';const before=JSON.stringify(e.qa.days),stored=e.map.get('tungngay.v1');
  e.box.location.hash='#/topic/food?mode=flip';await e.qa.topicPending;e.click('[data-action="flip-card"]');e.click('[data-action="answer-yes"]');
- assert.equal(JSON.stringify(e.qa.days),before);assert.equal(e.map.get('tungngay.v1'),stored);assert.ok(e.q('.review-schedule').hidden);
+ assert.equal(JSON.stringify(e.qa.days),before);assert.equal(e.map.get('tungngay.v1'),stored);assert.equal(e.q('.review-schedule').hidden,false);
 });
 
 test('Fixed flashcard results retry only missed words from that session',async()=>{
@@ -809,4 +809,47 @@ test('Day detail search state is cleared on an account switch',async()=>{
  const e=await accountEnvironment(signedSession('u1'),'#/');e.click('[data-action="sample"]');e.box.location.hash='#/day/'+e.qa.days[0].date;
  e.click('[data-action="day-filter"][data-filter="known"]');e.q('#word-search').value='private account search';e.q('#word-search').dispatchEvent({type:'input'});e.q('#word-search').focus();e.authEvent('SIGNED_IN',{user:signedUser('u2')});
  assert.equal(e.q('#word-search').value,'');assert.equal(e.q('[data-filter="all"]').getAttribute('aria-pressed'),'true');assert.equal(e.q('#word-list').querySelectorAll('.word-row').length,0);
+});
+
+
+test('Studied topic failures enter shared review, successful retry schedules tomorrow and survives reload',async()=>{
+ const e=environment({topicData:topicFixture(),hash:'#/topic/food?mode=flip'});await e.qa.topicPending;
+ e.click('[data-action="flip-card"]');e.click('[data-action="answer-no"]');e.click('[data-action="close-study"]');await e.qa.topicPending;
+ e.box.location.hash='#/review';await e.qa.reviewPending;assert.deepEqual(e.doc.querySelectorAll('.feature-number').map(n=>n.textContent),['1','1']);assert.match(e.q('.review-row').textContent,/Đồ ăn/);assert.equal(e.qa.days.length,0);
+ e.click('[data-action="review-start"][data-mode="unknown"]');await e.qa.reviewPending;assert.equal(e.qa.session.words.length,1);e.click('[data-action="flip-card"]');e.click('[data-action="answer-yes"]');e.click('[data-action="close-study"]');await e.qa.reviewPending;
+ assert.deepEqual(e.doc.querySelectorAll('.feature-number').map(n=>n.textContent),['0','0']);e.click('[data-action="review-filter"][data-mode="all"]');assert.equal(e.doc.querySelectorAll('.review-row').length,1);assert.match(e.q('.review-row').textContent,/Hẹn/);
+ const saved=JSON.parse(e.map.get('tutu.topics.progress.v1'));assert.equal(saved['food:tw-0'].nextReview,ReviewEngineDateTomorrow());assert.equal(saved['food:tw-0'].reviewCount,2);
+ const restored=environment({map:e.map,topicData:topicFixture(),hash:'#/review'});await restored.qa.reviewPending;assert.equal(restored.doc.querySelectorAll('.feature-number')[0].textContent,'0');restored.click('[data-action="review-filter"][data-mode="all"]');assert.equal(restored.doc.querySelectorAll('.review-row').length,1);
+});
+function ReviewEngineDateTomorrow(){const d=new Date();d.setDate(d.getDate()+1);return d.toLocaleDateString('en-CA');}
+
+test('Shared review keeps equal IDs in two topics and a personal day independent and retries only missed origins',async()=>{
+ const data=topicFixture();data.topics[1].words=[{...data.topics[0].words[0],vi:'táo ở nhà'}];
+ const today=new Date().toLocaleDateString('en-CA'),map=new Map([['tutu.topics.progress.v1',JSON.stringify({'food:tw-0':false,'home:tw-0':false})],['tungngay.v1',JSON.stringify({version:1,days:[{date:today,words:[{id:'tw-0',en:'apple',vi:'táo riêng',remembered:false}]}]})]]);
+ const e=environment({map,topicData:data,hash:'#/review'});await e.qa.reviewPending;assert.equal(e.doc.querySelectorAll('.review-row').length,3);
+ e.click('[data-action="review-start"][data-mode="due"]');await e.qa.reviewPending;const first={...e.qa.session.words[0]};
+ for(let i=0;i<3;i++){e.click('[data-action="flip-card"]');e.click('[data-action="answer-'+(i===0?'yes':'no')+'"]');}
+ assert.equal(e.qa.session.type,'result');e.click('[data-action="result-review"]');await e.qa.reviewPending;assert.equal(e.qa.session.words.length,2);assert.ok(e.qa.session.words.every(w=>w._topic!==first._topic||w._date!==first._date));
+ e.click('[data-action="close-study"]');await e.qa.reviewPending;assert.equal(e.doc.querySelectorAll('.feature-number')[1].textContent,'2');assert.equal(e.qa.days[0].words.length,1);
+});
+
+test('Late shared-review catalog loading cannot overwrite a page visited meanwhile',async()=>{
+ const map=new Map([['tutu.topics.progress.v1',JSON.stringify({'food:tw-0':false})]]),e=environment({map});let release;const original=e.box.fetch;
+ e.box.fetch=async url=>String(url).endsWith('data/topics/catalog.json')?new Promise(resolve=>release=()=>resolve(new Response(JSON.stringify(topicFixture())))):original(url);
+ e.box.location.hash='#/review';const pending=e.qa.reviewPending;e.box.location.hash='#/';release();await pending;assert.ok(e.q('#home-lookup'));assert.equal(e.q('#study-dialog').open,false);
+});
+
+
+test('A wrong topic match retains its review record and becomes due even when study is closed immediately',async()=>{
+ const today=new Date().toLocaleDateString('en-CA'),next=ReviewEngineDateTomorrow(),progress=Object.fromEntries(topicFixture().topics[0].words.map(w=>['food:'+w.id,{remembered:true,reviewLevel:2,reviewCount:5,lastReviewed:today,nextReview:next}]));
+ const e=environment({map:new Map([['tutu.topics.progress.v1',JSON.stringify(progress)]]),topicData:topicFixture(),hash:'#/topic/food?mode=match'});await e.qa.topicPending;
+ const cells=e.qa.session.cells,a=cells.findIndex(c=>c.lang==='en'),b=cells.findIndex(c=>c.lang==='vi'&&c.pair!==cells[a].pair),ids=[cells[a].pair,cells[b].pair];e.qa.selectCell(a);e.qa.selectCell(b);e.click('[data-action="close-study"]');await e.qa.topicPending;
+ const stored=JSON.parse(e.map.get('tutu.topics.progress.v1'));for(const id of ids){assert.equal(typeof stored['food:'+id],'object');assert.equal(stored['food:'+id].reviewCount,5);assert.equal(stored['food:'+id].reviewLevel,0);assert.equal(stored['food:'+id].nextReview,today);}
+ e.box.location.hash='#/review';await e.qa.reviewPending;assert.equal(e.doc.querySelectorAll('.feature-number')[1].textContent,'2');
+});
+
+test('Retrying a failed direct review link loads the catalog and starts the requested session',async()=>{
+ const today=new Date().toLocaleDateString('en-CA'),e=environment({map:new Map([['tutu.topics.progress.v1',JSON.stringify({'food:tw-0':false})]]),hash:'#/flip/'+today+'?queue=unknown'});await e.qa.reviewPending;assert.ok(e.q('[data-action="review-retry"]'));
+ e.box.fetch=async()=>new Response(JSON.stringify(topicFixture()));e.click('[data-action="review-retry"]');await e.qa.reviewPending;
+ assert.equal(e.q('#study-dialog').open,true);assert.equal(e.qa.session.words.length,1);assert.equal(e.qa.session.words[0]._topic,'food');
 });

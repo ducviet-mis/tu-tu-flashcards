@@ -166,3 +166,8 @@ Xem [hướng dẫn cấu hình Supabase và Vercel](supabase/HUONG-DAN-DANG-NHA
 Để desktop/mobile dùng cùng dữ liệu, chạy [SQL bổ sung](supabase/dong_bo_tai_khoan.sql), triển khai web mới rồi mở lại desktop còn dữ liệu cũ trước. Hướng dẫn đầy đủ và cách kiểm tra 11 lượt ôn: [HUONG-DAN-DONG-BO.md](supabase/HUONG-DAN-DONG-BO.md). Không có nút sao lưu/đồng bộ thủ công; trạng thái lưu nằm trong menu avatar/Hồ sơ.
 
 Kiểm thử: `npm ci` rồi `npm test`. PGlite chỉ dùng trong kiểm thử để chạy migration PostgreSQL/RLS thật, không nằm trong bản web.
+
+
+### Ôn tập chung với Chủ đề
+
+Từ chủ đề đã học dùng cùng hàng đợi và lịch 1–3–7–14–30 ngày với từ theo ngày. Chưa học chưa vào hàng đợi; các nguồn giữ tiến trình riêng. Tiến trình chủ đề cũ được giữ và sẽ thiết lập lịch ở lần ôn tiếp theo. Khi nâng cấp, chạy lại toàn bộ `supabase/dong_bo_tai_khoan.sql` để lưu lịch chủ đề giữa các thiết bị; xem [hướng dẫn đồng bộ](supabase/HUONG-DAN-DONG-BO.md).

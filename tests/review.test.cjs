@@ -40,3 +40,10 @@ test('A forgotten word is due even if an older app left it with a future schedul
  box.ReviewEngine.grade(rows[0].words[0],true,'2026-10-22');
  assert.equal(rows[0].words[0].reviewLevel,1);assert.equal(rows[0].words[0].nextReview,'2026-10-23');
 });
+
+
+test('Review intervals advance from each due review and remain at thirty days after level five',()=>{
+ const R=box.ReviewEngine,w={remembered:false};let date='2026-10-24';
+ for(const interval of [1,3,7,14,30,30]){R.grade(w,true,date);assert.equal(w.nextReview,R.addDays(date,interval));const next=w.nextReview;R.grade(w,true,date);assert.equal(w.nextReview,next);date=next;}
+ R.grade(w,false,date);assert.equal(w.reviewLevel,0);assert.equal(w.nextReview,date);R.grade(w,true,date);assert.equal(w.nextReview,R.addDays(date,1));
+});

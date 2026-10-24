@@ -2,11 +2,12 @@
 'use strict';
 const topicStore=TopicDecks.create((...args)=>fetch(...args)),TOPIC_PROGRESS_STORE='tutu.topics.progress.v1';
 let topicData=null,topicPending=null,topicPageToken=0,topicSearch='',topicProgress={};
-try{const saved=JSON.parse(getLearningItem(TOPIC_PROGRESS_STORE)||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))for(const [id,value] of Object.entries(saved))if(/^[a-z0-9-]+:tw-[a-z0-9-]+$/.test(id)&&typeof value==='boolean')topicProgress[id]=value;}catch{/* Keep the catalog usable if local storage is unavailable. */}
+try{const saved=JSON.parse(getLearningItem(TOPIC_PROGRESS_STORE)||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))for(const [id,value] of Object.entries(saved)){try{Object.assign(topicProgress,TuTuSync.cleanTopics({[id]:value}));}catch{/* Ignore only an invalid entry. */}}}catch{/* Keep the catalog usable if local storage is unavailable. */}
 const topicHref=id=>'#/notebook?view=topics'+(id?'&topic='+encodeURIComponent(id):'');
-const topicRemembered=(deck,id)=>topicProgress[deck+':'+id]===true;
-function saveTopicRemembered(deck,id,known){
- topicProgress[deck+':'+id]=!!known;
+const topicRemembered=(deck,id)=>{const value=topicProgress[deck+':'+id];return value===true||value?.remembered===true;};
+function topicReviewWord(deck,word){const value=topicProgress[deck.id+':'+word.id];return {...word,...(value&&typeof value==='object'?value:{remembered:value===true}),_topic:deck.id,_topicTitle:deck.title};}
+function saveTopicRemembered(deck,id,known,word=null){
+ topicProgress[deck+':'+id]=word?TuTuSync.cleanTopics({[deck+':'+id]:word})[deck+':'+id]:!!known;
  try{setLearningItem(TOPIC_PROGRESS_STORE,JSON.stringify(topicProgress));}catch{toast('Chưa lưu được tiến trình chủ đề trên thiết bị này.',null,'',true);}
 }
 function topicTabs(){return '<nav class="notebook-tabs" aria-label="Cách xem sổ từ"><a href="#/notebook?view=days">Theo ngày</a><a href="#/notebook?view=topics" aria-current="page">Chủ đề</a></nav>';}

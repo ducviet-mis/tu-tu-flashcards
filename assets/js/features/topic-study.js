@@ -1,10 +1,10 @@
 /* Topic sessions share study controls, never personal day membership. */
 'use strict';
 function topicSessionWord(id,s=session){return s?.topicAll?.find(w=>w.id===id);}
-function studyWord(id,date,s=session){return s?.fromTopic?topicSessionWord(id,s):day(date).words.find(w=>w.id===id);}
-function gradeStudyWord(word,known){recordReview(word,known);if(session?.fromTopic){session.topicAttempted.add(word.id);saveTopicRemembered(session.fromTopic,word.id,known);}}
+function studyWord(id,date,s=session,topic=null){if(s?.fromTopic)return topicSessionWord(id,s);if(topic){const deck=topicData?.topics.find(t=>t.id===topic),word=deck?.words.find(w=>w.id===id);return word?topicReviewWord(deck,word):null;}return day(date).words.find(w=>w.id===id);}
+function gradeStudyWord(word,known){recordReview(word,known);const topic=session?.fromTopic||word._topic;if(topic){if(session?.fromTopic)session.topicAttempted.add(word.id);saveTopicRemembered(topic,word.id,known,word);}}
 function persistStudy(){if(!session?.fromTopic)persist();}
-function topicSessionWords(deck){return deck.words.map(w=>({...w,remembered:topicRemembered(deck.id,w.id)}));}
+function topicSessionWords(deck){return deck.words.map(w=>topicReviewWord(deck,w));}
 function createTopicSession(deck,mode,words=null){
  const all=words||topicSessionWords(deck);stopSession();
  createSession(mode,C.isoToday(),false,{words:mode==='match'?C.shuffle(all).slice(0,6):all});
@@ -30,7 +30,7 @@ function finishTopicStudy(){
 function topicMissedWords(s){return s.topicAll.filter(w=>s.topicAttempted.has(w.id)&&!topicRemembered(s.fromTopic,w.id)).map(w=>({...w,remembered:false}));}
 function retryTopicMissed(){
  const s=session,deck=topicData?.topics.find(t=>t.id===s?.fromTopic),words=s&&topicMissedWords(s);if(!deck||!words.length)return;
- createTopicSession(deck,'flip',words);go('#/topic/'+deck.id+'?mode=flip');
+ createTopicSession(deck,'flip',words.map(w=>topicReviewWord(deck,w)));go('#/topic/'+deck.id+'?mode=flip');
 }
 function renderTopicResult(){
  const s=session,r=s.result,missed=topicMissedWords(s);

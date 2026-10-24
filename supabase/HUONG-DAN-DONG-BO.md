@@ -71,3 +71,19 @@ npm run build
 `@electric-sql/pglite` chỉ là phụ thuộc phát triển để chạy PostgreSQL trong kiểm thử; không nằm trong giao diện/bản triển khai và không yêu cầu người học cài database. Kiểm thử SQL chạy migration thật, giao dịch, RLS, phân tách tài khoản, chống đếm trùng, xử lý phiên bản, gỡ liên kết thẻ đã xóa và so sánh dữ liệu giữa hai client.
 
 Kiểm thử cục bộ không thay thế việc mở web thật trên desktop/mobile và kiểm tra cấu hình Supabase của dự án. Không có quyền truy cập trực tiếp database hoặc dữ liệu tài khoản thật trong phiên sửa này.
+
+
+## Cập nhật lịch ôn của Chủ đề (24/10/2026)
+
+Sau khi cập nhật web, mở Supabase SQL Editor và chạy lại **toàn bộ** [dong_bo_tai_khoan.sql](dong_bo_tai_khoan.sql) bản mới. File có thể chạy lại, giữ dữ liệu và bổ sung các cột lịch ôn vào bảng `tien_trinh_chu_de`. Không đưa kho từ lên database. Cập nhật PWA trên các thiết bị để cùng dùng bản mới.
+
+- Từ chủ đề đã được đánh giá nhớ/chưa nhớ xuất hiện ở Ôn tập; từ chưa học chưa vào hàng đợi.
+- Chưa nhớ: ôn lại hôm nay. Nhớ lần đầu: hẹn ngày mai; các lượt đến lịch tiếp theo giãn 3, 7, 14 rồi 30 ngày. Sau mức cuối, tiếp tục mỗi 30 ngày.
+- Học thêm trước ngày hẹn giữ lịch hiện tại. Quên một từ đặt lại mức đầu.
+- Từ đã nhớ vẫn nằm ở Tất cả; hàng Đến lịch chỉ ẩn tạm đến ngày hẹn.
+- Tiến trình cũ chỉ có nhớ/chưa nhớ vẫn được giữ. Các từ này xuất hiện một lượt để thiết lập lịch; app không đoán ngày ôn cũ.
+- Cùng một từ ở hai chủ đề, hoặc trong sổ cá nhân, có tiến trình riêng. Học chủ đề không tạo từ trong sổ theo ngày.
+
+Nếu chưa chạy SQL mới, lịch vẫn được giữ trên thiết bị và chờ lưu vào tài khoản; kiểm tra trạng thái trong menu avatar. Sau khi chạy SQL và kết nối lại, app tự thử lưu lại.
+
+Thử kiểm tra: chọn Chưa nhớ ở một từ chủ đề → mở Ôn tập/Chưa nhớ → học lại và chọn Đã nhớ → xem ngày hẹn ở Tất cả → đăng nhập cùng tài khoản trên thiết bị khác để kiểm tra cùng ngày hẹn.
