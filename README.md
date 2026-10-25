@@ -171,3 +171,14 @@ Kiểm thử: `npm ci` rồi `npm test`. PGlite chỉ dùng trong kiểm thử �
 ### Ôn tập chung với Chủ đề
 
 Từ chủ đề đã học dùng cùng hàng đợi và lịch 1–3–7–14–30 ngày với từ theo ngày. Chưa học chưa vào hàng đợi; các nguồn giữ tiến trình riêng. Tiến trình chủ đề cũ được giữ và sẽ thiết lập lịch ở lần ôn tiếp theo. Khi nâng cấp, chạy lại toàn bộ `supabase/dong_bo_tai_khoan.sql` để lưu lịch chủ đề giữa các thiết bị; xem [hướng dẫn đồng bộ](supabase/HUONG-DAN-DONG-BO.md).
+
+
+### Gõ từ và Nghe gõ
+
+- Mở từ chi tiết ngày, chi tiết chủ đề hoặc danh sách Ôn tập (theo bộ lọc đang chọn).
+- Gõ từ: đọc nghĩa, gõ tiếng Anh, có gợi ý chữ đầu. Nghe gõ: bấm loa/nghe lại, đổi tốc độ Chậm hoặc xem nghĩa.
+- Enter hoặc Kiểm tra để chấm; bỏ qua để xem đáp án. Màn phản hồi hiển thị từ đúng, phiên âm, âm thanh, ví dụ nếu có và ngày ôn thật.
+- Mỗi câu chỉ ghi một lượt học. Sai/bỏ qua vào ôn lại hôm nay, đúng dùng lịch ôn chung; tiến trình được lưu theo tài khoản như Lật thẻ.
+- Kết quả có số đúng/sai, thời gian, từ cần ôn và Chơi lại đúng chế độ/bộ từ. Menu nổi và Be Vietnam Pro được giữ trên cả desktop/mobile.
+- Không cần SQL mới cho cập nhật này nếu đã chạy bản `supabase/dong_bo_tai_khoan.sql` hỗ trợ lịch ôn chủ đề. Hai chế độ dùng nhóm lượt nhớ từ `lat_the` trong lịch sử hiện tại; thống kê đúng/sai và lịch ôn vẫn được lưu đầy đủ.
+- Nghe gõ dùng bản ghi âm của từ khi có, hoặc giọng tiếng Anh của thiết bị; nút loa cho phép phát bằng thao tác trực tiếp trên trình duyệt.

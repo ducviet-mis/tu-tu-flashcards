@@ -13,7 +13,7 @@ function updateAccountDataStatus(status=accountDataStatus){
 }
 function refreshLearningViews(force=false){
  applyTheme();updateThemeControls(preferences.theme);updateAccountHeader();
- const page=(location.hash||'#/').split('/')[1]?.split('?')[0];updateNav(['day','flip','match','result','topic'].includes(page)?'notebook':page||'home');
+ const page=(location.hash||'#/').split('/')[1]?.split('?')[0];updateNav(session?.fromReview?'review':['day','flip','match','type','listen','result','topic'].includes(page)?'notebook':page||'home');
  if(study.open||utility.open)return;
  const active=document.activeElement;
  if(!force&&(profileHasUnsavedChanges()||['INPUT','TEXTAREA','SELECT'].includes(active?.tagName)))return;

@@ -39,7 +39,7 @@ function renderTopicResult(){
 function renderTopicRoute(){
  closeSuggestions();$('#shell').classList.remove('mobile-day');
  const hash=location.hash,token=++topicPageToken,match=hash.match(/^#\/topic\/([a-z0-9-]+)(?:\?|$)/),mode=new URLSearchParams(hash.split('?')[1]||'').get('mode')||'flip';
- if(!match||!['flip','match','result'].includes(mode)){stopSession();if(study.open)study.close();go(topicHref());return;}
+ if(!match||!['flip','match','type','listen','result'].includes(mode)){stopSession();if(study.open)study.close();go(topicHref());return;}
  const id=match[1];
  if(session?.fromTopic!==id||session?.type!==mode){
   if(mode!=='result'){stopSession();if(study.open)study.close();}
@@ -50,8 +50,8 @@ function renderTopicRoute(){
   if(!deck||mode==='match'&&deck.words.length<3){stopSession();if(study.open)study.close();go(topicHref(deck?.id));return;}
   if(mode==='result'&&(!session?.result||session.fromTopic!==id)){go(topicHref(id));return;}
   app.innerHTML=`<div class="notebook-page fixed-topics-page"><div id="fixed-topic-content"></div></div>`;topicSearch='';renderFixedTopic(deck);
-  if(mode==='result')renderTopicResult();else{if(session?.fromTopic!==id||session.type!==mode)createTopicSession(deck,mode);if(mode==='flip')renderFlip();else renderMatch();}
-  if(!study.open){focusBeforeStudy=document.activeElement;study.showModal();}
+  if(mode==='result'){if(isTypingSession())renderTypingResult();else renderTopicResult();}else{if(session?.fromTopic!==id||session.type!==mode)createTopicSession(deck,mode);if(mode==='flip')renderFlip();else if(typingModes.includes(mode))renderTypingGame();else renderMatch();}
+  showStudy();
  }catch(error){if(token!==topicPageToken||location.hash!==hash)return;stopSession();if(study.open)study.close();app.innerHTML=`<div class="notebook-empty"><h1>Chưa mở được bộ từ</h1><p>${esc(error.message)}</p><button class="btn outline" data-action="topics-retry">Thử lại</button><a href="${topicHref()}">Về các chủ đề</a></div>`;}})();
  return topicPending;
 }

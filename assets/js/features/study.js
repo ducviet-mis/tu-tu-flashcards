@@ -199,11 +199,14 @@ function retryMissedWords(){
   go('#/flip/'+previous.date+(previous.fromReview?'?queue=unknown':'?review=1'));
 }
 function renderResult(){
+  if(isTypingSession())return renderTypingResult();
   if(session?.fromTopic)return renderTopicResult();
   const s=session,r=s.result,review=sessionReviewWords(s);
   study.innerHTML=studyHeader('Kết quả')+`<h2 class="sr-only" id="study-title">Kết quả học từ vựng</h2><div class="result-card"><div class="eyebrow">${r.completed?'Thêm một bước tiến!':'Một lượt ôn đã kết thúc'}</div><div class="score">${r.kind==='flip'?r.correct+'/'+r.total:timeLabel(r.elapsed)}</div><div class="eyebrow">${r.kind==='flip'?'Từ đã nhớ trong lượt này':(r.completed?'Thời gian hoàn thành':'Thời gian đã học')+' · ghép '+r.correct+'/'+r.total}</div>${mascot(true)}</div>${review.length?`<div class="review-title">Cần ôn lại · ${review.length} từ cần ôn</div><div class="result-tags">${review.map(w=>`<span class="pill">${esc(w.en)}</span>`).join('')}</div><button class="btn purple wfull" data-action="result-review">Ôn ${review.length} từ chưa nhớ ${icon('arrow')}</button>`:`<p class="success-note">${r.completed?'Bạn đã nhớ hết các từ trong lượt này. Hẹn gặp ở lượt ôn tiếp theo!':'Lượt học đã dừng. Bạn có thể quay lại mục Ôn tập để học tiếp.'}</p>`}<button class="btn white wfull" style="margin-top:12px" data-action="home">Về trang chủ ${icon('arrow')}</button>`;
 }
 function stopSession(){
+  if(study.classList.contains('game-dialog')){if(study.open)study.close();study.innerHTML='';}
+  study.classList.remove('game-dialog');document.body.classList.remove('game-active');
   if(session){
     clearInterval(session.timer);
     clearTimeout(session.timeout);
@@ -236,7 +239,7 @@ function routeDay(){
     parts=['',''];
   }
   let type=parts[1]||'',date=parts[2];
-  if(!['','day','flip','match','result'].includes(type)||(type&& !C.validDate(date))){
+  if(!['','day','flip','match','type','listen','result'].includes(type)||(type&& !C.validDate(date))){
     history.replaceState(null,'','#/');
     type='';
     date=null;
@@ -246,7 +249,7 @@ function routeDay(){
   else if(type==='')selected=days[0]?.date||C.isoToday();
   else selected=date;
   renderBase();
-  if(!['flip','match','result'].includes(type)){
+  if(!['flip','match','type','listen','result'].includes(type)){
     lastBase=location.hash||'#/';
     if(study.open)study.close();
     stopSession();
@@ -273,10 +276,8 @@ function routeDay(){
       createSession(type,date,review);
     }
     if(type==='flip')renderFlip();
+    else if(typingModes.includes(type))renderTypingGame();
     else renderMatch();
   }
-  if(!study.open){
-    focusBeforeStudy=document.activeElement;
-    study.showModal();
-  }
+  showStudy();
 }

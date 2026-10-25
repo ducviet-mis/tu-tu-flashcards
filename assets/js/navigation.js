@@ -24,9 +24,9 @@ function route(){
     if(page==='review')renderReview();if(page==='progress')renderProgress();if(page==='settings')renderSettings();if(page==='notebook')renderNotebook();lastBase=location.hash;updateNav(page);return;
   }
   const params=new URLSearchParams(location.hash.split('?')[1]||'');
-  if(page==='flip'&&params.has('queue')){
+  if(['flip','type','listen'].includes(page)&&params.has('queue')){
     const date=location.hash.split('/')[2]?.split('?')[0],mode=params.get('queue');
-    if(C.validDate(date)&&['due','unknown','all'].includes(mode)){renderGlobalSession(date,mode);updateNav('review');return;}
+    if(C.validDate(date)&&['due','unknown','all'].includes(mode)){renderGlobalSession(date,mode,page);updateNav('review');return;}
   }
-  routeDay();updateNav(location.hash.startsWith('#/day/')||['flip','match','result'].includes(page)?'notebook':'home');
+  routeDay();updateNav(session?.fromReview?'review':location.hash.startsWith('#/day/')||['flip','match','type','listen','result'].includes(page)?'notebook':'home');
 }

@@ -13,6 +13,7 @@ function renderReviewContent({loading=false,error=false}={}){
  <section class="feature-card yellow"><div class="eyebrow">Chưa nhớ</div><strong class="feature-number">${unknown}</strong><p>Học lại những từ bạn còn vướng.</p><button class="btn dark" data-action="review-start" data-mode="unknown" ${unknown?'':'disabled'}>Ôn từ chưa nhớ</button></section></div>
  <p class="topic-study-caption">Đã nhớ → ôn sau 1, 3, 7, 14 rồi 30 ngày tính từ mỗi lượt đến lịch. Chưa nhớ → ôn lại hôm nay.</p>
  <div class="filter-row" role="group" aria-label="Lọc hàng chờ ôn">${[['due','Đến lịch'],['unknown','Chưa nhớ'],['all','Tất cả']].map(([value,label])=>`<button class="btn outline small ${reviewFilter===value?'is-active':''}" data-action="review-filter" data-mode="${value}" aria-pressed="${reviewFilter===value}">${label}</button>`).join('')}</div>
+ <div class="filter-row game-review-actions"><button type="button" class="btn purple" data-action="review-start" data-mode="${reviewFilter}" data-kind="type" ${list.length?'':'disabled'}>${icon('edit')}Gõ từ</button><button type="button" class="btn yellow" data-action="review-start" data-mode="${reviewFilter}" data-kind="listen" ${list.length?'':'disabled'}>${icon('sound')}Nghe gõ</button></div>
  <section class="panel queue-panel"><h2>${list.length} từ trong danh sách</h2>${loading?'<p class="hint" role="status">Đang tải các từ chủ đề đã học…</p>':error?'<p class="hint" role="status">Chưa tải được từ chủ đề. Dữ liệu học vẫn được giữ.</p><button class="btn outline small" data-action="review-retry">Thử lại</button>':''}<div class="review-list">${list.length?list.slice(0,100).map(({word,date,topic,topicTitle})=>`<div class="review-row"><div><strong>${esc(word.en)}</strong><p>${esc(word.vi)}</p></div><small>${!word.remembered?'Cần ôn lại':word.nextReview?'Hẹn '+dateLabel(word.nextReview):'Cần đặt lịch ôn'}<br>${topic?'Chủ đề: '+esc(topicTitle):'Bộ ngày '+dateLabel(date)}</small></div>`).join(''):loading||error?'':'<p class="hint">Chưa có từ trong danh sách này. Các từ đã nhớ vẫn ở mục Tất cả và sẽ trở lại khi đến lịch.</p>'}</div>${list.length>100?'<p class="hint">Đang hiện 100 từ đầu. Lượt học vẫn gồm toàn bộ danh sách.</p>':''}</section>`;
 }
 function renderReview(){
@@ -20,29 +21,29 @@ function renderReview(){
  reviewPending=loading?(async()=>{try{await loadReviewCatalog();if(token===reviewPageToken&&location.hash===hash&&dataOwner===owner)renderReviewContent();}catch{if(token===reviewPageToken&&location.hash===hash&&dataOwner===owner)renderReviewContent({error:true});}})():Promise.resolve();
  return reviewPending;
 }
-function startGlobalReview(mode='due'){
+function startGlobalReview(mode='due',kind='flip'){
  if(needsReviewCatalog()){
   const token=++reviewPageToken,hash=location.hash,owner=dataOwner;
-  reviewPending=(async()=>{try{await loadReviewCatalog();if(token===reviewPageToken&&location.hash===hash&&dataOwner===owner)startGlobalReview(mode);}catch{if(token===reviewPageToken&&location.hash===hash&&dataOwner===owner)toast('Chưa tải được từ chủ đề. Hãy thử lại.',null,'',true);}})();return reviewPending;
+  reviewPending=(async()=>{try{await loadReviewCatalog();if(token===reviewPageToken&&location.hash===hash&&dataOwner===owner)startGlobalReview(mode,kind);}catch{if(token===reviewPageToken&&location.hash===hash&&dataOwner===owner)toast('Chưa tải được từ chủ đề. Hãy thử lại.',null,'',true);}})();return reviewPending;
  }
  if(!reviewQueue(C.isoToday(),mode).length){toast('Chưa có từ phù hợp để ôn.');return;}
- go('#/flip/'+C.isoToday()+'?queue='+mode);
+ go('#/'+kind+'/'+C.isoToday()+'?queue='+mode);
 }
-function renderGlobalSession(date,mode){
+function renderGlobalSession(date,mode,kind='flip'){
  if(needsReviewCatalog()){
   const token=++reviewPageToken,hash=location.hash,owner=dataOwner;stopSession();if(study.open)study.close();renderReviewContent({loading:true});
-  reviewPending=(async()=>{try{await loadReviewCatalog();if(token===reviewPageToken&&location.hash===hash&&dataOwner===owner)renderGlobalSession(date,mode);}catch{if(token===reviewPageToken&&location.hash===hash&&dataOwner===owner)renderReviewContent({error:true});}})();return;
+  reviewPending=(async()=>{try{await loadReviewCatalog();if(token===reviewPageToken&&location.hash===hash&&dataOwner===owner)renderGlobalSession(date,mode,kind);}catch{if(token===reviewPageToken&&location.hash===hash&&dataOwner===owner)renderReviewContent({error:true});}})();return;
  }
  selected=date;renderReviewContent();
- if(!session||!session.fromReview||session.reviewFilter!==mode){
+ if(!session||!session.fromReview||session.reviewFilter!==mode||session.type!==kind){
   stopSession();const list=reviewQueue(C.isoToday(),mode);if(!list.length){go('#/review');toast('Bạn đã ôn xong danh sách này.');return;}
-  createSession('flip',date,false);session.words=list.map(({date,word})=>({...word,_date:date}));session.fromReview=true;session.reviewFilter=mode;session.reversed=preferences.reverse;
+  createSession(kind,date,false);session.words=list.map(({date,word})=>({...word,_date:date}));session.fromReview=true;session.reviewFilter=mode;session.reversed=preferences.reverse;
  }
- renderFlip();updateNav('review');if(!study.open){focusBeforeStudy=document.activeElement;study.showModal();}
+ if(typingModes.includes(kind))renderTypingGame();else renderFlip();updateNav('review');showStudy();
 }
 document.addEventListener('click',event=>{
  const button=event.target.closest('[data-action]');if(!button||button.disabled)return;
- if(button.dataset.action==='review-start')startGlobalReview(button.dataset.mode);
+ if(button.dataset.action==='review-start')startGlobalReview(button.dataset.mode,button.dataset.kind||'flip');
  if(button.dataset.action==='review-filter'){reviewFilter=button.dataset.mode;renderReview();}
  if(button.dataset.action==='review-retry')route();
 });

@@ -6,24 +6,24 @@ function stopPronunciation(){
   pronunciationToken++;if(pronunciationAudio){pronunciationAudio.pause();pronunciationAudio=null;}
   if(speakerSupported)speechSynthesis.cancel();
 }
-function speakWord(word){
+function speakWord(word,{rate=preferences.rate}={}){
   stopPronunciation();
   const token=pronunciationToken,audio=word?.dictionary?.audio;
-  if(!audio||typeof Audio==='undefined'||!/^https:\/\/(upload|commons)\.wikimedia\.org\//.test(audio)){speak(word?.en||'');return;}
-  const player=pronunciationAudio=new Audio(audio);player.playbackRate=preferences.rate;
+  if(!audio||typeof Audio==='undefined'||!/^https:\/\/(upload|commons)\.wikimedia\.org\//.test(audio)){speak(word?.en||'',rate);return;}
+  const player=pronunciationAudio=new Audio(audio);player.playbackRate=rate;
   let failed=false;
-  const fallback=()=>{if(failed||token!==pronunciationToken)return;failed=true;player.pause();pronunciationAudio=null;toast('Chưa tải được bản ghi âm. Dùng giọng đọc của thiết bị.');speak(word.en);};
+  const fallback=()=>{if(failed||token!==pronunciationToken)return;failed=true;player.pause();pronunciationAudio=null;toast('Chưa tải được bản ghi âm. Dùng giọng đọc của thiết bị.');speak(word.en,rate);};
   player.onerror=fallback;
   try{const playback=player.play();playback?.catch(fallback);}catch{fallback();}
 }
-function speak(en){
+function speak(en,rate=preferences.rate){
   stopPronunciation();
   if(!speakerSupported)return;
   try{
     speechSynthesis.cancel();
     const utterance=new SpeechSynthesisUtterance(en);
     utterance.lang='en-US';
-    utterance.rate=preferences.rate;
+    utterance.rate=rate;
     const voices=speechSynthesis.getVoices();
     utterance.voice=voices.find(v=>v.lang.toLowerCase()==='en-us')||null;
     utterance.onerror=e=>{

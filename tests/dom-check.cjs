@@ -22,6 +22,7 @@ class El{
  addEventListener(name,fn){(this.events[name]??=[]).push(fn);}
  dispatchEvent(e){e.target??=this;e.preventDefault??=()=>{e.defaultPrevented=true;};for(const fn of this.events[e.type]||[])fn(e);if(e.bubbles!==false){if(this.parentElement)this.parentElement.dispatchEvent(e);else if(this!==this.doc.body)this.doc.body.dispatchEvent(e);}}
  click(){if(this.disabled)return;this.focus();this.onclick?.();this.dispatchEvent({type:'click',target:this});if(this.tagName==='A'&&this.href?.startsWith('blob:'))this.doc.downloads.push({name:this.download,blob:this.doc.blobs.get(this.href)});}
+ show(){this.open=true;}
  showModal(){this.open=true;(this.querySelector('button')||this).focus();}close(){this.open=false;this.dispatchEvent({type:'close',bubbles:false});}
 }
 function parse(markup,parent){const stack=[parent];let skipping=false;for(const m of markup.matchAll(/<!--[\s\S]*?-->|<![^>]*>|<\/?[a-zA-Z][^>]*>|[^<]+/g)){const token=m[0];if(token.startsWith('<!--')||token.startsWith('<!'))continue;if(token.startsWith('</')){if(stack.length>1)stack.pop();continue;}if(token.startsWith('<')){const tag=token.match(/^<([\w-]+)/)[1],attrs={};for(const a of token.slice(tag.length+1,-1).matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g))attrs[a[1]]=decode(a[2]??a[3]??a[4]??'');const el=new El(tag,parent.doc,attrs);stack.at(-1).append(el);if(!/^(input|link|meta|br|hr|img|source|path)$/i.test(tag)&&!token.endsWith('/>'))stack.push(el);}else stack.at(-1)._text+=decode(token);}}
@@ -852,4 +853,83 @@ test('Retrying a failed direct review link loads the catalog and starts the requ
  const today=new Date().toLocaleDateString('en-CA'),e=environment({map:new Map([['tutu.topics.progress.v1',JSON.stringify({'food:tw-0':false})]]),hash:'#/flip/'+today+'?queue=unknown'});await e.qa.reviewPending;assert.ok(e.q('[data-action="review-retry"]'));
  e.box.fetch=async()=>new Response(JSON.stringify(topicFixture()));e.click('[data-action="review-retry"]');await e.qa.reviewPending;
  assert.equal(e.q('#study-dialog').open,true);assert.equal(e.qa.session.words.length,1);assert.equal(e.qa.session.words[0]._topic,'food');
+});
+
+// Typing games: catch missing routes, duplicate grading, and lost topic/day origin.
+test('Typing a day word grades once, reveals feedback, and replays the same mode',()=>{
+ const e=demo();e.click('[data-action="start-type"]');
+ assert.ok(e.q('#typing-answer'),'typing mode opens from day');
+ assert.equal(e.qa.session.type,'type');
+ e.q('#typing-answer').value='  '+e.qa.session.words[0].en.toUpperCase()+'  ';
+ e.q('#typing-answer').dispatchEvent({type:'input'});
+ e.q('#typing-form').dispatchEvent({type:'submit'});
+ assert.equal(e.qa.session.answers.length,1);assert.equal(e.qa.session.answers[0],true);
+ assert.equal(e.qa.days[0].words[0].reviewCount,1);
+ assert.ok(e.q('.game-feedback'));assert.ok(e.q('[data-action="typing-next"]'));
+ e.q('#typing-form')?.dispatchEvent({type:'submit'});
+ assert.equal(e.qa.days[0].words[0].reviewCount,1);
+ e.click('[data-action="typing-next"]');assert.equal(e.qa.session.index,1);
+ e.click('[data-action="close-study"]');assert.equal(e.qa.session,null);assert.ok(!e.doc.body.classList.contains('game-active'));
+});
+test('Topic typing skips into shared review without creating personal words',async()=>{
+ const e=environment({topicData:topicFixture(),hash:'#/topic/food?mode=type'});await e.qa.topicPending;
+ assert.ok(e.q('#typing-answer'));e.click('[data-action="typing-skip"]');
+ const p=JSON.parse(e.map.get('tutu.topics.progress.v1'))['food:tw-0'];assert.equal(p.remembered,false);assert.equal(p.reviewCount,1);assert.equal(p.reviewLevel,0);
+ assert.equal(e.qa.days.length,0);e.click('[data-action="close-study"]');e.box.location.hash='#/review';await e.qa.reviewPending;
+ assert.equal(e.q('.feature-number').textContent,'1');
+});
+test('Listening hides the answer until submitted, supports meaning hint, and empty check does not grade',async()=>{
+ const e=environment({topicData:topicFixture(),hash:'#/topic/home?mode=listen',speech:true});await e.qa.topicPending;
+ assert.ok(e.q('#typing-answer'));assert.equal(e.qa.session.type,'listen');
+ assert.ok(!e.q('#study-dialog').textContent.includes('house'));
+ e.q('#typing-form').dispatchEvent({type:'submit'});assert.equal(e.qa.session.answers.length,0);
+ e.click('[data-action="typing-hint"]');assert.ok(e.q('#study-dialog').textContent.includes('ngôi nhà'));
+ e.q('#typing-answer').value='house';e.q('#typing-form').dispatchEvent({type:'submit'});
+ assert.ok(e.q('#study-dialog').textContent.includes('house'));e.click('[data-action="typing-next"]');await e.qa.topicPending;
+ assert.equal(e.qa.session.type,'result');assert.equal(e.qa.session.result.correct,1);assert.ok(e.q('.game-result'));
+ e.click('[data-action="typing-replay"]');await e.qa.topicPending;assert.equal(e.qa.session.type,'listen');assert.ok(e.q('#typing-answer'));
+});
+
+test('Typing composition does not submit the unfinished IME answer',()=>{
+ const e=demo();e.click('[data-action="start-type"]');const input=e.q('#typing-answer');
+ input.dispatchEvent({type:'compositionstart'});input.value=e.qa.session.words[0].en;
+ e.q('#typing-form').dispatchEvent({type:'submit'});assert.equal(e.qa.session.answers.length,0);
+ input.dispatchEvent({type:'compositionend'});e.q('#typing-form').dispatchEvent({type:'submit'});assert.equal(e.qa.session.answers.length,1);
+});
+test('Listening playback changes only the current audio rate and stops on navigation',async()=>{
+ const e=environment({topicData:topicFixture(),hash:'#/topic/home?mode=listen',speech:true});await e.qa.topicPending;
+ const rate=e.qa.preferences.rate;e.click('[data-action="typing-speak"]');assert.equal(e.spoken.at(-1).text,'house');assert.equal(e.spoken.at(-1).rate,rate);
+ e.click('[data-action="typing-slow"]');assert.equal(e.spoken.at(-1).rate,.65);assert.equal(e.qa.preferences.rate,rate);
+ e.box.location.hash='#/progress';assert.equal(e.qa.session,null);assert.equal(e.q('#study-dialog').open,false);assert.ok(!e.doc.body.classList.contains('game-active'));
+});
+test('Mixed typing review grades equal word IDs from separate origins independently',async()=>{
+ const data=topicFixture();data.topics[1].words=[{...data.topics[0].words[0],vi:'táo ở nhà'}];
+ const today=new Date().toLocaleDateString('en-CA'),map=new Map([['tutu.topics.progress.v1',JSON.stringify({'food:tw-0':false,'home:tw-0':false})],['tungngay.v1',JSON.stringify({version:1,days:[{date:today,words:[{id:'tw-0',en:'apple',vi:'táo riêng',remembered:false}]}]})]]);
+ const e=environment({map,topicData:data,hash:'#/review'});await e.qa.reviewPending;
+ e.click('[data-action="review-start"][data-kind="type"]');await e.qa.reviewPending;
+ assert.equal(e.qa.session.words.length,3);
+ for(let i=0;i<3;i++){e.q('#typing-answer').value=i===0?'wrong':'apple';e.q('#typing-form').dispatchEvent({type:'submit'});e.click('[data-action="typing-next"]');}
+ assert.ok(e.q('.game-result'));assert.equal(e.qa.session.result.correct,2);
+ const values=[e.qa.days[0].words[0],...Object.values(JSON.parse(e.map.get('tutu.topics.progress.v1')))];
+ assert.equal(values.filter(w=>w.remembered).length,2);assert.ok(values.every(w=>w.reviewCount===1));
+ assert.equal(e.q('.game-missed').querySelectorAll('article').length,1);
+ e.click('[data-action="typing-replay"]');assert.equal(e.qa.session.type,'type');assert.equal(e.qa.session.words.length,3);
+});
+
+test('Account typing progress syncs to listening on another device and preserves navigation',async()=>{
+ const cloud=accountCloud(),desktop=await accountEnvironment(signedSession('u1'),'#/',{rpc:cloud('u1')});await desktop.qa.flushAccountData();
+ desktop.click('[data-action="sample"]');const date=desktop.qa.days[0].date;desktop.box.location.hash='#/day/'+date;desktop.click('[data-action="start-type"]');
+ desktop.q('#typing-answer').value='wrong';desktop.q('#typing-form').dispatchEvent({type:'submit'});await desktop.qa.flushAccountData();
+ assert.equal(desktop.q('[data-nav="notebook"]').getAttribute('aria-current'),'page');
+ const mobile=await accountEnvironment(signedSession('u1'),'#/day/'+date,{rpc:cloud('u1'),speech:true});await mobile.qa.flushAccountData();mobile.click('[data-action="start-listen"]');
+ assert.equal(mobile.qa.days[0].words[0].reviewCount,1);assert.equal(mobile.qa.days[0].words[0].remembered,false);
+ mobile.q('#typing-answer').value=mobile.qa.session.words[0].en;mobile.q('#typing-form').dispatchEvent({type:'submit'});await mobile.qa.flushAccountData();
+ assert.equal(mobile.qa.days[0].words[0].reviewCount,2);assert.equal(mobile.qa.days[0].words[0].remembered,true);
+ mobile.click('[data-action="typing-next"]');mobile.q('#typing-answer').value='private typing draft';mobile.authEvent('SIGNED_IN',{user:signedUser('u2')});
+ assert.equal(mobile.qa.session,null);assert.ok(!mobile.q('#typing-answer'));assert.ok(!mobile.doc.body.classList.contains('game-active'));
+});
+
+test('Typing hint reveals the real first letter even after a wrong initial guess',()=>{
+ const e=demo();e.click('[data-action="start-type"]');e.q('#typing-answer').value='zzz';e.click('[data-action="typing-hint"]');
+ assert.equal(e.q('#typing-letters').querySelector('.game-letter').textContent,e.qa.session.words[0].en[0]);
 });

@@ -44,6 +44,7 @@ function renderFixedTopic(deck){
   <section class="fixed-topic-hero" aria-labelledby="fixed-topic-title"><div class="fixed-topic-hero-heading"><span class="fixed-topic-emblem">${emblem}</span><div><h1 id="fixed-topic-title">${esc(deck.title)}</h1><p class="fixed-topic-english" lang="en">${esc(deck.sourceLabel)} · ${total} từ</p></div></div>
    <div class="fixed-topic-progress-row"><div class="fixed-topic-progress" role="progressbar" aria-label="Số từ đã nhớ" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${known}"><span style="width:${percent}%"></span></div><p id="fixed-topic-known">Đã nhớ ${known}/${total}</p></div></section>
   <div class="fixed-topic-study-actions"><button type="button" class="fixed-topic-study-button purple" data-action="topic-flip" data-topic="${deck.id}">${icon('copy')}<span>Lật thẻ</span></button><button type="button" class="fixed-topic-study-button yellow" data-action="topic-match" data-topic="${deck.id}" ${total<3?'disabled':''}>${icon('grid')}<span>Ghép cặp</span></button></div>
+  <div class="fixed-topic-study-actions topic-typing-actions"><button type="button" class="fixed-topic-study-button purple" data-action="topic-type" data-topic="${deck.id}">${icon('edit')}<span>Gõ từ</span></button><button type="button" class="fixed-topic-study-button yellow" data-action="topic-listen" data-topic="${deck.id}">${icon('sound')}<span>Nghe gõ</span></button></div>
   <dl class="fixed-topic-stats"><div><dt>Đã nhớ</dt><dd id="fixed-topic-known-count">${known}</dd></div><div><dt>Chưa nhớ</dt><dd id="fixed-topic-unknown-count">${total-known}</dd></div></dl>
  </aside><section class="fixed-topic-vocabulary" aria-label="Từ vựng trong chủ đề"><div class="fixed-topic-list-heading"><p id="fixed-topic-results" role="status" aria-live="polite"></p>${topicSearchMarkup('Tìm trong chủ đề')}</div><p class="fixed-topic-sort">Xếp theo: A–Z</p><div id="fixed-topic-words" class="fixed-topic-words"></div></section></div></div>`;
  app.dataset.topic=deck.id;renderFixedTopicWords(deck);
@@ -57,7 +58,7 @@ app.addEventListener('input',event=>{if(event.target.id!=='fixed-topic-search'||
 document.addEventListener('click',event=>{
  const b=event.target.closest('[data-action]');if(!b||b.disabled)return;
  if(b.dataset.action==='topics-retry'){if(location.hash.startsWith('#/topic/'))renderTopicRoute();else renderFixedTopics();}
- if(b.dataset.action==='topic-flip'||b.dataset.action==='topic-match')go('#/topic/'+b.dataset.topic+'?mode='+(b.dataset.action==='topic-flip'?'flip':'match'));
+ if(['topic-flip','topic-match','topic-type','topic-listen'].includes(b.dataset.action))go('#/topic/'+b.dataset.topic+'?mode='+b.dataset.action.slice(6));
  if(b.dataset.action==='topic-speak'){const deck=topicData?.topics.find(t=>t.id===b.dataset.topic),word=deck?.words.find(w=>w.id===b.dataset.id);if(word)speakWord(word);}
  if(b.dataset.action==='topic-return'){const id=session?.fromTopic;stopSession();if(study.open)study.close();go(topicHref(id));}
 });
