@@ -13,3 +13,11 @@ test('Vercel build publishes public configuration and a matching offline cache w
 test('Vercel build rejects private Supabase keys instead of publishing them',()=>{
  const {build}=require('../tools/build-web.cjs');assert.throws(()=>build({env:{SUPABASE_URL:'https://demo.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_secret_forbidden'}}),/công khai/);
 });
+
+test('Push build exposes only public VAPID settings and no server credentials or code',()=>{
+ const {build}=require('../tools/build-web.cjs'),webpush=require('web-push'),keys=webpush.generateVAPIDKeys(),dir=fs.mkdtempSync(path.join(os.tmpdir(),'tutu-push-build-'));
+ build({output:dir,env:{VAPID_PUBLIC_KEY:keys.publicKey,VAPID_PRIVATE_KEY:keys.privateKey,VAPID_SUBJECT:'mailto:test@example.com',CRON_SECRET:'never-public-secret-never-public-secret',UPSTASH_REDIS_REST_URL:'https://example.upstash.io',UPSTASH_REDIS_REST_TOKEN:'never-public-redis',PUSH_SCHEDULE_MODE:'flexible'}});
+ const source=fs.readFileSync(path.join(dir,'assets/js/push-config.js'),'utf8'),box={};vm.runInNewContext(source,box);assert.equal(box.TUTU_PUSH.publicKey,keys.publicKey);assert.equal(box.TUTU_PUSH.mode,'flexible');assert.equal(box.TUTU_PUSH.enabled,true);
+ for(const secret of [keys.privateKey,'never-public-secret','never-public-redis'])assert.ok(!source.includes(secret));
+ assert.equal(fs.existsSync(path.join(dir,'server')),false);assert.equal(fs.existsSync(path.join(dir,'api')),false);
+});

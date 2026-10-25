@@ -1,6 +1,7 @@
 /* Never cache backups, cloud API calls or arbitrary cross-origin responses. */
 'use strict';
 importScripts('./precache-manifest.js');
+importScripts('./assets/js/push-worker.js');
 const scope=self.registration.scope;
 const prefix='tu-tu:'+encodeURIComponent(new URL(scope).pathname)+':';
 const cacheName=prefix+self.TUTU_BUILD;
@@ -29,6 +30,7 @@ self.addEventListener('activate',event=>{
 self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting();if(event.data?.type==='CACHE_FONTS')event.waitUntil(warmFonts());});
 self.addEventListener('fetch',event=>{
   const request=event.request,url=new URL(request.url);
+  if(url.pathname.startsWith('/api/')||url.pathname.startsWith(new URL('./api/',scope).pathname))return;
   if(request.method==='GET'&&isFontRequest(url)){
     event.respondWith((async()=>{const cache=await caches.open(fontCache),saved=await cache.match(request);if(saved)return saved;const response=await fetch(request);if(response.ok)try{await cache.put(request,response.clone());}catch{}return response;})());return;
   }

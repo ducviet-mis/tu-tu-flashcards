@@ -182,3 +182,10 @@ Từ chủ đề đã học dùng cùng hàng đợi và lịch 1–3–7–14�
 - Kết quả có số đúng/sai, thời gian, từ cần ôn và Chơi lại đúng chế độ/bộ từ. Menu nổi và Be Vietnam Pro được giữ trên cả desktop/mobile.
 - Không cần SQL mới cho cập nhật này nếu đã chạy bản `supabase/dong_bo_tai_khoan.sql` hỗ trợ lịch ôn chủ đề. Hai chế độ dùng nhóm lượt nhớ từ `lat_the` trong lịch sử hiện tại; thống kê đúng/sai và lịch ôn vẫn được lưu đầy đủ.
 - Nghe gõ dùng bản ghi âm của từ khi có, hoặc giọng tiếng Anh của thiết bị; nút loa cho phép phát bằng thao tác trực tiếp trên trình duyệt.
+
+
+### Nhắc ôn tập bằng Web Push
+
+Cài đặt có công tắc theo thiết bị, giờ nhắc, hướng dẫn iPhone và nút gửi thử. Vercel Functions + Upstash Redis gửi thông báo bằng `web-push`; SW hiện tại nhận và mở `#/review`, giữ offline cache và Be Vietnam Pro. Không thêm tài khoản.
+
+**Cần thiết lập env và Redis rồi redeploy:** xem [hướng dẫn Web Push](docs/HUONG-DAN-WEB-PUSH.md) từng bước. Không cần SQL mới. Hobby mặc định `0 13 * * *` UTC (20:00–20:59 Việt Nam); giờ cố định. Chuyển `PUSH_SCHEDULE_MODE=flexible` cùng cron15 phút trên Pro/cron ngoài để chọn giờ riêng. Chưa có tính năng bỏ qua khi đã ôn xong; nội dung nhắc chung theo thiết bị.

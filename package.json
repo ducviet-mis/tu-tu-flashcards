@@ -7,9 +7,14 @@
   "scripts": {
     "start": "node tools/serve.cjs",
     "test": "node --max-semi-space-size=4 --test --test-concurrency=1 tests/*.test.cjs tests/dom-check.cjs",
-    "build": "node tools/build-web.cjs"
+    "build": "node tools/build-web.cjs",
+    "start:push": "node --env-file=.env tools/serve.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.11"
+  },
+  "dependencies": {
+    "@upstash/redis": "1.39.0",
+    "web-push": "3.6.7"
   }
 }

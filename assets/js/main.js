@@ -7,3 +7,5 @@ updateAccountHeader();
 void initializeAccount();
 window.matchMedia?.('(prefers-color-scheme: light)').addEventListener?.('change',applyTheme);
 initPwa();
+
+void initPushReminders();

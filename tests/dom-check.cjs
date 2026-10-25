@@ -933,3 +933,7 @@ test('Typing hint reveals the real first letter even after a wrong initial guess
  const e=demo();e.click('[data-action="start-type"]');e.q('#typing-answer').value='zzz';e.click('[data-action="typing-hint"]');
  assert.equal(e.q('#typing-letters').querySelector('.game-letter').textContent,e.qa.session.words[0].en[0]);
 });
+
+test('Settings adds a device reminder section without changing the app font or requesting permission',()=>{
+ const e=demo();e.box.location.hash='#/settings';assert.ok(e.q('#push-reminder-enabled'));assert.equal(e.q('#push-reminder-time').value,'20:00');assert.equal(e.q('#push-reminder-time').disabled,true);assert.match(e.q('#push-reminder-status').textContent,/không hỗ trợ/);assert.ok(e.q('#main-nav'));assert.ok(e.q('[data-action="preference-theme"]'));
+});

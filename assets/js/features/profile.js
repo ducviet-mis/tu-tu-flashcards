@@ -33,6 +33,7 @@ function renderProfile(section='info'){
  <nav class="profile-tabs" aria-label="Hồ sơ và cài đặt"><a href="#/account" ${section==='info'?'aria-current="page"':''}>Thông tin</a><a href="#/settings" ${section==='settings'?'aria-current="page"':''}>Cài đặt</a></nav>
  <div class="profile-columns">${profileInfoMarkup()}<section class="profile-column profile-preferences" id="profile-settings" aria-labelledby="profile-settings-title"><h2 class="profile-section-label" id="profile-settings-title">Cài đặt học</h2>${preferencesFormMarkup()}${profileAppMarkup()}</section></div><p class="profile-footer">TỪ TỪ · Mỗi ngày một chút.</p></div>`;
  updateDictionaryStatus();
+ void initPushReminders();
 }
 function renderAccount(){if(!accountUser){renderAuth('login');return;}renderProfile('info');}
 async function saveProfile(form){

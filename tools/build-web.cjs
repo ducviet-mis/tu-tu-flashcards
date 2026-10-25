@@ -2,6 +2,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
+const {publicScript}=require('../server/push/public-config.cjs');
 function build({output=path.join(root,'dist'),env=process.env}={}){
  const config={url:env.SUPABASE_URL||'',key:env.SUPABASE_PUBLISHABLE_KEY||''};
  const api={URL,atob};vm.runInNewContext(fs.readFileSync(path.join(root,'assets/js/auth-service.js'),'utf8'),api);
@@ -13,6 +14,7 @@ function build({output=path.join(root,'dist'),env=process.env}={}){
  for(const name of inactive){const target=path.resolve(output,name);if(!target.startsWith(output+path.sep))throw Error('Invalid build path');fs.rmSync(target,{recursive:true,force:true});}
  for(const name of ['assets','data'])fs.cpSync(path.join(root,name),path.join(output,name),{recursive:true,filter:source=>!inactive.includes(path.relative(root,source).split(path.sep).join('/'))});
  fs.writeFileSync(path.join(output,'assets/js/supabase-config.js'),'/* Public configuration generated at build time. */\nglobalThis.TUTU_SUPABASE='+JSON.stringify(config).replace(/</g,'\\u003c')+';\n');
+ fs.writeFileSync(path.join(output,'assets/js/push-config.js'),publicScript(env));
  const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]);
  const shell=['index.html','manifest.webmanifest',...walk(path.join(output,'assets')).map(p=>path.relative(output,p).split(path.sep).join('/')).sort(),'data/kaikki/metadata.json','data/kaikki/NOTICE.txt','data/topics/catalog.json','data/topics/metadata.json','data/topics/NOTICE.txt'];
  const hash=crypto.createHash('sha256');

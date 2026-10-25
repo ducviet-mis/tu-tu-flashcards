@@ -1,0 +1,11 @@
+/* Reuse profile rows, switches, pills, colors and Be Vietnam Pro. */
+#push-reminder-section{margin-top:24px}
+.push-reminder-card{overflow:hidden}
+.push-reminder-card input[type=time]{width:112px;min-width:0;padding:8px 10px;border:1px solid var(--control-line);border-radius:999px;color:var(--ink);background:var(--bg);font:500 16px var(--sans);color-scheme:dark}
+[data-theme=light] .push-reminder-card input[type=time]{color-scheme:light}
+.push-reminder-card input[type=time]:disabled{opacity:.75}
+.push-reminder-actions{padding:0 18px 16px}
+.push-reminder-actions .btn{border-radius:999px}
+#push-reminder-message:empty{display:none}
+.push-help{overflow-wrap:anywhere}
+@media(max-width:360px){.push-reminder-card .profile-setting-row{gap:10px}.push-reminder-card input[type=time]{width:100px}.push-reminder-card .profile-setting-row small{font-size:11px}}

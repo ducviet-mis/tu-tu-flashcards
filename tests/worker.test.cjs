@@ -26,3 +26,17 @@ test('Font warmup caches Be Vietnam Pro for offline use and preserves it across 
  const font=await w.request('https://fonts.gstatic.com/s/bevietnampro/test.woff2');assert.equal(font.status,200);assert.match(await font.text(),/network/);
  assert.equal(await w.request('https://fonts.gstatic.com/s/otherfamily/test.woff2'),null);
 });
+
+function pushWorker({open=[]}={}){
+ const events={},notifications=[],opened=[],self={registration:{scope:'https://tutu.test/tu-tu/',showNotification:async(title,options)=>notifications.push({title,options})},clients:{matchAll:async()=>open,openWindow:async url=>opened.push(url)},addEventListener:(name,fn)=>events[name]=fn};
+ const box={self,URL};vm.createContext(box);const file='assets/js/push-worker.js';if(fs.existsSync(file))vm.runInContext(fs.readFileSync(file,'utf8'),box);
+ return {notifications,opened,async run(name,event){assert.ok(events[name],'push handler '+name+' must exist');let promise;events[name]({...event,waitUntil:p=>promise=p});await promise;}};
+}
+test('Push notification uses app icons/tag and safely falls back for invalid JSON',async()=>{
+ const w=pushWorker();await w.run('push',{data:{json:()=>{throw Error('bad');}}});assert.equal(w.notifications[0].title,'TỪ TỪ');assert.equal(w.notifications[0].options.tag,'daily-review');assert.equal(w.notifications[0].options.icon,'https://tutu.test/tu-tu/assets/images/icon-192.png');
+});
+test('Notification click navigates/focuses existing app tab and opens review when closed',async()=>{
+ const navigated=[],open=[{url:'https://tutu.test/tu-tu/#/',navigate:async url=>navigated.push(url),focus:async()=>navigated.push('focus')}],w=pushWorker({open});let closed=0;await w.run('notificationclick',{notification:{close:()=>closed++,data:{url:'https://evil.test/'}}});assert.equal(closed,1);assert.deepEqual(navigated,['https://tutu.test/tu-tu/#/review','focus']);
+ const empty=pushWorker();await empty.run('notificationclick',{notification:{close(){},data:{url:'./#/review'}}});assert.deepEqual(empty.opened,['https://tutu.test/tu-tu/#/review']);
+});
+test('Service worker never turns push API navigation into the offline HTML shell',async()=>{const w=worker();await w.run('install');assert.equal(await w.request('api/push/cron',{mode:'navigate'}),null);});
